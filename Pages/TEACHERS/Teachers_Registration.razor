@@ -1,0 +1,200 @@
+﻿@page "/teachersregistration"
+@using CORE.MODEL
+@using CORE.SERVICE
+@using System.ComponentModel.DataAnnotations
+@inject AuthService authService
+
+<style>
+    form .row {
+        margin-bottom: 16px;
+        margin-top: 10px;
+    }
+
+    .rz-fieldset-content {
+        padding: 0;
+    }
+
+    .form-label {
+        padding-top: 8px;
+    }
+
+    .form-control {
+        margin-bottom: 8px;
+    }
+</style>
+
+<RadzenFieldset Text="Teachers Registration">
+    <div class="row">
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Teacher FirstName" Component="textteachername" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherFirstName" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Teacher LastName" Component="textteacherlastname" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherLastName" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Date of Birth" Component="textteacherdob" />
+        </div>
+        <div class="col-md-3">
+            <RadzenDatePicker @bind-Value="@teachersRegistration.TeacherDateOfBirth" Format="d" Placeholder="Select Date of Birth" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Teacher Gender" Component="textteachergender" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherGender" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Teacher Address" Component="textteacheraddress" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherAddress" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Teacher Phone Number" Component="textteacherphonenumber" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherPhoneNumber" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Upload Image" Component="fileInput" />
+        </div>
+        <div class="col-md-3">
+            <InputFile id="teacherImage" OnChange="HandleFileChange" key="@inputFileKey" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Teacher Email" Component="textteacheremail" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherEmail" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Teacher ID" Component="textteacherid" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" Value="@newTeacherId.ToString()" ReadOnly="true" />
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-md-3">
+            <RadzenButton Text="Submit" Icon="check" ButtonType="ButtonType.Submit" Click="@SubmitForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
+        </div>
+        <div class="col-md-3">
+            <RadzenButton Text="New" Icon="add" ButtonStyle="ButtonStyle.Primary" Click="@ResetForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
+        </div>
+    </div>
+</RadzenFieldset>
+
+<!-- Bootstrap alert for success message -->
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">
+        <strong>Success!</strong> @successMessage
+    </div>
+}
+<!-- Bootstrap alert for error message -->
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        <strong>Error!</strong> @errorMessage
+    </div>
+}
+
+@code {
+    TeachersRegistration teachersRegistration = new TeachersRegistration();
+    byte[] imageData;
+    int newTeacherId;
+    string successMessage;
+    string errorMessage;
+    private IBrowserFile selectedFile;
+    private int inputFileKey = 0;
+
+    async Task SubmitForm()
+    {
+        if (IsValid(teachersRegistration))
+        {
+            if (selectedFile != null)
+            {
+                using (var stream = selectedFile.OpenReadStream())
+                {
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        await stream.CopyToAsync(memoryStream);
+                        imageData = memoryStream.ToArray();
+                    }
+                }
+
+                teachersRegistration.ImageData = imageData;
+            }
+
+            // Call the service to add the teacher
+            newTeacherId = await authService.AddTeachersAsync(teachersRegistration);
+
+            if (newTeacherId > 0)
+            {
+                Console.WriteLine($"Teacher successfully registered. TeacherID: {newTeacherId}");
+                successMessage = "Teacher successfully registered.";
+                // Reset error message
+                errorMessage = string.Empty;
+            }
+            else
+            {
+                Console.WriteLine("Failed to register the teacher.");
+                errorMessage = "Failed to register the teacher. Please try again.";
+                // Reset success message
+                successMessage = string.Empty;
+                // Handle failure, show error messages, etc.
+            }
+        }
+    }
+
+    bool IsValid(object obj)
+    {
+        // Validate the object using DataAnnotations
+        var validationContext = new ValidationContext(obj, null, null);
+        var validationResults = new List<ValidationResult>();
+        return Validator.TryValidateObject(obj, validationContext, validationResults, true);
+    }
+
+    private void HandleFileChange(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+    }
+
+    void ResetForm()
+    {
+        // Create a new instance of the TeachersRegistration class to clear all fields
+        teachersRegistration = new TeachersRegistration();
+
+        // Reset other variables as needed
+        selectedFile = null;
+        imageData = null;
+        newTeacherId = 0;
+        successMessage = string.Empty;
+        errorMessage = string.Empty;
+
+        // Create a new instance of InputFile to replace the existing one
+        inputFileKey++;
+        StateHasChanged();
+    }
+}

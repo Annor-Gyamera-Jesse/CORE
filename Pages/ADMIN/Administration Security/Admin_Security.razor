@@ -1,0 +1,118 @@
+﻿@page "/adminsec"
+@inject AuthService authService
+@using CORE.MODEL
+@using CORE.SERVICE
+
+<div class="rz-mb-4">
+    <div class="rz-form">
+        <div class="rz-form-group">
+            <label for="newUsername">Username:</label>
+            <RadzenTextBox @bind-Value="newUsername" class="rz-form-control"></RadzenTextBox>
+        </div>
+        <div class="rz-form-group">
+            <label for="newPassword">Password:</label>
+            <RadzenPassword @bind-Value="newPassword" class="rz-form-control"></RadzenPassword>
+        </div>
+        <RadzenButton Text="Add User" ButtonStyle="Radzen.ButtonStyle.Primary" Click="@AddUser" class="rz-mt-2"></RadzenButton>
+    </div>
+</div>
+
+<div class="rz-mb-4">
+    <h4>User List</h4>
+    <ul class="rz-list">
+        @foreach (var user in userList)
+        {
+            <li class="rz-list-item">
+                <div class="rz-list-content">
+                    <span>@user.UserName</span>
+                </div>
+                <div class="rz-list-actions">
+                    <RadzenButton Text="Delete" ButtonStyle="Radzen.ButtonStyle.Danger" Click="@(() => DeleteUser(user.UserID))"></RadzenButton>
+                    <RadzenButton Text="Change Password" ButtonStyle="Radzen.ButtonStyle.Secondary" Click="@(() => ChangePassword(user.UserID))"></RadzenButton>
+                </div>
+            </li>
+        }
+    </ul>
+</div>
+
+<div class="rz-mb-4">
+    <h4>User List with Roles</h4>
+    <RadzenGrid TItem="UserRole" Data="@userRoles" Style="height: 400px">
+        <Columns>
+            <RadzenGridColumn TItem="UserRole" Property="UserName" Title="User Name" />
+            <RadzenGridColumn TItem="UserRole" Property="RoleName" Title="Role Name" />
+            <RadzenGridColumn TItem="UserRole" Property="Assigned" Title="Assigned">
+                <Template Context="data">
+                    <RadzenSwitch @bind-Value="@data.Assigned" Style="margin-top: -8px;"></RadzenSwitch>
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="UserRole" Title="Actions">
+                <Template Context="data">
+                    <RadzenButton Text="Save" ButtonStyle="Radzen.ButtonStyle.Success" Click="@(() => SaveUserRole(data))"></RadzenButton>
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
+</div>
+
+@code {
+    private string newUsername;
+    private string newPassword;
+    private List<User> userList = new List<User>();
+    private List<UserRole> userRoles = new List<UserRole>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load the user list when the page is initialized
+        userList = await authService.GetAllUsersAsync();
+
+        // Load the user roles when the page is initialized
+        userRoles = await authService.GetAllUsersWithRolesAsync();
+    }
+
+    private async Task AddUser()
+    {
+        // Your logic to add a new user
+        await authService.AddUserAsync(newUsername, newPassword);
+
+        // Refresh the user list
+        userList = await authService.GetAllUsersAsync();
+
+        // Clear input fields
+        newUsername = string.Empty;
+        newPassword = string.Empty;
+    }
+
+    private async Task DeleteUser(int userId)
+    {
+        // Your logic to delete a user
+        await authService.DeleteUserAsync(userId);
+
+        // Refresh the user list
+        userList = await authService.GetAllUsersAsync();
+    }
+
+    private async Task ChangePassword(int userId)
+    {
+        // Your logic to change the password of a user
+        await authService.ChangePasswordAsync(userId, newPassword);
+
+        // Refresh the user list
+        userList = await authService.GetAllUsersAsync();
+    }
+
+    private async Task SaveUserRole(UserRole userRole)
+    {
+        if (userRole.Assigned)
+        {
+            await authService.AssignUserRoleAsync(userRole.UserID, userRole.RoleID);
+        }
+        else
+        {
+            await authService.RemoveUserRoleAsync(userRole.UserID, userRole.RoleID);
+        }
+
+        // Refresh the user roles
+        userRoles = await authService.GetAllUsersWithRolesAsync();
+    }
+}

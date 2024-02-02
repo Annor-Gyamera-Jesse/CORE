@@ -1,0 +1,189 @@
+﻿@page "/classscore"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
+@using Radzen.Blazor
+
+<RadzenFieldset Text="Upload Class Score">
+    <div class="container">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="searchInput" class="form-label">Search by Name or ID:</label>
+                <div class="input-group">
+                    <RadzenTextBox @bind-Value="searchInput" class="form-control" />
+                    <div class="input-group-append">
+                        <RadzenButton Click="@SearchStudent" Text="Search" class="btn btn-primary" />
+                    </div>
+                </div>
+            </div>          
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label class="form-label">Refresh:</label>
+                <RadzenButton Click="@RefreshPage" Icon="refresh" ButtonStyle="ButtonStyle.Danger" />
+            </div>
+        </div>
+
+        @if (selectedStudent != null)
+        {
+            <!-- Display student information here -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="studentID" class="form-label">Student ID:</label>
+                    <input type="text" value="@selectedStudent.StudentID" class="form-control" readonly />
+                </div>
+                <div class="col-md-6">
+                    <label for="studentName" class="form-label">Student Name:</label>
+                    <input type="text" value="@($"{selectedStudent.StudentFirstName} {selectedStudent.StudentLastName}")" class="form-control" readonly />
+                </div>
+                <div class="col-md-6">
+                    <label for="className" class="form-label">Class Name:</label>
+                    <input type="text" value="@selectedStudent.ClassID" class="form-control" readonly />
+                </div>
+            </div>
+
+            <!-- Code for uploading class score -->
+            <form @onsubmit="UploadScore">
+                <div class="row mb-2">
+                    <div class="col-md-6">
+                        <label for="score" class="form-label">Score:</label>
+                        <input type="text" @bind="classScore.Score" class="form-control" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="course" class="form-label">Select Subject:</label>
+                        <RadzenDropDown @bind-Value="classScore.SchoolCourse" Data="@SchoolCourse" TextProperty="SchoolCourse" ValueProperty="SchoolCourse" class="form-control" />
+                    </div>
+                </div>
+
+               @*  <div class="row mb-2">
+                    <div class="col-md-6">
+                        <label for="course" class="form-label">Select Subject:</label>
+                        <RadzenDropDown @bind-Value="classScore.SchoolCourse" Data="@SchoolCourse" TextProperty="SchoolCourse" ValueProperty="SchoolCourse" class="form-control" />
+                    </div>
+                </div> *@
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <RadzenButton Text="Submit" Icon="check" ButtonStyle="ButtonStyle.Success" ButtonType="ButtonType.Button" Click="@(() => { if (!isSubmitting) { isSubmitting = true; UploadScore(); } })" />
+                    </div>
+                </div>
+            </form>
+
+            @if (!string.IsNullOrEmpty(uploadMessage))
+            {
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p>@uploadMessage</p>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p>No student found.</p>
+            <br />
+            <b><i>Please search for a student by ID or Full Name</i></b>
+        }
+    </div>
+</RadzenFieldset>
+
+@code {
+    string searchInput = "";
+    Student selectedStudent;
+    ClassScore classScore = new ClassScore();
+    string uploadMessage = "";
+    List<ClassScore> SchoolCourse = new List<ClassScore>();
+    bool isSubmitting = false;
+
+    async Task SearchStudent()
+    {
+        // Call the service to search for the student by name or ID
+        var result = await authService.GetStudentByNameOrIdAsyncs(searchInput);
+
+        // Update the selectedStudent variable
+        selectedStudent = result;
+
+        // Set the properties for the classScore
+        classScore.StudentID = selectedStudent.StudentID;
+        classScore.StudentFirstName = selectedStudent.StudentFirstName;
+        classScore.StudentLastName = selectedStudent.StudentLastName;
+        classScore.ClassName = selectedStudent.ClassID;
+
+        // Get course names
+        SchoolCourse = await authService.GetCourseNamesAsync();
+    }
+
+    async Task UploadScore()
+    {
+        try
+        {
+            // Check if the selectedStudent is not null
+            if (selectedStudent != null)
+            {
+                // Set the ClassName to the ClassID of the selected student
+                classScore.ClassName = selectedStudent.ClassID;
+
+                // Check if the exact same data already exists in the database
+                var existingData = await authService.CheckExistingScoreAsync(classScore);
+
+                if (existingData != null)
+                {
+                    // Handle the case where the data already exists (e.g., show a message)
+                    uploadMessage = "Score for the selected student, class, and course already exists.";
+                }
+                else
+                {
+                    // Log information to the console for debugging
+                    Console.WriteLine("UploadScore method is called.");
+                    Console.WriteLine($"Student ID: {classScore.StudentID}, Class Name: {classScore.ClassName}, Score: {classScore.Score}");
+
+                    // Call the service to upload the student's score
+                    var result = await authService.UploadScoreAsync(classScore);
+
+                    // Log information to the console for debugging
+                    Console.WriteLine($"Upload result: {result}");
+
+                    if (result > 0)
+                    {
+                        // Clear the form after successful upload
+                        classScore = new ClassScore();
+                        // Provide feedback to the user (e.g., show a success message)
+                        uploadMessage = "Upload successful!";
+                    }
+                    else
+                    {
+                        // Handle the case where the upload fails (e.g., show an error message)
+                        uploadMessage = "Upload fails.";
+                    }
+                }
+            }
+            else
+            {
+                // Handle the case where no student is selected (optional)
+                uploadMessage = "No student is selected";
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log the exception or handle it as needed
+            Console.WriteLine($"Error in UploadScore: {ex.Message}");
+            uploadMessage = "An error occurred during the upload.";
+        }
+        finally
+        {
+            isSubmitting = false; // Reset the isSubmitting flag
+        }
+    }
+
+    void RefreshPage()
+    {
+        // Reset all the variables and clear the form
+        searchInput = "";
+        selectedStudent = null;
+        classScore = new ClassScore();
+        uploadMessage = "";
+        SchoolCourse.Clear();
+    }
+}

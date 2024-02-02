@@ -1,0 +1,59 @@
+﻿@page "/attendancetab"
+@using CORE.SECURITY
+@using CORE.SECURITY.LOADER
+@inject ContentLoaderTemplate LoaderTemplate
+
+<style>
+    form .row {
+        /*margin-bottom: 16px;*/
+        /* margin-top: 10px;*/
+    }
+
+    .rz-fieldset-content {
+        padding: 0;
+        /*margin-left:2em;*/
+    }
+</style>
+
+
+<div class="row">
+    <div class="col-md-10">
+        <RadzenTabs SelectedIndex="@SelectedTabPage" Change="@OnTabChange">
+            <Tabs>
+                <RadzenTabsItem Text="CLOCK IN">
+                    <CORE.Pages.ATTENDANCES.TEACHERS.Attendance_Teachers/>
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="CLOCK OUT">
+                  <CORE.Pages.ATTENDANCES.TEACHERS.Attendance_Out_Teachers/>
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="VIEW ALL">
+                    
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
+
+    </div>
+</div>
+
+@code {
+    LoadTypeTrigger _loader;
+    protected LoadTypeTrigger Loader
+    {
+        get => _loader;
+        set
+        {
+            _loader = value;
+            StateHasChanged();
+        }
+    }
+
+    int SelectedTabPage = 0;
+
+    void OnTabChange(int newIndex)
+    {
+        SelectedTabPage = newIndex;
+    }
+}
+

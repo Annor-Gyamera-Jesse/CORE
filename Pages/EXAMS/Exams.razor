@@ -1,0 +1,309 @@
+﻿@page "/exams"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
+@using Radzen
+@using Radzen.Blazor
+@using System.Globalization
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <RadzenFieldset Text="EXAMS RESULT">
+            <form @ref="examsForm" @onsubmit="@AddExam">
+                <RadzenForm Data="@examModel">
+                    <!-- General Information -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                          <RadzenField Property="SchoolCourse" Title="School Course">
+                           <RadzenLabel Text="Course" />
+                                <RadzenDropDown @bind-Value="@examModel.SchoolCourse" Data="@courseList"></RadzenDropDown>
+                           </RadzenField>
+                        </div>
+                        <div class="col-md-4">
+                            <RadzenField Property="StudentName" Title="Student Name">
+                                <RadzenLabel Text="Student Name" />
+                                <RadzenTextBox @bind-Value="@examModel.StudentName"></RadzenTextBox>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-4">
+                            <RadzenField Property="ClassName" Title="Class Name">
+                              <RadzenLabel Text="Class Name" />
+                              <RadzenDropDown @bind-Value="@examModel.ClassName" Data="@classList"></RadzenDropDown>
+                            </RadzenField>
+                         </div>
+                    </div>
+
+                    <!-- Academic Details -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <RadzenField Property="AcademicYear" Title="Academic Year">
+                                <RadzenLabel Text="Academic Year" />
+                                <RadzenTextBox @bind-Value="@examModel.AcademicYear"></RadzenTextBox>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-3">
+                            <RadzenField Property="VacationDate" Title="Vacation Date">
+                                <RadzenLabel Text="Vacation Date" />
+                                <RadzenDatePicker @bind-Value="@examModel.VacationDate"></RadzenDatePicker>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-3">
+                            <RadzenField Property="PromotedTo" Title="Promoted To">
+                                <RadzenLabel Text="Promoted To" />
+                                <RadzenTextBox @bind-Value="@examModel.PromotedTo"></RadzenTextBox>
+                            </RadzenField>
+                        </div>
+                    </div>
+
+                    <!-- Examination Details -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <RadzenField Property="NumberOnRoll" Title="Number On Roll">
+                                <RadzenLabel Text="Number On Roll" />
+                                <RadzenNumeric @bind-Value="@examModel.NumberOnRoll"></RadzenNumeric>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-4">
+                            <RadzenField Property="Term" Title="Term">
+                                <RadzenLabel Text="Term" />
+                                <RadzenTextBox @bind-Value="@examModel.Term"></RadzenTextBox>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-4">
+                            <RadzenField Property="Position" Title="Position">
+                                <RadzenLabel Text="Position" />
+                                <RadzenTextBox @bind-Value="@examModel.Position"></RadzenTextBox>
+                            </RadzenField>
+                        </div>
+                    </div>
+
+                    <!-- Results Details -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <RadzenField Property="ClassScore" Title="Class Score">
+                                <RadzenLabel Text="Class Score" />
+                                <RadzenNumeric @bind-Value="@examModel.ClassScore"></RadzenNumeric>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-4">
+                            <RadzenField Property="ExamsScore" Title="Exams Score">
+                                <RadzenLabel Text="Exams Score" />
+                                <RadzenNumeric @bind-Value="@examModel.ExamsScore"></RadzenNumeric>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-4">
+                            <RadzenField Property="TotalScore" Title="Total Score">
+                                <RadzenLabel Text="Total Score" />
+                                <RadzenNumeric @bind-Value="@examModel.TotalScore"></RadzenNumeric>
+                            </RadzenField>
+                        </div>
+                    </div>
+
+                    <!-- Additional Details -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <RadzenField Property="SubjectsPositions" Title="Subjects Positions">
+                                <RadzenLabel Text="Subjects Positions" />
+                                <RadzenTextBox @bind-Value="@examModel.SubjectsPositions"></RadzenTextBox>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-4">
+                            <RadzenField Property="Grade" Title="Grade">
+                                <RadzenLabel Text="Grade" />
+                                <RadzenTextBox @bind-Value="@examModel.Grade"></RadzenTextBox>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-4">
+                            <RadzenField Property="TeachersRemarks" Title="Teachers Remarks">
+                                <RadzenLabel Text="Teachers Remarks" />
+                                <RadzenTextArea @bind-Value="@examModel.TeachersRemarks"></RadzenTextArea>
+                            </RadzenField>
+                        </div>
+                    </div>
+
+                    <!-- Conduct and Remarks -->
+                    <div class="row mb-3">
+                         <div class="col-md-3">
+                            <RadzenField Property="NextTermsBegins" Title="NextTermsBegins">
+                                <RadzenLabel Text="Vacation Date" />
+                                 <RadzenDatePicker @bind-Value="@examModel.NextTermsBegins"></RadzenDatePicker>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-4">
+                            <RadzenField Property="Conduct" Title="Conduct">
+                                <RadzenLabel Text="Conduct" />
+                                <RadzenTextArea @bind-Value="@examModel.Conduct"></RadzenTextArea>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-4">
+                            <RadzenField Property="HeadmasterRemark" Title="Headmaster Remark">
+                                <RadzenLabel Text="Headmaster Remark" />
+                                <RadzenTextArea @bind-Value="@examModel.HeadmasterRemark"></RadzenTextArea>
+                            </RadzenField>
+                        </div>
+                    </div>
+
+                    <!-- Signatures -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <RadzenField Property="TeachersSignature" Title="Teachers Signature">
+                                <RadzenLabel Text="Teachers Signature" />
+                                <RadzenTextBox @bind-Value="@examModel.TeachersSignature"></RadzenTextBox>
+                            </RadzenField>
+                        </div>
+                        <div class="col-md-4">
+                            <RadzenField Property="HeadMasterSignature" Title="Headmaster Signature">
+                                <RadzenLabel Text="Headmaster Signature" />
+                                <RadzenTextBox @bind-Value="@examModel.HeadMasterSignature"></RadzenTextBox>
+                            </RadzenField>
+                        </div>
+                    </div>
+
+                    <div class="text-right mt-3">
+                        <RadzenButton Text="Add" Click="@AddExam"></RadzenButton>
+                    </div>
+                </RadzenForm>
+            </form>
+            </RadzenFieldset>
+        </div>
+
+        <RadzenFieldset Text="VIEW">
+        <div class="col-md-12 mt-4">
+                <div style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>StudentName</th>
+                        <th>ClassName</th>
+                        <th>AcademicYear</th>
+                        <th>VacationDate</th> 
+                        <th>NextTermsBegins</th>
+                        <th>PromotedTo</th>
+                        <th>NumberOnRoll</th>
+                        <th>Term</th>
+                        <th>Position</th>
+                        <th>ClassScore 50%</th>
+                        <th>ExamsScore 50%</th>
+                        <th>TotalScore 100%</th>
+                        <th>SubjectsPositions</th>
+                        <th>Grade</th>
+                        <th>TeachersRemarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var result in examResults)
+                    {
+                        <tr>
+                            <td>@result.SchoolCourse</td>
+                            <td>@result.StudentName</td>
+                            <td>@result.ClassName</td>
+                            <td>@result.AcademicYear</td>
+                            <td>@result.VacationDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
+                            <td>@result.NextTermsBegins?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
+                            <td>@result.PromotedTo</td>
+                            <td>@result.NumberOnRoll</td>
+                            <td>@result.Term</td>
+                            <td>@result.Position</td>
+                            <td>@result.ClassScore</td>
+                            <td>@result.ExamsScore</td>
+                            <td>@result.TotalScore</td>
+                            <td>@result.SubjectsPositions</td>
+                            <td>@result.Grade</td>
+                            <td>@result.TeachersRemarks</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>            
+            </div>
+                <div class="text-right">
+                    <RadzenButton Text="Upload" ButtonStyle="ButtonStyle.Success" Click="@UploadExams"></RadzenButton>
+                </div>
+            </div>
+        </RadzenFieldset>
+    </div>
+</div>
+
+@code {
+    List<Exam> examResults = new List<Exam>();
+    Exam examModel = new Exam();
+    ElementReference examsForm;
+    List<string> courseList = new List<string>();
+    List<string> classList = new List<string>();
+
+    [Inject]
+    protected IJSRuntime JSRuntime { get; set; }
+
+    void AddExam()
+    {
+        examResults.Add(new Exam
+            {
+                SchoolCourse = examModel.SchoolCourse,
+                StudentName = examModel.StudentName,
+                ClassName = examModel.ClassName,
+                AcademicYear = examModel.AcademicYear,
+                VacationDate = examModel.VacationDate,
+                NextTermsBegins = examModel.NextTermsBegins,
+                PromotedTo = examModel.PromotedTo,
+                NumberOnRoll = examModel.NumberOnRoll,
+                Term = examModel.Term,
+                Position = examModel.Position,
+                ClassScore = examModel.ClassScore,
+                ExamsScore = examModel.ExamsScore,
+                TotalScore = examModel.TotalScore,
+                SubjectsPositions = examModel.SubjectsPositions,
+                Grade = examModel.Grade,
+                TeachersRemarks = examModel.TeachersRemarks,
+                Conduct = examModel.Conduct,
+                HeadmasterRemark = examModel.HeadmasterRemark,
+                SchoolInformation = examModel.SchoolInformation,
+                TeachersSignature = examModel.TeachersSignature,
+                HeadMasterSignature = examModel.HeadMasterSignature,
+            });
+
+        // Reset only specific properties, not the entire examModel so this fields are resertted after its added 
+        examModel.ClassScore = 0;
+        examModel.ExamsScore = 0;
+        examModel.TotalScore = 0;
+        examModel.Grade = "";
+        examModel.SubjectsPositions = "";
+        examModel.SchoolCourse = "";
+
+        StateHasChanged();
+    }
+
+
+    async Task UploadExams()
+    {
+        foreach (var result in examResults)
+        {
+            var insertResult = await authService.InsertExamAsync(result);
+
+            if (insertResult > 0)
+            {
+                // Insertion successful
+                Console.WriteLine($"Exam for {result.StudentName} Upload successfully!");
+            }
+            else
+            {
+                // Insertion failed
+                Console.WriteLine($"Exam for {result.StudentName} Upload failed!");          
+            }
+        }
+
+        // Clear the examResults list after successful upload
+        examResults.Clear();
+        StateHasChanged();
+    }
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch data for dropdowns
+        courseList = await authService.GetSchoolExamsCoursesAsync();
+        classList = await authService.GetClassesAsync();
+    }
+}

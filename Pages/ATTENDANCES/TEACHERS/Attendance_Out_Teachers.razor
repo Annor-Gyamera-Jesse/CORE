@@ -1,0 +1,156 @@
+﻿@page "/clockout"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
+@inject NotificationMessageService Notify
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using Radzen.Blazor
+
+<style>
+    .warning-message {
+        color: red;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+</style>
+
+<div class="row">
+   
+    <div class="col-md-4">
+         <RadzenFieldset Text="TEACHERS">
+        <RadzenListBox @bind-Value="selectedTeacherId" AllowFiltering="true" AllowVirtualization="true"
+                       Data="@teachersAttendance" TextProperty="TeacherFirstName" ValueProperty="TeachersAttendanceID"
+                       Style="width: 100%; height: 300px;" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                       Change="@(args => OnTeacherSelectionChange((int)args))">
+        </RadzenListBox>
+        </RadzenFieldset>
+    </div>
+
+
+    <div class="col-md-8">
+        <form @ref="clockOutForm" @onsubmit="@ClockOut">
+            <RadzenForm Data="@attendanceOutModel">
+                <RadzenField Property="SelectedTeacher" Title="Selected Teacher">
+                    <RadzenTextBox @bind-Value="@attendanceOutModel.SelectedTeacher" ReadOnly="true"></RadzenTextBox>
+                </RadzenField>
+
+                <RadzenLabel Text="Clocked In At"/>
+                <RadzenField Property="ClockInTime" Title="Clock In Time">
+                    <RadzenTextBox @bind-Value="@attendanceOutModel.ClockInTime" ReadOnly="true"></RadzenTextBox>
+                </RadzenField>
+
+                <RadzenLabel Text="Clock Out"/>
+                  <RadzenField Property="IsClockedOut" Title="Clocked Out">
+                  <RadzenSwitch @bind-Value="@attendanceOutModel.IsClockedOut"></RadzenSwitch>
+                </RadzenField>
+
+                <div class="text-right">
+                    <RadzenButton Text="Clock Out" Click="@ClockOut" Disabled="!attendanceOutModel.IsClockedOut"></RadzenButton>
+                      @if (!attendanceOutModel.IsClockedOut)
+                        {
+                         <div class="warning-message">Please turn on the switch before submitting.</div>
+                        }
+                 </div>
+            </RadzenForm>
+        </form>
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Teacher First Name</th>
+            <th>Enable Switch</th>
+            <th>Clock In</th>
+            <th>Clock Out</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var record in attendanceOutRecords)
+        {
+            <tr>
+                <td>@record.TeacherFirstName</td>
+                <td>@record.TeacherLastName</td>
+                <td>@record.EnableSwitch</td>
+                <td>@record.ClockIN</td>
+                <td>@record.ClockOUT</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    List<TeacherAttendance> teachersAttendance;
+    List<TeachersAttendanceOut> attendanceOutRecords = new List<TeachersAttendanceOut>();
+    ClockOutModel attendanceOutModel = new ClockOutModel();
+    int selectedTeacherId;
+    ElementReference clockOutForm;
+
+    // [Inject]
+    // protected IJSRuntime JSRuntime { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        teachersAttendance = await authService.GetTeacherAttendanceAsync();
+    }
+
+    void OnTeacherSelectionChange(int selectedValue)
+    {
+        if (selectedValue > 0)
+        {
+            var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeachersAttendanceID == selectedValue);
+            if (selectedTeacher != null)
+            {
+                attendanceOutModel.SelectedTeacher = $"{selectedTeacher.TeacherFirstName} {selectedTeacher.TeacherLastName}";
+                attendanceOutModel.ClockInTime = selectedTeacher.ClockIN.ToString("yyyy-MM-dd HH:mm:ss"); // Display clock-in time
+            }
+        }
+    }
+
+    async Task ClockOut()
+    {
+        TeacherAttendance selectedTeacher = null;
+
+        if (selectedTeacherId > 0)
+        {
+            selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeachersAttendanceID == selectedTeacherId);
+        }
+
+        if (selectedTeacher != null)
+        {
+            var newRecord = new TeachersAttendanceOut
+            {
+                TeacherFirstName = selectedTeacher.TeacherFirstName,
+                TeacherLastName = selectedTeacher.TeacherLastName,
+                EnableSwitch = attendanceOutModel.IsClockedOut,
+                ClockIN = selectedTeacher.ClockIN,
+                ClockOUT = DateTime.Now
+            };
+
+            bool saved = await authService.SaveTeachersAttendanceOutAsync(newRecord);
+
+            if (saved)
+            {
+                attendanceOutRecords.Add(newRecord);
+                // Console.WriteLine($"Teacher: {newRecord.TeacherFirstName}, Clock Out: {newRecord.ClockOUT}");
+                Notify.ShowNotification($"Teacher", "{newRecord.TeacherFirstName}, Clock Out: {newRecord.ClockOUT}", NotificationSeverity.Success);
+
+                attendanceOutModel = new ClockOutModel();
+                StateHasChanged();
+            }
+            else
+            {
+                // Console.WriteLine("Failed to clock out.");
+                Notify.ShowNotification("ALERT", "Failed to clock out.", NotificationSeverity.Error);
+            }
+        }
+    }
+
+    public class ClockOutModel
+    {
+        public string SelectedTeacher { get; set; }
+        public string ClockInTime { get; set; }
+        public bool IsClockedOut { get; set; }
+    }
+}

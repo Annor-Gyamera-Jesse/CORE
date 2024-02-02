@@ -1,0 +1,311 @@
+﻿@page "/studentsregistration"
+@using CORE.MODEL
+@using CORE.SERVICE
+@using System.ComponentModel.DataAnnotations
+@inject AuthService authService
+
+<style>
+    form .row {
+        margin-bottom: 16px;
+        margin-top: 10px;
+    }
+
+    .rz-fieldset-content {
+        padding: 0;
+    }
+
+    .form-label {
+        padding-top: 8px;
+    }
+
+    .form-control {
+        margin-bottom: 8px;
+    }
+</style>
+
+<RadzenFieldset Text="Students Registration">
+    <div class="row">
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Student FirstName" Component="textstudentname" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentFirstName" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Student LastName" Component="textstudentlastname" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentLastName" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Date of Birth" Component="textstudentdob" />
+        </div>
+        <div class="col-md-3">
+            <RadzenDatePicker @bind-Value="@student.StudentDateOfBirth" Format="d" Placeholder="Select Date of Birth" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Student Gender" Component="textstudentgender" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentGender" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Student Address" Component="textstudentaddress" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentAddress" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Student Phone Number" Component="textstudentphonenumber" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentPhoneNumber" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Upload Image" Component="fileInput" />
+        </div>
+        <div class="col-md-3">
+            <InputFile id="studentImage" OnChange="HandleFileChange" key="@inputfileKey" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Student Email" Component="textstudentemail" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentEmail" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Class:" Component="classDropdown" />
+        </div>
+        <div class="col-md-3">
+            <RadzenDropDown Data="@classList" TextProperty="ClassID" ValueProperty="ClassID" TValue="string" @bind-Value="@classId" Style="width:100%;">
+            </RadzenDropDown>
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Student ID" Component="textstudentid" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" Value="@newStudentId.ToString()" ReadOnly="true" />
+        </div>
+    </div>
+
+</RadzenFieldset>
+<br/>
+<RadzenFieldset Text="Guardian Contacts" AllowCollapse="true" Collapsed="true">
+    <div class="row">
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Guardian FullName" Component="textguardiangfullname" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianFullName" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Guardian Gender" Component="textguardianggender" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianGender" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Guardian House Address" Component="textguardiangfullname" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianHouseAddress" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Guardian Work Address" Component="textguardiangworkaddress" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianWorkAddress" />
+        </div>
+        </div>
+
+        <div class="row">
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Guardian Email" Component="textguardiangemail" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianEmail" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Guardian Contact 1" Component="textguardiangfirstcontact" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianFirstContact" />
+        </div>
+
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Guardian Contact 2" Component="textguardiangsecondcontact" />
+        </div>
+        <div class="col-md-3">
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianSecondContact" />
+        </div>
+    </div>
+   
+</RadzenFieldset>
+
+<div class="row mt-2">
+    <div class="col-md-3">      
+        <RadzenButton Text="New" Icon="add" ButtonStyle="ButtonStyle.Info" Click="@ResetForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
+    </div>
+    <div class="col-md-3">
+        <RadzenButton Text="Submit" Icon="check" ButtonStyle="ButtonStyle.Success" ButtonType="ButtonType.Submit" Click="@SubmitForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
+    </div>
+</div>
+
+<br/>
+
+<RadzenFieldset>
+    <RadzenGrid @ref="@Grid" Data="ViewStudents" AllowPaging="true" PageSize="100" AllowSorting="true" AllowColumnResize="true">
+    <Columns>
+        <RadzenGridColumn TItem="Student" Property="StudentFirstName" Title="Student`s FirstName" />
+        <RadzenGridColumn TItem="Student" Property="StudentLastName" Title="Student`s LastName" />
+        <RadzenGridColumn TItem="Student" Property="StudentGender" Title="Student`s Gender" />
+        <RadzenGridColumn TItem="Student" Property="StudentPhoneNumber" Title="Student`s PhoneNumber" />
+        <RadzenGridColumn TItem="Student" Property="ClassID" Title="Student`s Class" />
+    </Columns>
+</RadzenGrid>
+
+
+
+
+</RadzenFieldset>
+
+
+<!-- Bootstrap alert for success message -->
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">
+        <strong>Success!</strong> @successMessage
+    </div>
+}
+<!-- Bootstrap alert for error message -->
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        <strong>Error!</strong> @errorMessage
+    </div>
+}
+@code {
+
+    Student student = new Student();
+    RadzenGrid<Student> Grid;// this is for the grid to dsiplay the students 
+    List<Student> ViewStudents;// put the students in a list 
+
+    byte[] imageData;
+
+    int newStudentId;
+
+    string successMessage;
+
+    string errorMessage;
+
+    private IBrowserFile selectedFile;
+
+    private int inputfileKey = 0;
+
+    string classId = "";
+
+    List<Class> classList = new List<Class>();
+
+    async Task SubmitForm()
+    {
+        if (IsValid(student))
+        {
+            if (selectedFile != null)
+            {
+                using (var stream = selectedFile.OpenReadStream())
+                {
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        await stream.CopyToAsync(memoryStream);
+                        imageData = memoryStream.ToArray();
+                    }
+                }
+
+                student.ImageData = imageData;
+            }
+            student.ClassID = classId;
+            // Call the service to add the student
+            newStudentId = await authService.AddStudentAsync(student);
+
+            if (newStudentId > 0)
+            {
+                Console.WriteLine($"Student successfully registered. StudentID: {newStudentId}");
+                successMessage = "Student successfully registered.";
+                // Reset error message
+                errorMessage = string.Empty;
+            }
+            else
+            {
+                Console.WriteLine("Failed to register the student.");
+                errorMessage = "Failed to register the student. Please try again Hint Check If Gender Is M or F.";
+                // Reset success message
+                successMessage = string.Empty;
+                // Handle failure, show error messages, etc.
+            }
+        }
+    }
+
+    bool IsValid(object obj)
+    {
+        // Validate the object using DataAnnotations
+        var validationContext = new ValidationContext(obj, null, null);
+        var validationResults = new List<ValidationResult>();
+        return Validator.TryValidateObject(obj, validationContext, validationResults, true);
+    }
+
+
+    private void HandleFileChange(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+    }
+
+    void ResetForm()
+    {
+        // Create a new instance of the Student class to clear all fields
+        student = new Student();
+
+        // Reset other variables as needed
+        selectedFile = null;
+        imageData = null;
+        newStudentId = 0;
+        successMessage = string.Empty;
+        errorMessage = string.Empty;
+
+        // Create a new instance of InputFile to replace the existing one
+        inputfileKey++;
+        StateHasChanged();
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load the class list
+        classList = await authService.GetAllClassAsync();
+
+        //load all the students for view 
+        ViewStudents = await authService.GetAllStudents();
+
+        StateHasChanged();
+    }
+
+}

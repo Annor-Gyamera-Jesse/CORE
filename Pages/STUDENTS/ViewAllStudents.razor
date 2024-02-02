@@ -1,0 +1,33 @@
+﻿@* @page "/viewallstudents"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
+
+
+<RadzenGrid @ref="@Grid" Data="ViewStudents" AllowPaging="true" PageSize="100" AllowSorting="true" AllowColumnResize="true">
+    <Columns>
+        <RadzenGridColumn TItem="Student" Property="StudentFirstName" Title="Student`s FirstName" />
+        <RadzenGridColumn TItem="Student" Property="StudentLastName" Title="Student`s LastName" />
+        <RadzenGridColumn TItem="Student" Property="StudentGender" Title="Student`s Gender" />
+        <RadzenGridColumn TItem="Student" Property="StudentPhoneNumber" Title="Student`s PhoneNumber" />
+        <RadzenGridColumn TItem="Student" Property="ClassID" Title="Student`s Class" />
+    </Columns>
+
+</RadzenGrid>
+
+
+
+@code {
+    RadzenGrid<Student> Grid;
+    List<Student> ViewStudents;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        ViewStudents = await authService.GetAllStudents();
+
+    }
+
+}
+ *@

@@ -1,0 +1,65 @@
+﻿@page "/admin"
+@using CORE.SECURITY
+@using CORE.SECURITY.LOADER
+@inject ContentLoaderTemplate LoaderTemplate
+
+<style>
+    form .row {
+        /*margin-bottom: 16px;*/
+        /* margin-top: 10px;*/
+    }
+
+    .rz-fieldset-content {
+        padding: 0;
+        /*margin-left:2em;*/
+    }
+</style>
+
+
+<div class="row">
+    <div class="col-md-10">
+        <RadzenTabs SelectedIndex="@SelectedTabPage" Change="@OnTabChange">
+            <Tabs>
+                <RadzenTabsItem Text="ADMIN">
+                    <CORE.Pages.ADMIN.Administration_Security.Admin_Security/>
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="ASSIGN TEACHERS">
+                    <CORE.Pages.ADMIN.Assign_Teachers/>
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="NON TEACHING STAFFS">
+                    <CORE.Pages.NON_STAFFS.Non_Teaching_Staffs_Registration />
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="COURSE">
+                    <CORE.Pages.COURSES.Course_Registration />
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
+
+    </div>
+</div>
+
+@code {
+    LoadTypeTrigger _loader;
+    protected LoadTypeTrigger Loader
+    {
+        get => _loader;
+        set
+        {
+            _loader = value;
+            StateHasChanged();
+        }
+    }
+
+    int SelectedTabPage = 0;
+
+    void OnTabChange(int newIndex)
+    {
+        SelectedTabPage = newIndex;
+    }
+}
+
+
+

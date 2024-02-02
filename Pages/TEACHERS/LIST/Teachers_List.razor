@@ -1,0 +1,41 @@
+﻿@page "/teacherslist"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
+
+<style>
+    .rz-fieldset-content {
+        padding: 0;
+        /*margin-left:2em;*/
+    }
+</style>
+
+<RadzenGrid @ref="@Grid" Data="@AllTeachers" AllowFiltering="true" AllowPaging="true" PageSize="100" AllowSorting="true" AllowColumnResize="true">
+    <Columns>
+        <RadzenGridColumn TItem="TeachersRegistration" Property="TeacherFirstName" Title="Teacher`s FirstName" />
+        <RadzenGridColumn TItem="TeachersRegistration" Property="TeacherLastName" Title="Teacher`s LastName" />
+        <RadzenGridColumn TItem="TeachersRegistration" Property="TeacherGender" Title="Gender" />
+        <RadzenGridColumn TItem="TeachersRegistration" Property="TeacherAddress" Title="Address" />
+        <RadzenGridColumn TItem="TeachersRegistration" Property="TeacherPhoneNumber" Title="PhoneNumber" />
+        <RadzenGridColumn TItem="TeachersRegistration" Property="TeacherEmail" Title="Email" />
+
+    </Columns>
+</RadzenGrid>
+
+
+
+
+@code {
+    RadzenGrid<TeachersRegistration> Grid;
+    List<TeachersRegistration> AllTeachers = new List<TeachersRegistration>();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        AllTeachers = await authService.GetAllSchoolTeachersAsync();
+
+        StateHasChanged();
+    }
+
+
+}

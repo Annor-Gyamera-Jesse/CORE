@@ -1,0 +1,153 @@
+﻿@page "/schoolcourse"
+@using CORE.MODEL
+@using CORE.SECURITY.LOADER
+@using CORE.SERVICE
+@inject AuthService authService
+@inject IJSRuntime JSRuntime
+
+<RadzenGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" Data="@schoolCourses">
+    <Columns>
+        <RadzenGridColumn TItem="SchoolCourse" Property="SCID" Title="ID" Filterable="false" />
+        <RadzenGridColumn TItem="SchoolCourse" Property="SchoolCourseName" Title="Course Name" Filterable="false" />
+        <RadzenGridColumn TItem="SchoolCourse" Title="Actions">
+            <Template Context="course">
+                <RadzenButton Text="Edit" Click="@(args => EditCourse(course))" />
+                <RadzenButton Text="Delete" Click="@(args => DeleteCourse(course))" />
+            </Template>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+
+<!-- Form for adding/editing a course -->
+@if (showForm)
+{
+    <div>
+        <h4>@(isEditMode ? "Edit Course" : "Add Course")</h4>
+        <div>
+            <label for="courseId">Course ID:</label>
+            <RadzenTextBox @bind-Value="currentCourse.SCID" Disabled="@isEditMode" />
+
+            <label for="courseName">Course Name:</label>
+            <RadzenTextBox @bind-Value="currentCourse.SchoolCourseName" />
+        </div>
+        <div>
+            <RadzenButton Text="Save" Click="SaveChanges" />
+            <RadzenButton Text="Cancel" Click="CancelEdit" />
+        </div>
+    </div>
+}
+else
+{
+    <div>
+        <RadzenButton Text="Add" Click="AddCourse" />
+    </div>
+}
+
+@code {
+    RadzenGrid<SchoolCourse> grid;
+    List<SchoolCourse> schoolCourses;
+    SchoolCourse currentCourse;
+    bool showForm = false;
+    bool isEditMode = false;
+
+    //LOADING COMPONENT
+    LoadTypeTrigger _loader;
+    protected LoadTypeTrigger Loader
+    {
+
+        get => _loader;
+        set
+        {
+            _loader = value;
+            StateHasChanged();
+        }
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        LoadTypeTrigger _loader;
+        // Load school courses from the service
+        schoolCourses = await authService.GetSchoolCoursesAsync();
+    }
+
+    void EditCourse(SchoolCourse course)
+    {
+        currentCourse = new SchoolCourse
+            {
+                SCID = course.SCID,
+                SchoolCourseName = course.SchoolCourseName
+            };
+
+        isEditMode = true;
+        showForm = true;
+    }
+
+    async Task DeleteCourse(SchoolCourse course)
+    {
+        // You might want to confirm the deletion with a dialog before proceeding
+        var confirmed = await ShowConfirmationDialog("Delete Course", "Are you sure you want to delete this course?");
+
+        if (confirmed)
+        {
+            try
+            {
+                // Delete the course from the database
+                await authService.DeleteSchoolCourseAsync(course.SCID);
+
+                // Refresh the grid
+                schoolCourses = await authService.GetSchoolCoursesAsync();
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions that might occur during deletion
+                Console.WriteLine($"Error deleting course: {ex.Message}");
+            }
+        }
+    }
+
+
+    async Task SaveChanges()
+    {
+        if (isEditMode)
+        {
+            Loader = LoadTypeTrigger.LOADING;
+            // Update the course in the database
+            await authService.UpdateSchoolCourseAsync(currentCourse);
+
+            // Refresh the grid
+            schoolCourses = await authService.GetSchoolCoursesAsync();
+        }
+        else
+        {
+            // Add a new course to the database
+            await authService.AddSchoolCourseAsync(currentCourse);
+
+            // Refresh the grid
+            schoolCourses = await authService.GetSchoolCoursesAsync();
+        }
+
+        // Hide the form after saving
+        showForm = false;
+    }
+
+    void AddCourse()
+    {
+        // Initialize a new course for adding
+        currentCourse = new SchoolCourse();
+
+        isEditMode = false;
+        showForm = true;
+    }
+
+    void CancelEdit()
+    {
+        // Hide the form without saving changes
+        showForm = false;
+    }
+
+    async Task<bool> ShowConfirmationDialog(string title, string message)
+    {
+        return await JSRuntime.InvokeAsync<bool>("confirm", $"{title}\n\n{message}");
+    }
+}

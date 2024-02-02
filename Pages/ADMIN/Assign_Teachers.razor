@@ -1,0 +1,184 @@
+﻿@page "/assignteachers"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
+
+<RadzenHeader>
+    <ChildContent>
+        <div class="header-content">
+            <p><b>CLASS TEACHERS ASSIGN</b></p>
+        </div>
+    </ChildContent>
+</RadzenHeader>
+
+<div class="teacher-section">
+    <label for="teacher">Class Teacher Name:</label>
+    <select @bind="selectedTeacherId" class="form-control">
+        <option value="">Select a teacher</option>
+        @foreach (var teacher in teacherList)
+        {
+            <option value="@teacher.TeacherID">@TeacherDisplayName(teacher)</option>
+        }
+    </select>
+</div>
+
+@if (!string.IsNullOrEmpty(selectedTeacherId))
+{
+    selectedTeacher = teacherList.FirstOrDefault(t => t.TeacherID == int.Parse(selectedTeacherId));
+
+    <div class="phone-section">
+        <label for="phone">Teacher Phone Number:</label>
+        <input @bind="selectedTeacher.TeacherPhoneNumber" class="form-control" disabled />
+    </div>
+
+   @*  <div class="class-section">
+        <label for="class">Assign to Class:</label>
+        <select class="form-control" @bind="classId">
+            <option value="">Select Class</option>
+            @foreach (var schoolClass in classList)
+            {
+                <option value="@schoolClass.ClassID">@schoolClass.ClassID</option>
+            }
+        </select>
+    </div> *@
+    <div class="col-md-3 text-md-end form-label">
+        <RadzenLabel Text="Class" Component="classDropdown" />
+    </div>
+    <div class="col-md-3">
+        <RadzenDropDown Data="@classList" TextProperty="ClassID" ValueProperty="ClassID" TValue="string" @bind-Value="@classId" Style="width:100%;">
+        </RadzenDropDown>
+    </div>
+
+
+    <div class="buttons">
+        <RadzenButton Click="@AssignTeacherAsync" Disabled="@isLoading">Assign Teacher</RadzenButton>
+      @*   <RadzenButton Click="@AddAssignmentAsync" Disabled="@isLoading">Add Assignment</RadzenButton>
+        <RadzenButton Click="@DeleteAssignmentAsync" Disabled="@isLoading">Delete Assignment</RadzenButton> *@
+    </div>
+
+    @if (showSuccessMessage)
+    {
+        <div class="success-message">
+            Data inserted successfully!
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="loader">
+            <!-- Add your loader/spinner here -->
+            Loading...
+        </div>
+    }
+}
+
+@code {
+    string selectedTeacherId = "";
+    TeachersRegistration selectedTeacher;
+    string classId = "";
+    List<TeachersRegistration> teacherList = new List<TeachersRegistration>();
+    bool isLoading = false;
+    bool showSuccessMessage = false;
+    List<Class> classList = new List<Class>();
+
+    string TeacherDisplayName(TeachersRegistration teacher) => $"{teacher.TeacherFirstName} {teacher.TeacherLastName}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        teacherList = await authService.GetAllTeachersAsync();
+
+        // Load the class list
+        classList = await authService.GetAllClassAsync();
+    }
+
+    async Task AssignTeacherAsync()
+    {
+        try
+        {
+            isLoading = true; // Set loading state
+
+            if (!string.IsNullOrEmpty(selectedTeacherId) && !string.IsNullOrEmpty(classId))
+            {
+                await authService.AssignTeacherToClassAsync(int.Parse(selectedTeacherId), classId);
+                ClearFields();
+                teacherList = await authService.GetAllTeachersAsync();
+                showSuccessMessage = true;
+            }
+            else
+            {
+                Console.WriteLine("Please select a teacher and enter a class ID before assigning.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in Search: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false; // Reset loading state
+        }
+    }
+
+    async Task AddAssignmentAsync()
+    {
+        try
+        {
+            isLoading = true; // Set loading state
+
+            if (!string.IsNullOrEmpty(selectedTeacherId) && !string.IsNullOrEmpty(classId))
+            {
+                await authService.AddAssignmentAsync(int.Parse(selectedTeacherId), classId);
+                ClearFields();
+                teacherList = await authService.GetAllTeachersAsync();
+                showSuccessMessage = true;
+            }
+            else
+            {
+                Console.WriteLine("Please select a teacher and enter a class ID before adding assignment.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in Search: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false; // Reset loading state
+        }
+    }
+
+    async Task DeleteAssignmentAsync()
+    {
+        try
+        {
+            isLoading = true; // Set loading state
+
+            if (!string.IsNullOrEmpty(selectedTeacherId) && !string.IsNullOrEmpty(classId))
+            {
+                await authService.DeleteAssignmentAsync(int.Parse(selectedTeacherId), classId);
+                ClearFields();
+                teacherList = await authService.GetAllTeachersAsync();
+                showSuccessMessage = true;
+            }
+            else
+            {
+                Console.WriteLine("Please select a teacher and enter a class ID before deleting assignment.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in Search: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false; // Reset loading state
+        }
+    }
+
+    void ClearFields()
+    {
+        selectedTeacherId = "";
+        classId = "";
+        showSuccessMessage = false;
+    }
+}

@@ -1,0 +1,55 @@
+﻿@page "/teachersassignclasses"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject IJSRuntime jsRuntime
+@inject AuthService authService
+
+<RadzenFieldset Text="Teachers Assigned To Class Rooms">
+<RadzenGrid AllowFiltering="true" AllowPaging="true" PageSize="10" Data="@classList">
+    <Columns>
+        <RadzenGridColumn TItem="TeachersAssignClasses" Property="ClassID" Title="Class ID" />
+       @*  <RadzenGridColumn TItem="TeachersAssignClasses" Property="ClassName" Title="Class Name" /> *@
+            <RadzenGridColumn TItem="TeachersAssignClasses" Property="TeacherFirstName" Title="Teacher's FirstName" />
+            <RadzenGridColumn TItem="TeachersAssignClasses" Property="TeacherLastName" Title="Teacher's LastName" />
+        <RadzenGridColumn TItem="TeachersAssignClasses" Property="TeacherPhoneNumber" Title="Teacher Phone Number" />
+            <RadzenGridColumn TItem="TeachersAssignClasses" TextAlign="TextAlign.Center" Width="100px">
+                <Template>
+                    <RadzenButton Click="@(async () => await DeleteClass((context as TeachersAssignClasses).ClassID))" Text="Delete" ButtonStyle="ButtonStyle.Danger" />
+                </Template>
+            </RadzenGridColumn>
+
+
+    </Columns>
+</RadzenGrid>
+</RadzenFieldset>
+@code {
+    List<TeachersAssignClasses> classList = new List<TeachersAssignClasses>();
+
+    async Task LoadData()
+    {
+        classList = await authService.GetAllClassesAsync();
+    }
+
+    async Task DeleteClass(string classId)
+    {
+        var confirmed = await jsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this class?");
+        if (confirmed)
+        {
+            var result = await authService.DeleteClassAsync(classId);
+            if (result)
+            {
+                await LoadData();
+            }
+            else
+            {
+                // Handle delete error
+                Console.WriteLine("Error deleting class.");
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+}

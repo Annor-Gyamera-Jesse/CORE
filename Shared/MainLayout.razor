@@ -1,0 +1,97 @@
+@inherits LayoutComponentBase
+<RadzenComponents />
+
+<RadzenLayout style="grid-template-areas: 'rz-sidebar rz-header' 'rz-sidebar rz-body';">
+    <RadzenHeader>
+        <RadzenRow JustifyContent="JustifyContent.Start" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenColumn Size="5">
+                <RadzenSidebarToggle Click="@SidebarToggleClick"></RadzenSidebarToggle>
+            </RadzenColumn>
+            <RadzenColumn Size="7">
+                <RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End"></RadzenStack>
+                <RadzenText Text="Welcome, " TextStyle="Radzen.Blazor.TextStyle.Body1" />
+
+                <RadzenText Text="@userName"
+                            TextStyle="Radzen.Blazor.TextStyle.Body2"
+                            Style="font-weight: bold; color: #007bff; margin-left: 8px;" />
+
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenHeader>
+    <RadzenBody Expanded="@sidebarExpanded">
+        <RadzenRow class="rz-mx-auto rz-px-4 rz-pt-2 rz-pt-md-4 rz-pt-lg-6 rz-pt-xl-12 rz-pb-2 rz-pb-lg-12" Style="max-width: 1440px;">
+            <RadzenColumn Size="12">
+                @Body
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenBody>
+    <RadzenSidebar Expanded="@sidebarExpanded" style="z-index: 2">
+        <RadzenStack AlignItems="Radzen.AlignItems.Center" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding); border-bottom: var(--rz-panel-menu-item-border);">
+            <RadzenImage Path="images/logo.png" style="width: 48px; height: 48px;"></RadzenImage>
+            <RadzenText Text="LAMIN" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" class="rz-mb-0" style="color: var(--rz-sidebar-color);" />
+        </RadzenStack>
+        <RadzenPanelMenu>
+            <RadzenPanelMenuItem Text="KYC" Icon="school">
+                <RadzenPanelMenuItem Text="STUDENT PROFILE" Path="/studentprofile" Icon="group" />
+            </RadzenPanelMenuItem>
+
+            <RadzenPanelMenuItem Text="CLASSES" Icon="class">
+                <RadzenPanelMenuItem Text="CLASS" Path="/class" Icon="view_list" />
+                <RadzenPanelMenuItem Text="ASSIGNED TEACHERS" Path="/teachersassignclasses" Icon="house" />
+            </RadzenPanelMenuItem>
+
+            <RadzenPanelMenuItem Text="REGISTRATIONS" Icon="group">
+                <RadzenPanelMenuItem Text="REGISTRATION" Path="/registration" Icon="people" />
+                @*        <RadzenPanelMenuItem Text="COURSE REGISTRATION" Path="" Icon="assignment" />
+                <RadzenPanelMenuItem Text="TEACHERS REGISTRATION" Path="" Icon="group" />
+                <RadzenPanelMenuItem Text="NON TEACHING STAFFS REGISTRATION" Path="" Icon="chat" /> *@
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="COURSES" Icon="view_list">
+                <RadzenPanelMenuItem Text="SCHOOL COURSES" Path="/schoolcourse" Icon="class" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="TIME TABLE" Icon="task">
+                <RadzenPanelMenuItem Text="EXAMS" Path="" Icon="event" />
+                <RadzenPanelMenuItem Text="SCHOOL TIME TABLE" Path="" Icon="task" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="GRADES" Icon="check_circle">
+                @*      <RadzenPanelMenuItem Text="CLASS SCORE" Path="/classscore" Icon="attach_file" /> //will impliment it later*@
+                <RadzenPanelMenuItem Text="MID SEM" Path="/midsem" Icon="assignment" />
+                <RadzenPanelMenuItem Text="MOCK SCORE" Path="/mockscore" Icon="view_list" />
+                <RadzenPanelMenuItem Text="EXAMS" Path="/exams" Icon="note_add" />
+                <RadzenPanelMenuItem Text="REPORT" Path="/report" Icon="report" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="ATTENDANCE" Icon="access_time">
+                <RadzenPanelMenuItem Text="STUDENTS ATTENDANCE" Path="/schoolattendance" Icon="group" />
+                <RadzenPanelMenuItem Text="STAFF ATTENDANCE" Path="/attendancetab" Icon="supervised_user_circle" />
+                <RadzenPanelMenuItem Text="NON TEACHING STAFF ATTENDANCE" Path="" Icon="people" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="TEACHERS" Icon="task">
+                <RadzenPanelMenuItem Text="TEACHERS TASKS" Path="" Icon="schedule" />
+                <RadzenPanelMenuItem Text="TEACHERS TABLE" Path="" Icon="book" />
+                <RadzenPanelMenuItem Text="TEACHERS" Path="/teacherslist" Icon="group" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="NON TEACHING STAFFS" Icon="people">
+                <RadzenPanelMenuItem Text="TASKS" Path="" Icon="task" />
+                <RadzenPanelMenuItem Text="ATTENDANCE" Path="" Icon="access_time" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="INBOX" Icon="report">
+                <RadzenPanelMenuItem Text="REPORT" Path="/report" Icon="report" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="SECURITY" Icon="settings">
+                <RadzenPanelMenuItem Text="ADMIN" Path="/admin" Icon="house" />
+                @*   <RadzenPanelMenuItem Text="ACCOUNTS" Path="" Icon="account_circle" />
+                <RadzenPanelMenuItem Text="PERMISSIONS" Path="" Icon="lock" />
+                <RadzenPanelMenuItem Text="Assign_Teachers" Path="/assignteachers" Icon="share" />
+                <RadzenPanelMenuItem Text="MONITOR" Path="" Icon="tv" />
+                <RadzenPanelMenuItem Text="EMERGENCY" Path="" Icon="warning" /> *@
+            </RadzenPanelMenuItem>
+
+            <!-- Logout button -->
+            <RadzenPanelMenuItem Text="Logout" Click="@logout" Icon="power_settings_new" />
+        </RadzenPanelMenu>
+        <RadzenStack AlignItems="Radzen.AlignItems.Center" Gap="0" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding);">
+            <RadzenText Text="LAMIN v1.0.0" TextStyle="Radzen.Blazor.TextStyle.Caption" style="color: var(--rz-text-disabled-color);" TagName="Radzen.Blazor.TagName.P" TextAlign="Radzen.TextAlign.Center" />
+            <RadzenText Text="Copyright Ⓒ 2023" TextStyle="Radzen.Blazor.TextStyle.Caption" class="rz-mb-0" style="color: var(--rz-text-disabled-color);" TagName="Radzen.Blazor.TagName.P" TextAlign="Radzen.TextAlign.Center" />
+        </RadzenStack>
+    </RadzenSidebar>
+</RadzenLayout>

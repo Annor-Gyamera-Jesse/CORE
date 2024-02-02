@@ -1,0 +1,33 @@
+﻿@if (cssType == LoadinCSSType.PURE_CSS)
+{
+    if (string.IsNullOrWhiteSpace(pureCss))
+    {
+        <div class="lds-default"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+    }
+    else
+    {
+        <div class="@pureCss"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+    }
+
+}
+else
+{
+    if (string.IsNullOrWhiteSpace(pureCss))
+    {
+        <div class="cust-loader"></div>
+    }
+    else
+    {
+        <div class="@pureCss"></div>
+    }
+}
+
+
+@code {
+
+    [Parameter]
+    public string pureCss { get; set; }
+
+    [Parameter]
+    public LoadinCSSType cssType { get; set; }
+}

@@ -1,0 +1,137 @@
+﻿@page "/courseregistration"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
+
+<RadzenFieldset>
+    <ChildContent>
+        <div class="search-section">
+            <label for="search">Search by Name or ID:</label>
+            <RadzenTextBox @bind-Value="searchText" Placeholder="Enter name or ID" />
+            <RadzenButton Text="Search" Click="Search" />
+        </div>
+
+        @if (selectedStudent != null)
+        {
+            <div class="student-details">
+                <h4>Student Details</h4>
+                <p><strong>Student ID:</strong> @selectedStudent.StudentID</p>
+                <p><strong>Full Name:</strong> @($"{selectedStudent.StudentFirstName} {selectedStudent.StudentLastName}")</p>
+                <p><strong>Gender:</strong> @selectedStudent.StudentGender</p>
+            </div>
+
+            <div class="course-section">
+                <label for="course">Select a Course:</label>
+                <select @bind="selectedCourseId" class="form-control">
+                    <option value="">Select course</option>
+                    @foreach (var course in courseList)
+                    {
+                        <option value="@course.CourseID.ToString()">@course.CourseName</option>
+                    }
+                </select>
+            </div>
+
+            @if (!string.IsNullOrEmpty(selectedCourseId))
+            {
+                // Find the selected course based on the ID
+                selectedCourse = courseList.FirstOrDefault(c => c.CourseID.ToString() == selectedCourseId);
+
+                <div class="course-registration">
+                    <h4>Course Details</h4>
+                    <p><strong>Course ID:</strong> @selectedCourse.CourseID</p>
+                    <p><strong>Course Name:</strong> @selectedCourse.CourseName</p>
+                    <p><strong>Description:</strong> @selectedCourse.Description</p>
+                    <RadzenButton Click="@RegisterForCourse" Text="Register for Course" />
+                    <p>@registrationMessage</p>
+                </div>
+            }
+        }
+    </ChildContent>
+</RadzenFieldset>
+
+@code {
+    // Variables
+    string searchText = "";
+    Student selectedStudent;
+    Course selectedCourse;
+    string selectedCourseId = "";  // New variable to store selected course ID
+    List<Course> courseList = new List<Course>();
+
+    string registrationMessage = "";
+    // Methods
+    async Task Search()
+    {
+        try
+        {
+            
+            if (searchText.All(char.IsDigit))
+            {
+                // Search by ID
+                selectedStudent = await authService.GetStudentByIdAsync(searchText);
+            }
+            else
+            {
+                // Search by Name
+                var names = searchText.Split(' ');
+                if (names.Length == 2)
+                {
+                    selectedStudent = await authService.GetStudentByNameAsync(names[0], names[1]);
+                }
+            }
+
+            // Load the course list
+            var loadedCourses = await authService.GetAllCoursesAsync();
+
+            // Check the type of items in loadedCourses
+            if (loadedCourses.All(item => item is Course))
+            {
+                // If all items are of type Course, assign to courseList
+                courseList = loadedCourses.Cast<Course>().ToList();
+            }
+            else
+            {
+                // Handle the case where items are not of type Course
+                Console.WriteLine("Error: Course list contains items of incorrect type");
+                courseList = new List<Course>(); // Ensure that courseList is initialized
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle the exception (log, display an error message, etc.)
+            Console.WriteLine($"Error in Search: {ex.Message}");
+        }
+    }
+
+    async Task RegisterForCourse()
+    {
+        Console.WriteLine("RegisterForCourse method called."); // Log that the method is being called
+
+        try
+        {
+            if (selectedStudent != null && selectedCourse != null)
+            {
+                Console.WriteLine($"Attempting to register Student ID: {selectedStudent.StudentID} for Course ID: {selectedCourse.CourseID}");
+
+                // Use selectedCourse.CourseID instead of selectedCourse
+                var result = await authService.RegisterStudentForCourseAsync(selectedStudent.StudentID, selectedCourse.CourseID);
+
+                // Handle the result if needed
+                Console.WriteLine($"Registration successful. Student ID: {result}");
+                registrationMessage = "Registration successful.";
+            }
+            else
+            {
+                // Handle the case where either selectedStudent or selectedCourse is null
+                Console.WriteLine("Please select both a student and a course before registering.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle the exception (log, display an error message, etc.)
+            Console.WriteLine($"Error in RegisterForCourse: {ex.Message}");
+            registrationMessage = $"Error: {ex.Message}";
+        }
+    }
+
+
+}

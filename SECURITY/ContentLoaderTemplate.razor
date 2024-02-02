@@ -1,0 +1,41 @@
+﻿@using CORE.SECURITY.LOADER
+
+@if (LoadContent == LoadTypeTrigger.LOADED)
+{
+    @LoadContentSuccessful
+}
+else if (LoadContent == LoadTypeTrigger.LOADING)
+{
+    if (LoadingContent != null)
+    {
+        @LoadingContent
+    }
+    else
+    {
+        <div class="h-100 w-100 d-flex justify-content-center align-items-center">
+            <LoadingComponent></LoadingComponent>
+        </div>
+
+    }
+
+
+}
+else if (LoadContent == LoadTypeTrigger.LOAD_FAILED)
+{
+    @LoadContentFailed
+}
+
+@code {
+
+    [Parameter]
+    public LoadTypeTrigger LoadContent { get; set; }
+
+    [Parameter]
+    public RenderFragment LoadContentSuccessful { get; set; }
+
+    [Parameter]
+    public RenderFragment LoadContentFailed { get; set; }
+
+    [Parameter]
+    public RenderFragment LoadingContent { get; set; }
+}

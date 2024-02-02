@@ -1,0 +1,129 @@
+﻿@page "/login"
+@using CORE.SECURITY.LOADER
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Microsoft.JSInterop;
+@using Microsoft.AspNetCore.Components;
+@inject AuthService authService
+@inject NavigationManager NavigationManager
+@layout LoginLayout
+@inject NotificationMessageService Notify
+@attribute [AllowAnonymous]
+
+
+<div class="container">
+    <div class="login-container">
+        <RadzenText Text="Login" TextStyle="Radzen.Blazor.TextStyle.H3" class="mb-4" />
+
+        @if (showInvalidLoginMessage)
+        {
+            <RadzenAlert Text="Invalid credentials. Please try again." Severity="Radzen.AlertSeverity.Error" />
+        }
+
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" @bind="@Username" class="form-control" />
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" @bind="@Password" class="form-control" />
+        </div>
+        <br />
+           <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2" Class="mb-4">
+        <RadzenButton Text="Login" ButtonStyle="Radzen.ButtonStyle.Primary" Click="@login" />
+        </RadzenText>
+    </div>
+</div>
+
+
+@code {
+    protected LoadTypeTrigger Loader { get; set; } = LoadTypeTrigger.LOADING;
+
+    private string Username { get; set; }
+    private string Password { get; set; }
+    private bool showInvalidLoginMessage = false;
+    protected string redirectUrl;
+    protected string error;
+    protected string info;
+    protected bool errorVisible;
+    protected bool infoVisible;
+    [Inject]
+    protected IJSRuntime JSRuntime { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var query = System.Web.HttpUtility.ParseQueryString(new Uri(NavigationManager.ToAbsoluteUri(NavigationManager.Uri).ToString()).Query);
+
+        error = query.Get("error");
+
+        info = query.Get("info");
+
+        redirectUrl = query.Get("redirectUrl");
+
+        errorVisible = !string.IsNullOrEmpty(error);
+
+        infoVisible = !string.IsNullOrEmpty(info);
+    }
+
+    [Inject]
+    protected DialogService DialogService { get; set; }
+
+    [Inject]
+    protected TooltipService TooltipService { get; set; }
+
+    [Inject]
+    protected ContextMenuService ContextMenuService { get; set; }
+    // string successMessage;
+    // string errorMessage;
+
+    private async Task login()
+    {
+        // Show loading indicator during login process
+        Loader = LoadTypeTrigger.LOADING;
+
+        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+        {
+            // Show a warning message if either Username or Password is empty
+            showInvalidLoginMessage = true;
+            return;
+        }
+
+        var user = await authService.GetUserByUsernameAsync(Username);
+
+        if (user != null && user.Password == Password)
+        {
+            // Log the login event
+            await authService.LogEvent(user.UserID, "Login");
+
+            // Set user name in session storage
+            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userName", user.UserName);
+
+            // Redirect to the homepage after successful login
+            NavigationManager.NavigateTo("/landingpage");
+            Loader = LoadTypeTrigger.LOADED;
+            // successMessage = $"Welcome, {user.UserName}.";
+
+
+            Notify.ShowNotification("PERFECT", "Happy Working.", NotificationSeverity.Success);
+            // Reset error message
+            //errorMessage = string.Empty;
+        }
+        else
+        {
+            Notify.ShowNotification("ALERT", "Invalid credentials. Please try again.", NotificationSeverity.Error);
+            // Show an error message for failed login attempts
+            // showInvalidLoginMessage = true;
+
+            // // Display a RadzenAlert for the error message
+            // await JSRuntime.InvokeVoidAsync("alert", "Invalid credentials. Please try again.");
+            // errorMessage = "Invalid Credentials";
+
+            // // Reset success message
+            // successMessage = string.Empty;
+        }
+
+        StateHasChanged();
+    }
+}
