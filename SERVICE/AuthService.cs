@@ -60,114 +60,53 @@ namespace CORE.SERVICE
             return null;
         }
 
-        //----------------------------------------------------------//
-        public async Task<List<UserRole>> GetAllUsersWithRolesAsync()
+        //----------------------For Admin_Security ------------------------------------//
+        public void AddUser(User user)
         {
-            using (var connection = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                await connection.OpenAsync();
+                connection.Open();
 
-                var query = "SELECT u.UserID, u.UserName, r.RoleID, r.RoleName, ISNULL(ur.Assigned, 0) AS Assigned " +
-                            "FROM SchoolManagement.Users u " +
-                            "CROSS JOIN SchoolManagement.Roles r " +
-                            "LEFT JOIN SchoolManagement.UserRoles ur ON u.UserID = ur.UserID AND r.RoleID = ur.RoleID";
+                string query = "INSERT INTO SchoolManagement.Users (UserName, Password) VALUES (@UserName, @Password)";
 
-                using (var command = new SqlCommand(query, connection))
+                using (SqlCommand command = new SqlCommand(query, connection))
                 {
-                    using (var reader = await command.ExecuteReaderAsync())
+                    command.Parameters.AddWithValue("@UserName", user.UserName);
+                    command.Parameters.AddWithValue("@Password", user.Password);
+
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+        
+        public List<User> GetUsers()
+        {
+            List<User> users = new List<User>();
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                string query = "SELECT UserID, UserName, Password FROM SchoolManagement.Users";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
                     {
-                        var userRoles = new List<UserRole>();
-                        while (await reader.ReadAsync())
+                        User user = new User
                         {
-                            userRoles.Add(new UserRole
-                            {
-                                UserID = reader.GetInt32(0),
-                                UserName = reader.GetString(1),
-                                RoleID = reader.GetInt32(2),
-                                RoleName = reader.GetString(3),
-                                Assigned = reader.GetBoolean(4)
-                            });
-                        }
-                        return userRoles;
+                            UserID = reader.GetInt32(0),
+                            UserName = reader.GetString(1),
+                            Password = reader.GetString(2)
+                        };
+
+                        users.Add(user);
                     }
                 }
             }
-        }
 
-
-        //public async Task<List<string>> GetUserRolesAsync(string username)
-        //{
-        //    using (var connection = new SqlConnection(connectionString))
-        //    {
-        //        await connection.OpenAsync();
-
-        //        var query = "SELECT r.RoleName " +
-        //                    "FROM SchoolManagement.Users u " +
-        //                    "JOIN SchoolManagement.UserRoles ur ON u.UserID = ur.UserID " +
-        //                    "JOIN SchoolManagement.Roles r ON ur.RoleID = r.RoleID " +
-        //                    "WHERE u.UserName = @Username";
-
-        //        using (var command = new SqlCommand(query, connection))
-        //        {
-        //            command.Parameters.AddWithValue("@Username", username);
-
-        //            using (var reader = await command.ExecuteReaderAsync())
-        //            {
-        //                var roles = new List<string>();
-        //                while (await reader.ReadAsync())
-        //                {
-        //                    roles.Add(reader.GetString(0));
-        //                }
-
-        //                // Log roles
-        //                Console.WriteLine($"Roles for user {username}: {string.Join(", ", roles)}");
-
-        //                return roles;
-        //            }
-        //        }
-        //    }
-        //}
-
-
-
-        public async Task AssignUserRoleAsync(int userId, int roleId)
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-
-                var query = "MERGE INTO [INTEL].[SchoolManagement].[UserRoles] AS target " +
-                            "USING (VALUES (@UserId, @RoleId, 1)) AS source (UserID, RoleID, Assigned) " +
-                            "ON target.UserID = source.UserID AND target.RoleID = source.RoleID " +
-                            "WHEN MATCHED THEN UPDATE SET target.Assigned = 1 " +
-                            "WHEN NOT MATCHED THEN INSERT (UserID, RoleID, Assigned) VALUES (source.UserID, source.RoleID, source.Assigned);";
-
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@UserId", userId);
-                    command.Parameters.AddWithValue("@RoleId", roleId);
-
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
-        }
-
-        public async Task RemoveUserRoleAsync(int userId, int roleId)
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-
-                var query = "DELETE FROM [INTEL].[SchoolManagement].[UserRoles] WHERE UserID = @UserId AND RoleID = @RoleId";
-
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@UserId", userId);
-                    command.Parameters.AddWithValue("@RoleId", roleId);
-
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
+            return users;
         }
         //--------------------------------------------------------------//
 
@@ -188,140 +127,6 @@ namespace CORE.SERVICE
                 await command.ExecuteNonQueryAsync();
             }
         }
-
-        // logic for adding a new user, deleting a user, and changing the password of a user = Admin_Sec
-        public async Task AddUserAsync(string username, string password)
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-
-                var query = "INSERT INTO SchoolManagement.Users (UserName, Password) VALUES (@UserName, @Password)";
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@UserName", username);
-                    command.Parameters.AddWithValue("@Password", password); // Store password as-is
-
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
-        }
-
-
-        public async Task DeleteUserAsync(int userId)
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-
-                // Delete user from Users table
-                var deleteUserQuery = "DELETE FROM SchoolManagement.Users WHERE UserID = @UserID";
-                using (var deleteUserCommand = new SqlCommand(deleteUserQuery, connection))
-                {
-                    deleteUserCommand.Parameters.AddWithValue("@UserID", userId);
-                    await deleteUserCommand.ExecuteNonQueryAsync();
-                }
-
-                // Delete user's log entries from UserLog table
-                var deleteLogQuery = "DELETE FROM SchoolManagement.UserLog WHERE UserId = @UserID";
-                using (var deleteLogCommand = new SqlCommand(deleteLogQuery, connection))
-                {
-                    deleteLogCommand.Parameters.AddWithValue("@UserID", userId);
-                    await deleteLogCommand.ExecuteNonQueryAsync();
-                }
-            }
-        }
-
-        public async Task ChangePasswordAsync(int userId, string newPassword)
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-
-                var query = "UPDATE SchoolManagement.Users SET Password = @Password WHERE UserID = @UserID";
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@Password", newPassword); // Store new password as-is
-                    command.Parameters.AddWithValue("@UserID", userId);
-
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
-        }
-
-        // FOR ADMIN_SEC
-        public async Task<List<User>> GetAllUsersAsync()
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-
-                var query = "SELECT UserID, UserName FROM SchoolManagement.Users";
-                using (var command = new SqlCommand(query, connection))
-                {
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        var users = new List<User>();
-
-                        while (await reader.ReadAsync())
-                        {
-                            users.Add(new User
-                            {
-                                UserID = reader.GetInt32(0),
-                                UserName = reader.GetString(1),
-                            });
-                        }
-
-                        return users;
-                    }
-                }
-            }
-        }
-
-        //for change password
-        public async Task<bool> CheckTemporaryPassword(string username, string password)
-        {
-            // Your logic to check if the provided password matches the temporary password for the given user
-            // This could involve querying the database or checking against a stored value
-            // For simplicity, let's assume the temporary password is stored in the database
-
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-
-                var query = "SELECT TOP 1 1 FROM SchoolManagement.Users WHERE UserName = @UserName AND TemporaryPassword = @Password";
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@UserName", username);
-                    command.Parameters.AddWithValue("@Password", password);
-
-                    var result = await command.ExecuteScalarAsync();
-
-                    return result != null;
-                }
-            }
-        }
-
-        public async Task ChangePasswordAsync(string username, string tempPassword, string newPassword)
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-
-                // Update the password and clear the temporary password
-                var query = "UPDATE SchoolManagement.Users SET Password = @Password, TemporaryPassword = NULL WHERE UserName = @UserName AND TemporaryPassword = @TempPassword";
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@Password", newPassword);
-                    command.Parameters.AddWithValue("@UserName", username);
-                    command.Parameters.AddWithValue("@TempPassword", tempPassword);
-
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
-        }
-
-
 
 
         //Add Student
