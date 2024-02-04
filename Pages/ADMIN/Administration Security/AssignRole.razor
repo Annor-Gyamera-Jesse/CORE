@@ -1,0 +1,72 @@
+﻿@inject AuthService authService
+@inject NotificationMessageService Notify
+@using CORE.MODEL
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <RadzenCard Style="max-width: 400px;">
+                <RadzenCardContent>
+                    <h3 class="mb-4 text-center">User Role Management</h3>
+
+                    <div class="form-group">
+                        <label for="selectedUser">Select User:</label>
+                        <RadzenDropDown @bind-Value="selectedUser" Data="@users" TextProperty="UserName" ValueProperty="UserID" class="form-control"></RadzenDropDown>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="selectedRole">Select Role:</label>
+                        <RadzenDropDown @bind-Value="selectedRole" Data="@roles" TextProperty="RoleName" ValueProperty="RoleName" class="form-control"></RadzenDropDown>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="enable">Enable Account:</label>
+                        <RadzenCheckBox @bind-Value="enable"></RadzenCheckBox>
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <RadzenButton Text="Save" Click="SaveUserRoles" ButtonStyle="ButtonStyle.Primary" Style="margin-right: 10px;"></RadzenButton>
+                        <RadzenButton Text="Reset" Click="ResetForm" ButtonStyle="ButtonStyle.Danger"></RadzenButton>
+                    </div>
+                </RadzenCardContent>
+            </RadzenCard>
+        </div>
+    </div>
+</div>
+
+@code {
+    List<UserRoleViewModel> users = new List<UserRoleViewModel>();
+    List<Role> roles = new List<Role>();
+    int selectedUser;
+    string selectedRole;
+    bool enable;
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await authService.GetUsersAsync();
+        roles = await authService.GetRolesAsync();
+    }
+
+    async Task SaveUserRoles()
+    {
+        try
+        {
+            await authService.SaveUserRolesAsync(selectedUser, selectedRole, enable);
+            Notify.ShowNotification("Success", "Role for user saved!", NotificationSeverity.Success);
+            ResetForm();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"Failed to save user role. {ex.Message}", NotificationSeverity.Error);
+        }
+    }
+
+    void ResetForm()
+    {
+        selectedUser = 0;
+        selectedRole = null;
+        enable = false;
+    }
+}

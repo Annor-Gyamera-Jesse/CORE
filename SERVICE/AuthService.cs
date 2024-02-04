@@ -108,7 +108,108 @@ namespace CORE.SERVICE
 
             return users;
         }
-        //--------------------------------------------------------------//
+
+        public void DeleteUser(int userId)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                // Delete related records in UserLog
+                using (SqlCommand deleteLogsCommand = new SqlCommand("DELETE FROM SchoolManagement.UserLog WHERE UserId = @UserId", connection))
+                {
+                    deleteLogsCommand.Parameters.AddWithValue("@UserId", userId);
+                    deleteLogsCommand.ExecuteNonQuery();
+                }
+
+                // Now delete the user
+                using (SqlCommand deleteUserCommand = new SqlCommand("DELETE FROM SchoolManagement.Users WHERE UserID = @UserID", connection))
+                {
+                    deleteUserCommand.Parameters.AddWithValue("@UserID", userId);
+
+                    int rowsAffected = deleteUserCommand.ExecuteNonQuery();
+
+                    if (rowsAffected == 0)
+                    {
+                        throw new Exception($"User with ID {userId} not found.");
+                    }
+                }
+            }
+        }
+
+        //------------------------END--------------------------------------//
+
+        //----Assign Roles--------//
+
+        public async Task<List<UserRoleViewModel>> GetUsersAsync()
+        {
+            List<UserRoleViewModel> users = new List<UserRoleViewModel>();
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (SqlCommand command = new SqlCommand("SELECT UserID, UserName FROM SchoolManagement.Users", connection))
+                using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        users.Add(new UserRoleViewModel
+                        {
+                            UserID = reader.GetInt32(0),
+                            UserName = reader.GetString(1)
+                        });
+                    }
+                }
+            }
+
+            return users;
+        }
+
+        public async Task<List<Role>> GetRolesAsync()
+        {
+            List<Role> roles = new List<Role>();
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (SqlCommand command = new SqlCommand("SELECT RoleID, RoleName FROM SchoolManagement.Roles", connection))
+                using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        roles.Add(new Role
+                        {
+                            RoleID = reader.GetInt32(0),
+                            RoleName = reader.GetString(1)
+                        });
+                    }
+                }
+            }
+
+            return roles;
+        }
+
+        public async Task SaveUserRolesAsync(int userID, string roleName, bool enable)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (SqlCommand command = new SqlCommand("INSERT INTO SchoolManagement.UserRoles (UserID, UserName, RoleName, Enable) VALUES (@UserID, @UserName, @RoleName, @Enable)", connection))
+                {
+                    command.Parameters.AddWithValue("@UserID", userID);
+                    command.Parameters.AddWithValue("@UserName", "");
+                    command.Parameters.AddWithValue("@RoleName", roleName);
+                    command.Parameters.AddWithValue("@Enable", enable);
+
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        //------END-----------//
 
 
         //logout service
