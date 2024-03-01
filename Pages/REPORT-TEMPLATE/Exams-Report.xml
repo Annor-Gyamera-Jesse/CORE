@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="07/26/2020 15:55:47" ReportInfo.Modified="01/29/2023 23:36:11" ReportInfo.CreatorVersion="2020.3.0.0">
+	<Styles>
+		<!-- Define styles as needed -->
+	</Styles>
+	<Dictionary>
+		<!-- Define data sources here -->
+		<TableDataSource Name="SchoolExamsDataSource" ReferenceName="SchoolManagement.SchoolExams" DataType="System.Int32" PropName="Table" Enabled="true" TableName="SchoolExams">
+			<!-- Define columns for data source -->
+			<Column Name="StudentName" DataType="System.String"/>
+			<Column Name="ClassName" DataType="System.String"/>
+			<Column Name="AcademicYear" DataType="System.String"/>
+			<Column Name="VacationDate" DataType="System.DateTime"/>
+			<Column Name="PromotedTo" DataType="System.String"/>
+			<Column Name="NumberOnRoll" DataType="System.Int32"/>
+			<Column Name="Term" DataType="System.String"/>
+			<Column Name="Position" DataType="System.String"/>
+			<Column Name="NextTermsBegins" DataType="System.DateTime"/>
+			<Column Name="AttendanceOut" DataType="System.Int32"/>
+			<Column Name="AttendanceIn" DataType="System.Int32"/>
+			<Column Name="SchoolCourse" DataType="System.String"/>
+			<Column Name="ClassScore" DataType="System.Int32"/>
+			<Column Name="ExamsScore" DataType="System.Int32"/>
+			<Column Name="TotalScore" DataType="System.Int32"/>
+			<Column Name="SubjectsPositions" DataType="System.String"/>
+			<Column Name="Grade" DataType="System.String"/>
+			<Column Name="TeachersRemarks" DataType="System.String"/>
+			<Column Name="Conduct" DataType="System.String"/>
+			<Column Name="HeadmasterRemark" DataType="System.String"/>
+			<Column Name="SchoolInformation" DataType="System.String"/>
+			<Column Name="TeachersSignature" DataType="System.String"/>
+			<Column Name="HeadMasterSignature" DataType="System.String"/>
+
+		</TableDataSource>
+	</Dictionary>
+	<ReportPage Name="Page1" RawPaperSize="9" BottomMargin="5" Watermark.Font="Arial, 60pt">
+		<ReportTitleBand Name="ReportTitle1" Width="718.2" Height="113.4" Border.Lines="Bottom" Border.BottomLine.Width="2">
+			<!-- Sample: -->
+			<!-- <PictureObject Name="Logo" Width="122.85" Height="103.95" DataColumn="SchoolExamsDataSource.Logo"/> -->
+			<TextObject Name="Title" Left="122.85" Width="585.9" Height="18.9" Text="My Blazor Project" HorzAlign="Center" Font="Arial, 12pt, style=Bold"/>
+		</ReportTitleBand>
+
+		<!-- Form Section -->
+		<DataBand Name="FormData" Top="117.4" Width="718.2" Height="240" DataSource="SchoolExamsDataSource">
+			<!-- Define form elements here -->
+			<TextObject Name="StudentNameLabel" Left="10" Width="150" Height="18.9" Text="Name of Student"/>
+			<TextBoxObject Name="StudentName" Left="160" Width="200" Height="18.9" Text="[SchoolExamsDataSource.StudentName]" Border.Lines="Bottom"/>
+			<!-- Repeat for other form elements -->
+		</DataBand>
+
+		<!-- Subjects Table -->
+		<DataBand Name="SubjectsTable" Top="357.4" Width="718.2" Height="200" DataSource="SchoolExamsDataSource">
+			<!-- Define table columns -->
+			<TextObject Name="SubjectColumn" Left="10" Width="150" Height="18.9" Text="Subjects"/>
+			<TextObject Name="ClassScoreColumn" Left="160" Width="150" Height="18.9" Text="Class Score (50%)"/>
+			<!-- Add other columns -->
+
+			<!-- Data rows go here -->
+			<TextBoxObject Name="Subject" Left="10" Width="150" Height="18.9" Text="[SchoolExamsDataSource.SchoolCourse]"/>
+			<TextBoxObject Name="ClassScore" Left="160" Width="150" Height="18.9" Text="[SchoolExamsDataSource.ClassScore]"/>
+			<!-- Add other data bindings -->
+		</DataBand>
+
+		<!-- Additional Inputs -->
+		<DataBand Name="AdditionalInputs" Top="557.4" Width="718.2" Height="120" DataSource="SchoolExamsDataSource">
+			<!-- Define additional input fields -->
+			<TextObject Name="AttendanceLabel" Left="10" Width="150" Height="18.9" Text="Attendance"/>
+			<TextBoxObject Name="Attendance" Left="160" Width="200" Height="18.9" Text="[SchoolExamsDataSource.AttendanceIn]" Border.Lines="Bottom"/>
+			<!-- Repeat for other input fields -->
+		</DataBand>
+	</ReportPage>
+</Report>

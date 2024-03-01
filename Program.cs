@@ -30,7 +30,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<AuthService>(provider => new AuthService("Server=ANDERSON-WALKER;Database=INTEL;Trusted_Connection=True;MultipleActiveResultSets=true;Encrypt=False;"));
 
 builder.Services.AddScoped<ContentLoaderTemplate>();
-
+Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("OTEwODM4QDMyMzAyZTM0MmUzMGwybS9hbGswSEo2eURRRjFCVVUxc0FlWFAvWDdCanIvRGlvRGlvS084N0pYR1k9");
 
 var app = builder.Build();
 

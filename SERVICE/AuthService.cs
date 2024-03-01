@@ -1,10 +1,10 @@
 ﻿using Dapper;
 using CORE.MODEL;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Data;
-using System.Security.Claims;
 using System.Data.SqlClient;
+using CORE.Pages.REPORT_TEMPLATE.Models;
+using Syncfusion.Pdf.Graphics;
+using Syncfusion.Pdf;
+using Syncfusion.Drawing;
 
 namespace CORE.SERVICE
 {
@@ -12,7 +12,12 @@ namespace CORE.SERVICE
     public class AuthService
     {
         private readonly string connectionString;
+        private readonly IWebHostEnvironment _hostingEnvironment;
 
+        public AuthService(IWebHostEnvironment hostingEnvironment)
+        {
+            _hostingEnvironment = hostingEnvironment;
+        }
         public AuthService(string connectionString)
         {
             this.connectionString = connectionString;
@@ -78,7 +83,7 @@ namespace CORE.SERVICE
                 }
             }
         }
-        
+
         public List<User> GetUsers()
         {
             List<User> users = new List<User>();
@@ -1359,6 +1364,201 @@ namespace CORE.SERVICE
             {
                 Console.WriteLine($"Error in GetAllTeachersAsync: {ex.Message}");
                 throw;
+            }
+        }
+
+        //---- Report ----//
+        public async Task<List<ReportViewPage>> GetReportViewPagesAsync()
+        {
+            List<ReportViewPage> reportPages = new List<ReportViewPage>();
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (SqlCommand command = new SqlCommand("SELECT * FROM SchoolManagement.ReportViewPage", connection))
+                using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        ReportViewPage reportPage = new ReportViewPage
+                        {
+                            ReportViewPageID = reader.GetInt32(reader.GetOrdinal("ReportViewPageID")),
+                            Title = reader.GetString(reader.GetOrdinal("Title")),
+                            Description = reader.GetString(reader.GetOrdinal("Description"))
+                        };
+
+                        reportPages.Add(reportPage);
+                        try
+                        {
+                            // Database operations
+                        }
+                        catch (Exception ex)
+                        {
+                            // Handle exception (log or show an error message)
+                        }
+
+                    }
+                }
+            }
+
+            return reportPages;
+        }
+
+        //public MemoryStream CreatePDF()
+        //{
+        //    PdfDocument document = new PdfDocument();
+        //    PdfPage currentPage = document.Pages.Add();
+        //    SizeF clientSize = currentPage.GetClientSize();
+        //    FileStream imageStream = new FileStream(_hostingEnvironment.WebRootPath + "//images//logo.png", FileMode.Open, FileAccess.Read);
+        //    PdfImage icon = new PdfBitmap(imageStream);
+        //    SizeF iconSize = new SizeF(40, 40);
+        //    PointF iconLocation = new PointF(14, 13);
+        //    PdfGraphics graphics = currentPage.Graphics;
+        //    graphics.DrawImage(icon, iconLocation, iconSize);
+
+        //    // Use the PdfStandardFont constructor with fewer parameters
+        //    PdfFont font = new PdfStandardFont(PdfFontFamily.Helvetica, 20);
+
+        //    // Create header text element
+        //    var headerText = new PdfTextElement("School Report", font, new PdfSolidBrush(Color.FromArgb(1, 53, 67, 16)));
+        //    headerText.StringFormat = new PdfStringFormat(PdfTextAlignment.Right);
+        //    PdfLayoutResult result = headerText.Draw(currentPage, new PointF(clientSize.Width - 25, iconLocation.Y + 10));
+
+        //    font = new PdfStandardFont(PdfFontFamily.Helvetica, 10);
+
+        //    headerText = new PdfTextElement("To", font);
+        //    result = headerText.Draw(currentPage, new PointF(14, result.Bounds.Bottom + 30));
+
+        //    font = new PdfStandardFont(PdfFontFamily.Helvetica, 14, PdfFontStyle.Bold);
+        //    headerText = new PdfTextElement("Name", font);
+        //    result = headerText.Draw(currentPage, new PointF(14, result.Bounds.Bottom + 3));
+
+        //    font = new PdfStandardFont(PdfFontFamily.Helvetica, 10);
+        //    headerText = new PdfTextElement(string.Format("{0}, {1}", "Address", "Address"), font);
+        //    result = headerText.Draw(currentPage, new PointF(14, result.Bounds.Bottom + 3));
+
+        //    font = new PdfStandardFont(PdfFontFamily.Helvetica, 10, PdfFontStyle.Bold);
+        //    headerText = new PdfTextElement("Paper No.#12334", font);
+        //    headerText.StringFormat = new PdfStringFormat(PdfTextAlignment.Right);
+        //    headerText.Draw(currentPage, new PointF(clientSize.Width - 25, result.Bounds.Y - 20));
+
+        //    MemoryStream stream = new MemoryStream();
+        //    document.Save(stream);
+        //    document.Close(true);
+        //    stream.Position = 0;
+
+        //    return stream;
+        //}
+
+        public MemoryStream CreatePDF()
+        {
+            try
+            {
+                // Create a new PDF document
+                PdfDocument document = new PdfDocument();
+
+                // Add a new page to the document
+                PdfPage currentPage = document.Pages.Add();
+
+                // Get the graphics context of the page
+                PdfGraphics graphics = currentPage.Graphics;
+
+                // Set font and brush
+                PdfFont font = new PdfStandardFont(PdfFontFamily.Helvetica, 12);
+                PdfBrush brush = new PdfSolidBrush(Color.Black);
+
+                // Header Section with Logo
+                float logoTopMargin = 20;
+                float logoLeftMargin = 50;
+                float logoWidth = 40;
+                float logoHeight = 40;
+
+                // Load the logo image
+                FileStream logoStream = new FileStream(_hostingEnvironment.WebRootPath + "//images//logo.png", FileMode.Open, FileAccess.Read);
+                PdfImage logoImage = new PdfBitmap(logoStream);
+
+                // Draw the logo
+                graphics.DrawImage(logoImage, new RectangleF(logoLeftMargin, logoTopMargin, logoWidth, logoHeight));
+
+                // Draw the project name
+                graphics.DrawString("My Blazor Project", font, brush, new PointF(logoLeftMargin + logoWidth + 10, logoTopMargin + 10));
+
+                // Form Section
+                float formTopMargin = 100;
+                float formLeftMargin = 50;
+                float formRowHeight = 20;
+                float formColumnWidth = 200;
+
+                graphics.DrawString("Name of Student", font, brush, new PointF(formLeftMargin, formTopMargin));
+                graphics.DrawString("Class", font, brush, new PointF(formLeftMargin + formColumnWidth, formTopMargin));
+                graphics.DrawString("Overall", font, brush, new PointF(formLeftMargin, formTopMargin + formRowHeight));
+                graphics.DrawString("No. On Roll", font, brush, new PointF(formLeftMargin + formColumnWidth, formTopMargin + formRowHeight));
+                graphics.DrawString("Year", font, brush, new PointF(formLeftMargin + 2 * formColumnWidth - 20, formTopMargin + formRowHeight));
+                graphics.DrawString("Date", font, brush, new PointF(formLeftMargin, formTopMargin + 2 * formRowHeight));
+                graphics.DrawString("Next Term Begins", font, brush, new PointF(formLeftMargin + formColumnWidth, formTopMargin + 2 * formRowHeight));
+
+                // Table Section
+                float tableTopMargin = 250;
+                float tableLeftMargin = 50;
+                float tableRowHeight = 20;
+                float tableColumnWidth = 100;
+
+                graphics.DrawString("Subjects", font, brush, new PointF(tableLeftMargin, tableTopMargin));
+                graphics.DrawString("Class Score", font, brush, new PointF(tableLeftMargin + 100, tableTopMargin));
+                graphics.DrawString("Exams Score", font, brush, new PointF(tableLeftMargin + 200, tableTopMargin));
+                graphics.DrawString("Total Score", font, brush, new PointF(tableLeftMargin + 300, tableTopMargin));
+                graphics.DrawString("Grade", font, brush, new PointF(tableLeftMargin + 400, tableTopMargin));
+                graphics.DrawString("Remarks", font, brush, new PointF(tableLeftMargin + 500, tableTopMargin));
+
+                // Draw table content (you can use a loop to iterate through subjects)
+                List<string> subjects = new List<string> { "Math", "Science", "English", "History" };
+                float currentTop = tableTopMargin + tableRowHeight;
+
+                foreach (var subject in subjects)
+                {
+                    graphics.DrawString(subject, font, brush, new PointF(tableLeftMargin, currentTop));
+                    graphics.DrawString("75", font, brush, new PointF(tableLeftMargin + 100, currentTop));
+                    graphics.DrawString("80", font, brush, new PointF(tableLeftMargin + 200, currentTop));
+                    graphics.DrawString("155", font, brush, new PointF(tableLeftMargin + 300, currentTop));
+                    graphics.DrawString("A", font, brush, new PointF(tableLeftMargin + 400, currentTop));
+                    graphics.DrawString("Excellent", font, brush, new PointF(tableLeftMargin + 500, currentTop));
+
+                    currentTop += tableRowHeight;
+                }
+
+                // Remarks Section
+                float remarksTopMargin = 450;
+                float remarksLeftMargin = 50;
+
+                graphics.DrawString("Attendance", font, brush, new PointF(remarksLeftMargin, remarksTopMargin));
+                graphics.DrawString("Out of", font, brush, new PointF(remarksLeftMargin + 200, remarksTopMargin));
+                graphics.DrawString("Promoted To", font, brush, new PointF(remarksLeftMargin + 330, remarksTopMargin));
+                graphics.DrawString("Conduct/Character", font, brush, new PointF(remarksLeftMargin, remarksTopMargin + 50));
+                graphics.DrawString("Attitude", font, brush, new PointF(remarksLeftMargin + 200, remarksTopMargin + 50));
+                graphics.DrawString("Interest", font, brush, new PointF(remarksLeftMargin + 310, remarksTopMargin + 50));
+                graphics.DrawString("Class Teacher's Remarks", font, brush, new PointF(remarksLeftMargin, remarksTopMargin + 100));
+                graphics.DrawString("Signature", font, brush, new PointF(remarksLeftMargin + 310, remarksTopMargin + 100));
+                graphics.DrawString("HeadMaster's Remark", font, brush, new PointF(remarksLeftMargin, remarksTopMargin + 150));
+                graphics.DrawString("HeadMaster's Signature", font, brush, new PointF(remarksLeftMargin + 250, remarksTopMargin + 150));
+
+                // Save the document to a MemoryStream
+                MemoryStream stream = new MemoryStream();
+                document.Save(stream);
+
+                // Close the document
+                document.Close(true);
+
+                // Reset the stream position
+                stream.Position = 0;
+
+                return stream;
+            }
+            catch (Exception ex)
+            {
+                // Log or print the exception details
+                Console.WriteLine(ex.ToString());
+                throw; // Re-throw the exception to propagate it
             }
         }
     }

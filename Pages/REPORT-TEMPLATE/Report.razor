@@ -1,0 +1,42 @@
+﻿@page "/report"
+@inject AuthService authService
+@inject IJSRuntime JSRuntime
+@inject Microsoft.JSInterop.IJSRuntime JS
+@using CORE.MODEL
+@using CORE.Pages.REPORT_TEMPLATE.Models
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment hostingEnvironment
+@using CORE.SERVICE
+
+<RadzenGrid TItem="ReportViewPage" Data="@reportPages">
+    <Columns>
+        <RadzenGridColumn TItem="ReportViewPage" Property="Title" Title="Title" />
+        <RadzenGridColumn TItem="ReportViewPage" Property="Description" Title="Description" />
+        <RadzenGridColumn TItem="ReportViewPage">
+            <Template Context="page">
+                <RadzenLink @onclick="() => GeneratePDF()">Generate PDF</RadzenLink>
+            </Template>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+
+@code {
+    List<ReportViewPage> reportPages;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch data from the database using the service
+        reportPages = await authService.GetReportViewPagesAsync();
+    }
+
+    protected async void GeneratePDF()
+    {
+        authService = new AuthService(hostingEnvironment);
+        MemoryStream documentStream = authService.CreatePDF();
+
+        await JS.InvokeAsync<object>(
+            "saveAsFile",
+            "Report.pdf",
+            Convert.ToBase64String(documentStream.ToArray())
+        );
+    }
+}

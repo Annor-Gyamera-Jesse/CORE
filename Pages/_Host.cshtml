@@ -2,7 +2,9 @@
 @using Microsoft.AspNetCore.Components.Web
 @namespace CORE.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
-
+@{
+    Layout = null;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,5 +33,28 @@
 
     <script src="_framework/blazor.server.js"></script>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+
+    <script type="text/javascript">
+      function saveAsFile(filename, byteBase64){
+          if (navigation.msSaveBlob) {
+              //Download document in Edge browser
+              var data = window.atob(byteBase64);
+              var bytes = new Unit8Array(data.length);
+              for (var i = 0; i < data.length; i++) {
+                  bytes[i] = data.charCodeAt(i);
+              }
+              var blob = new Blob([bytes.buffer], { type: "application/octet-stream" });
+              navigator.msSaveBlob(blob, filename);
+          }
+          else {
+              var link = document.createElement('a');
+              link.download = filename;
+              link.href = "data:application/octet-stream;base64," + byteBase64;
+              document.body.appendChild(link);//Needed Firefox or google
+              link.click();
+              document.body.removeChild(link);
+          }
+      }    
+    </script>
 </body>
 </html>
