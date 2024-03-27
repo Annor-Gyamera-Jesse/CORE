@@ -1,5 +1,7 @@
 ﻿@inject AuthService authService
 @using CORE.MODEL
+@using CORE.SECURITY
+@using CORE.SECURITY.LOADER
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
 @inject NotificationMessageService Notify
@@ -34,6 +36,17 @@
 </RadzenFieldset>
 
 @code {
+    LoadTypeTrigger _loader;
+
+    protected LoadTypeTrigger Loader
+    {
+        get => _loader;
+        set
+        {
+            _loader = value;
+            StateHasChanged();
+        }
+    }
     private User user = new User();
     private List<User> users;
 

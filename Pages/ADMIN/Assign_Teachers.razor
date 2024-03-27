@@ -1,7 +1,21 @@
 ﻿@page "/assignteachers"
 @using CORE.MODEL
+@using CORE.SECURITY.LOADER
 @using CORE.SERVICE
 @inject AuthService authService
+
+<style>
+    /*Define some inline CSS styles for the component*/
+    form .row {
+        /*margin-bottom: 16px;*/
+        /* margin-top: 10px;*/
+    }
+
+    .rz-fieldset-content {
+        padding: 0;
+        /*margin-left:2em;*/
+    }
+</style>
 
 <RadzenHeader>
     <ChildContent>
@@ -73,6 +87,19 @@
 }
 
 @code {
+
+    LoadTypeTrigger _loader;
+
+    protected LoadTypeTrigger Loader
+    {
+        get => _loader;
+        set
+        {
+            _loader = value;
+            StateHasChanged();
+        }
+    }
+
     string selectedTeacherId = "";
     TeachersRegistration selectedTeacher;
     string classId = "";
@@ -95,7 +122,8 @@
     {
         try
         {
-            isLoading = true; // Set loading state
+            //isLoading = true; // Set loading state
+            Loader = LoadTypeTrigger.LOADING;
 
             if (!string.IsNullOrEmpty(selectedTeacherId) && !string.IsNullOrEmpty(classId))
             {
@@ -115,7 +143,8 @@
         }
         finally
         {
-            isLoading = false; // Reset loading state
+           // isLoading = false; // Reset loading state
+            Loader = LoadTypeTrigger.LOADED;
         }
     }
 
@@ -123,8 +152,8 @@
     {
         try
         {
-            isLoading = true; // Set loading state
-
+            //isLoading = true; // Set loading state
+            Loader = LoadTypeTrigger.LOADING;
             if (!string.IsNullOrEmpty(selectedTeacherId) && !string.IsNullOrEmpty(classId))
             {
                 await authService.AddAssignmentAsync(int.Parse(selectedTeacherId), classId);
@@ -143,7 +172,8 @@
         }
         finally
         {
-            isLoading = false; // Reset loading state
+           // isLoading = false; // Reset loading state
+            Loader = LoadTypeTrigger.LOADED;
         }
     }
 
