@@ -5,6 +5,7 @@ using System;
 using System.Data;
 using System.Security.Claims;
 using System.Data.SqlClient;
+using CORE.Pages.TEACHERS.TASK;
 
 namespace CORE.SERVICE
 {
@@ -1315,6 +1316,70 @@ namespace CORE.SERVICE
                 throw; // Re-throw the exception for better debugging
             }
         }
+
+        //-------Teachers Task-----------//
+        public async Task<List<TeachersRegistration>> GetViewTeachersAsync()//This is for the dropdown to display all the teachers
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = "SELECT * FROM SchoolManagement.Teacher";
+                    var result = await connection.QueryAsync<TeachersRegistration>(query);
+
+                    return result.AsList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetAllTeachersAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<bool> SaveTeachersTaskAsync(Teachers_Task teachersTaks)//This is for Saving Teachers Task
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = @"
+                INSERT INTO SchoolManagement.TeachersTask 
+                (TeachersName, TeacherTask, SwitchBar, StartDate, EndDate)
+                VALUES 
+                (@TeachersName, @TeacherTask, @SwitchBar, @StartDate, @EndDate)
+            ";
+
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@TeachersName", teachersTaks.TeachersName);
+                        command.Parameters.AddWithValue("@TeacherTask", teachersTaks.TeacherTask);
+                        command.Parameters.AddWithValue("@SwitchBar", teachersTaks.SwitchBar);                      
+                        command.Parameters.AddWithValue("@StartDate", DateTime.Now);
+                        command.Parameters.AddWithValue("@EndDate", DateTime.Now);
+
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        return rowsAffected > 0;
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                // Log SQL exceptions
+                Console.WriteLine($"SQL Exception: {ex.Message}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // Log other exceptions
+                Console.WriteLine($"Exception: {ex.Message}");
+                return false;
+            }
+        } 
 
 
 
