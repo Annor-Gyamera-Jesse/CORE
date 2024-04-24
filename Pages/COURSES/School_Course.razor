@@ -11,8 +11,8 @@
         <RadzenGridColumn TItem="SchoolCourse" Property="SchoolCourseName" Title="Course Name" Filterable="false" />
         <RadzenGridColumn TItem="SchoolCourse" Title="Actions">
             <Template Context="course">
-                <RadzenButton Text="Edit" Click="@(args => EditCourse(course))" />
-                <RadzenButton Text="Delete" Click="@(args => DeleteCourse(course))" />
+                <RadzenButton Text="Edit" ButtonStyle="ButtonStyle.Secondary" Click="@(args => EditCourse(course))" />
+                <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger"  Click="@(args => DeleteCourse(course))" />
             </Template>
         </RadzenGridColumn>
     </Columns>
