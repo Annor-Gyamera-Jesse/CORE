@@ -1,4 +1,5 @@
 using CORE.SECURITY;
+using CORE.SECURITY.LOADER;
 using CORE.SERVICE;
 using CORE.SERVICE.NOTIFICATION;
 using Radzen;
@@ -31,6 +32,7 @@ builder.Services.AddScoped<AuthService>(provider => new AuthService("Server=ANDE
 
 builder.Services.AddScoped<ContentLoaderTemplate>();
 
+builder.Services.AddScoped<LoadingComponent>();
 
 var app = builder.Build();
 
