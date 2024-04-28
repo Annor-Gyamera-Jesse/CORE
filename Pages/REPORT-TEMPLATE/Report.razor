@@ -30,13 +30,13 @@
 
     protected async void GeneratePDF()
     {
-        // authService = new AuthService(hostingEnvironment);
-        // MemoryStream documentStream = authService.CreatePDF();
+        authService = new AuthService(hostingEnvironment);
+        MemoryStream documentStream = authService.CreatePDF();
 
-        // await JS.InvokeAsync<object>(
-        //     "saveAsFile",
-        //     "Report.pdf",
-        //     Convert.ToBase64String(documentStream.ToArray())
-        // );
+        await JS.InvokeAsync<object>(
+            "saveAsFile",
+            "Report.pdf",
+            Convert.ToBase64String(documentStream.ToArray())
+        );
     }
 }
