@@ -1361,5 +1361,29 @@ namespace CORE.SERVICE
                 throw;
             }
         }
+
+        //-----Total Number of Students displayed in the Card---//
+        public async Task<int> GetTotalStudentsCount()
+        {
+            int totalStudents = 0;
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT COUNT(*) FROM SchoolManagement.Students";
+                SqlCommand command = new SqlCommand(query, connection);
+
+                try
+                {
+                    connection.Open();
+                    totalStudents = (int)command.ExecuteScalar();
+                }
+                catch (Exception ex)
+                {
+                    // Handle exception
+                }
+            }
+
+            return totalStudents;
+        }
     }
 }

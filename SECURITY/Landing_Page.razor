@@ -1,8 +1,34 @@
 ﻿@page "/landingpage"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
 
 <RadzenButton Text="Welcome to INTEL CORE"></RadzenButton>
 <RadzenIcon Icon="accessibility" />
 
-@code {
+<div class="container mt-5">
+<RadzenFieldset Text="" AllowCollapse="true" Collapsed="true">
+  <div class="row mt-4">
+    <div class="col-md-3">
+            <RadzenCard Class="rz-my-12 rz-mx-auto" Style="max-width: 420px">
+            <RadzenHeader>
+                Total Students
+            </RadzenHeader>
+            <RadzenContent>
+               <b> <h1 class="card-text">@totalStudentsCount</h1></b>
+            </RadzenContent>
+        </RadzenCard>
+    </div>
+</div>
+</RadzenFieldset>
+</div>
 
+@code {
+    private int totalStudentsCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        totalStudentsCount = await authService.GetTotalStudentsCount();
+        StateHasChanged();
+    }
 }
