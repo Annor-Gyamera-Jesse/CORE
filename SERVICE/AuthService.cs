@@ -1385,5 +1385,27 @@ namespace CORE.SERVICE
 
             return totalStudents;
         }
+
+
+        //----- For Card Component Counting the Number of data being recieved by user -----//
+        public async Task<int> GetNewDataCount(int userId)
+        {
+            int newDataCount = 0;
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT COUNT(*) FROM SchoolManagement.SchoolExams WHERE RecDateCreated >= @LastCheckDate AND UserID = @UserId";
+                SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@LastCheckDate", DateTime.Now.AddDays(-1)); // Adjust this based on your logic
+                command.Parameters.AddWithValue("@UserId", userId);
+
+                await connection.OpenAsync();
+
+                newDataCount = (int)await command.ExecuteScalarAsync();
+            }
+
+            return newDataCount;
+        }
+
     }
 }

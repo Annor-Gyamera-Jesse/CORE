@@ -2,9 +2,21 @@
 @using CORE.MODEL
 @using CORE.SERVICE
 @inject AuthService authService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime js
 
 <RadzenButton Text="Welcome to INTEL CORE"></RadzenButton>
 <RadzenIcon Icon="accessibility" />
+
+
+<RadzenCard Style="width:18rem;" Class="mb-4" Color="primary" @onclick="ShowDialog">
+    <HeaderTemplate>
+        Notifications <span class="badge badge-danger">@NotificationCount</span>
+    </HeaderTemplate>
+    <Template>
+        <!-- Card content -->
+    </Template>
+</RadzenCard>
 
 <div class="container mt-5">
 <RadzenFieldset Text="" AllowCollapse="true" Collapsed="true">
@@ -25,10 +37,25 @@
 
 @code {
     private int totalStudentsCount;
+    int NotificationCount { get; set; }
+    int UserID { get; set; } // Set this value based on user data
+    int Count { get; set; }  // Set this value based on data count
 
     protected override async Task OnInitializedAsync()
     {
+        await UpdateNotificationCount();
         totalStudentsCount = await authService.GetTotalStudentsCount();
         StateHasChanged();
+    }
+
+    private async Task UpdateNotificationCount()
+    {
+        // Fetch notification count from the service
+        NotificationCount = await authService.GetNewDataCount(UserID);
+    }
+
+    private async Task ShowDialog()
+    {
+        await js.InvokeVoidAsync("document.getElementById('my-dialog').showModal");
     }
 }

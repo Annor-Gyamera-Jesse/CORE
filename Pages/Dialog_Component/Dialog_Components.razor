@@ -1,0 +1,40 @@
+﻿@* 
+<div>
+<dialog id="my-dialog" @onclose="OnClose" @oncancle="OnCancel">
+    <p>Hi</p>
+    <form method="dialog">
+        <button>Close</button>
+    </form>
+
+</dialog>
+</div>
+
+@code {
+    string message;
+    void OnClose(EventArgs e) => message += "onclose,";
+    void OnCancel(EventArgs e) => message += "oncancel,";
+} *@
+
+@page "/dialog"
+@inject NavigationManager NavigationManager
+<dialog id="my-dialog">
+    <h3>User ID: @UserID</h3>
+    <p>Count: @Count</p>
+    <form method="dialog">
+        <button @onclick="CloseDialog">Close</button>
+    </form>
+</dialog>
+
+@code {
+    [Parameter]
+    public int UserID { get; set; }
+
+    [Parameter]
+    public int Count { get; set; }
+
+    private void CloseDialog()
+    {
+        // Navigate back to the previous page or close the dialog
+        NavigationManager.NavigateTo("/");
+    }
+}
