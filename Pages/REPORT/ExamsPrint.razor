@@ -1,0 +1,42 @@
+﻿@page "/reportexams"
+@using FastReport
+@using System.Data
+@using FastReport.Web
+@using FastReport.Web.Blazor.Components
+
+@code {
+    WebReport myWebReport;
+    bool isReady = false;
+
+    protected override void OnInitialized()
+    {
+        // Fetch data from your server-side data source
+        DataSet dataSet = FetchData();
+
+        // Generate the report
+        FastReport.Report report = new FastReport.Report();
+        report.Load("ReprtPageTemplate.frx");
+        report.RegisterData(dataSet, "Exams");
+
+        // Create WebReport instance
+        myWebReport = new WebReport()
+            {
+                Report = report,
+                EmbedPictures = true
+            };
+        isReady = true;
+    }
+
+    private DataSet FetchData()
+    {
+        // Simulated data fetching (replace with your actual data retrieval logic)
+        DataSet dataSet = new DataSet();
+        // Fetch data from your server-side data source and populate the DataSet
+        return dataSet;
+    }
+}
+
+@if (isReady)
+{
+    <WebReportContainer WebReport="myWebReport" />
+}

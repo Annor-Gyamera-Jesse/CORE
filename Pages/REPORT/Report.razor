@@ -1,2 +1,33 @@
 ﻿@page "/report"
+@inject AuthService authService
+@inject NavigationManager NavigationManager
+@inject Microsoft.JSInterop.IJSRuntime JS
+@using CORE.MODEL
+@using CORE.SERVICE
 
+<RadzenGrid TItem="ReportViewPage" Data="@reportPages">
+    <Columns>
+        <RadzenGridColumn TItem="ReportViewPage" Property="Title" Title="Title" />
+        <RadzenGridColumn TItem="ReportViewPage" Property="Description" Title="Description" />
+        <RadzenGridColumn TItem="ReportViewPage">
+            <Template Context="page">
+                <RadzenLink @onclick="() => NavigateToExamsPage()">Go to Exams</RadzenLink>
+            </Template>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+
+@code {
+    List<ReportViewPage> reportPages;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch data from the database using the service
+        reportPages = await authService.GetAllReportViewPagesAsync();
+    }
+
+    protected void NavigateToExamsPage()
+    {
+        NavigationManager.NavigateTo("/reportexams");
+    }
+}

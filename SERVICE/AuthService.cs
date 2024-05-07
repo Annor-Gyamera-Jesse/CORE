@@ -78,7 +78,7 @@ namespace CORE.SERVICE
                 }
             }
         }
-        
+
         public List<User> GetUsers()
         {
             List<User> users = new List<User>();
@@ -1360,6 +1360,34 @@ namespace CORE.SERVICE
                 Console.WriteLine($"Error in GetAllTeachersAsync: {ex.Message}");
                 throw;
             }
+        }
+
+
+        //------Report Page------//
+        public async Task<List<ReportViewPage>> GetAllReportViewPagesAsync()
+        {
+            List<ReportViewPage> reportViewPages = new List<ReportViewPage>();
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT ReportViewPageID, Title, Description FROM SchoolManagement.ReportViewPage";
+                SqlCommand command = new SqlCommand(query, connection);
+                await connection.OpenAsync();
+                SqlDataReader reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    ReportViewPage reportViewPage = new ReportViewPage
+                    {
+                        ReportViewPageID = reader.GetInt32(0),
+                        Title = reader.GetString(1),
+                        Description = reader.GetString(2)
+                    };
+                    reportViewPages.Add(reportViewPage);
+                }
+            }
+
+            return reportViewPages;
         }
     }
 }

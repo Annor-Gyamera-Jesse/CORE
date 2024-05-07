@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.28" />
+    <PackageReference Include="FastReport.Data.MsSql" Version="2024.2.2" />
+    <PackageReference Include="FastReport.Web" Version="2024.2.2-demo" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
     <PackageReference Include="Radzen.Blazor" Version="*" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
