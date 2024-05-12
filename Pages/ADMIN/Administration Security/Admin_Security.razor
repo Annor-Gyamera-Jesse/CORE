@@ -5,32 +5,37 @@
 @inject NotificationMessageService Notify
 
 <RadzenFieldset Text="CREATE USER">
-<EditForm Model="@user" OnValidSubmit="@AddUser">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+    <EditForm Model="@user" OnValidSubmit="@AddUser">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
 
-    <div class="form-group">
-        <label for="username">Username:</label>
-        <RadzenTextBox id="username" class="form-control" @bind-Value="user.UserName" />
-        <ValidationMessage For="@(() => user.UserName)" />
-    </div>
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <RadzenTextBox id="username" class="form-control" @bind-Value="user.UserName" />
+            <ValidationMessage For="@(() => user.UserName)" />
+        </div>
 
-    <div class="form-group">
-        <label for="password">Password:</label>
-        <RadzenTextBox id="password" class="form-control" @bind-Value="user.Password" />
-        <ValidationMessage For="@(() => user.Password)" />
-    </div>
-    <br/>
-    <button type="submit" class="btn btn-primary">Add User</button>
-</EditForm>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <RadzenTextBox id="password" class="form-control" @bind-Value="user.Password" />
+            <ValidationMessage For="@(() => user.Password)" />
+        </div>
+        <br />
+        <RadzenButton Text="Submit" type="submit" class="btn btn-primary"/>
+    </EditForm>
 </RadzenFieldset>
-<br/>
+<br />
 <RadzenFieldset Text="VIEW USER">
-<RadzenGrid Data="@users" TItem="User" PageSize="10">
-    <Columns>
-        <RadzenGridColumn TItem="User" Property="UserName" Title="Username"></RadzenGridColumn>
-    </Columns>
-</RadzenGrid>
+    <RadzenGrid Data="@users" TItem="User" PageSize="10">
+        <Columns>
+            <RadzenGridColumn TItem="User" Property="UserName" Title="Username"></RadzenGridColumn>
+            <RadzenGridColumn TItem="User" Title="Actions">
+                <Template Context="user">
+                    <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="() => DeleteUser(user.UserID)"/>
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
 </RadzenFieldset>
 
 @code {
@@ -58,6 +63,20 @@
         catch (Exception ex)
         {
             Notify.ShowNotification("Error", $"Failed to add user. {ex.Message}", NotificationSeverity.Error);
+        }
+    }
+
+    private void DeleteUser(int userId)
+    {
+        try
+        {
+            authService.DeleteUser(userId);
+            LoadData();
+            Notify.ShowNotification("Success", "User deleted successfully.", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"Failed to delete user. {ex.Message}", NotificationSeverity.Error);
         }
     }
 }
