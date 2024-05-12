@@ -4,6 +4,14 @@
 @using FastReport.Web
 @using FastReport.Web.Blazor.Components
 
+
+
+@if (isReady)
+{
+    <WebReportContainer WebReport="myWebReport" />
+}
+
+
 @code {
     WebReport myWebReport;
     bool isReady = false;
@@ -16,6 +24,7 @@
         // Generate the report
         FastReport.Report report = new FastReport.Report();
         report.Load("ReprtPageTemplate.frx");
+        // report.LoadPrepared("ReprtPageTemplate.frx");
         report.RegisterData(dataSet, "Exams");
 
         // Create WebReport instance
@@ -34,9 +43,4 @@
         // Fetch data from your server-side data source and populate the DataSet
         return dataSet;
     }
-}
-
-@if (isReady)
-{
-    <WebReportContainer WebReport="myWebReport" />
 }

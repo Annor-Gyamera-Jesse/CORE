@@ -29,7 +29,7 @@ builder.Services.AddScoped<NotificationMessageService>();
 // Register HttpClient
 builder.Services.AddHttpClient();
 
-builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(builder.Configuration["BaseAddress"]) });
+//builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(builder.Configuration["BaseAddress"]) });
 builder.Services.AddFastReport();
 
 

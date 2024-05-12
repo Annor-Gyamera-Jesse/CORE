@@ -1,9 +1,5 @@
 ﻿using Dapper;
 using CORE.MODEL;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Data;
-using System.Security.Claims;
 using System.Data.SqlClient;
 
 namespace CORE.SERVICE
@@ -50,11 +46,13 @@ namespace CORE.SERVICE
             {
                 // Log SQL exceptions
                 Console.WriteLine($"SQL Exception: {ex.Message}");
+                throw; // Re-throw the exception to propagate it
             }
             catch (Exception ex)
             {
                 // Log other exceptions
                 Console.WriteLine($"Exception: {ex.Message}");
+                throw; // Re-throw the exception to propagate it
             }
 
             return null;
