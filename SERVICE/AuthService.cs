@@ -60,6 +60,50 @@ namespace CORE.SERVICE
             return null;
         }
 
+
+
+        //--- For company LoginLayout display--///
+        public async Task<string> GetSoftwareVersionAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT SoftWareVerssion FROM SchoolManagement.LoginScreenDetails";
+                    return (string)await command.ExecuteScalarAsync();
+                }
+            }
+        }
+
+        public int GetCompanyRegisteredYear()
+        {
+            // Use current year as company registered date
+            return DateTime.Now.Year;
+        }
+
+        public async Task<(string, string)> GetLoginScreenDetailsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT SchoolName, CompanyRegisteredName FROM SchoolManagement.LoginScreenDetails";
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            string schoolName = reader.GetString(reader.GetOrdinal("SchoolName"));
+                            string companyRegisteredName = reader.GetString(reader.GetOrdinal("CompanyRegisteredName"));
+                            return (schoolName, companyRegisteredName);
+                        }
+                    }
+                }
+            }
+            return (null, null); // Return null if no data found
+        }
+
         //----------------------For Admin_Security ------------------------------------//
         public void AddUser(User user)
         {
