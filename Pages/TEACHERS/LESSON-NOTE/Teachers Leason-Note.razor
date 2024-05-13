@@ -1,0 +1,120 @@
+﻿@page "/lessonnote"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
+
+<RadzenFieldset Text="Submit Lesson Note">
+    <div class="container">
+        <div class="row mb-3">
+            <div class="col-md-4">
+                @* <RadzenLabel Text="Course Name:" Associated="courseName" />
+                <RadzenTextBox @bind-Value="lessonNote.CourseName" class="form-control" id="courseName" /> *@
+                  <RadzenField Property="SchoolCourse" Title="School Course">
+                           <RadzenLabel Text="Course" />
+                    <RadzenDropDown @bind-Value="@examModel.SchoolCourse" Data="@courseList"></RadzenDropDown>
+                           </RadzenField>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <RadzenLabel Text="Topic:" Associated="topic" />
+                <RadzenTextBox @bind-Value="lessonNote.Topic" class="form-control" id="topic" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <RadzenLabel Text="Objectives:" Associated="objectives" />
+                <RadzenTextArea @bind-Value="lessonNote.Objectives" class="form-control" id="objectives" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <RadzenLabel Text="TLM/TLA:" Associated="tlmtla" />
+                <RadzenTextArea @bind-Value="lessonNote.TLMTLA" class="form-control" id="tlmtla" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <RadzenLabel Text="Introduction:" Associated="introduction" />
+                <RadzenTextArea @bind-Value="lessonNote.Introduction" class="form-control" id="introduction" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <RadzenLabel Text="Core Points:" Associated="corePoints" />
+                <RadzenTextArea @bind-Value="lessonNote.CorePoints" class="form-control" id="corePoints" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <RadzenLabel Text="Evaluation Remarks:" Associated="evaluationRemarks" />
+                <RadzenTextArea @bind-Value="lessonNote.EvaluationRemarks" class="form-control" id="evaluationRemarks" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <RadzenButton Text="Submit" Icon="check" ButtonStyle="ButtonStyle.Success"  Click="@SubmitLessonNote" />
+            </div>
+        </div>
+      @if (!string.IsNullOrEmpty(uploadMessage))
+        {
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <p>@uploadMessage</p>
+                </div>
+            </div>
+        }
+    </div>
+</RadzenFieldset>
+
+@code {
+    LessonNote lessonNote = new LessonNote();
+    string uploadMessage = "";
+    Exam examModel = new Exam();
+    List<string> courseList = new List<string>();
+    // Method to submit the lesson note
+    // Method to submit the lesson note
+    async Task SubmitLessonNote()
+    {
+        try
+        {
+            // Call the service method to submit the lesson note
+            var result = await authService.SubmitLessonNoteAsync(lessonNote);
+
+            // Check if the submission was successful
+            if (result > 0)
+            {
+                // Reset the lessonNote object
+                lessonNote = new LessonNote();
+                // Provide success message
+                uploadMessage = "Lesson note submitted successfully.";
+            }
+            else
+            {
+                // Provide failure message
+                uploadMessage = "Failed to submit lesson note. Please try again later.";
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log or handle the exception
+            Console.WriteLine($"Exception in SubmitLessonNote: {ex.Message}");
+            uploadMessage = "An unexpected error occurred. Please try again later.";
+        }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            courseList = await authService.GetSchoolExamsCoursesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in OnInitializedAsync: {ex.Message}");
+            uploadMessage = "An error occurred while initializing the page.";
+        }
+    }
+}

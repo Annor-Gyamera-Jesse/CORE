@@ -1530,5 +1530,36 @@ namespace CORE.SERVICE
 
             return totalStudents;
         }
+
+        //----for submitting lesson note--//
+
+        public async Task<int> SubmitLessonNoteAsync(LessonNote lessonNote)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = @"INSERT INTO SchoolManagement.lessonnotes (UserId, SchoolCourse, Topic, OBJECTIVES, TLMTLA, INTRODUCTION, COREPOINTS, EVALUATIONREMARKS) 
+                          VALUES (@UserId, @SchoolCourse, @Topic, @Objectives, @TLMTLA, @Introduction, @CorePoints, @EvaluationRemarks)";
+
+                    return await connection.ExecuteAsync(query, lessonNote);
+                }
+            }
+            catch (SqlException ex)
+            {
+                // Log SQL-related exceptions
+                Console.WriteLine($"SQL Exception in SubmitLessonNoteAsync: {ex}");
+                throw; // Re-throw the exception
+            }
+            catch (Exception ex)
+            {
+                // Log other types of exceptions
+                Console.WriteLine($"Exception in SubmitLessonNoteAsync: {ex}");
+                throw; // Re-throw the exception
+            }
+        }
+
     }
 }
