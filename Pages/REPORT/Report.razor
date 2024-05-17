@@ -33,4 +33,27 @@
         await JS.InvokeVoidAsync("open", "/reportexams", "_blank");
         // NavigationManager.NavigateTo("/reportexams");
     }
+
+    // protected async Task NavigateToExamsPage()
+    // {
+    //     string templateName = "ReprtPageTemplate.frx";
+    //     string reportName = "example_report";
+    //     string url = $"/reportexams?template={templateName}&report={reportName}";
+
+    //     Console.WriteLine($"Navigating to exams page: {url}");
+    //     await JS.InvokeVoidAsync("window.open", url, "_blank");
+    // }
+
+    // protected async Task NavigateToExamsPage()
+    // {
+    //     Console.WriteLine("Navigating to exams page...");
+
+    //     // Generate the URL for the report page
+    //     var url = NavigationManager.ToAbsoluteUri("/reportexams").ToString();
+
+    //     // Open the URL in a new tab using JavaScript interop
+    //     await JS.InvokeVoidAsync("open", url, "_blank");
+    // }
+
+
 }

@@ -1,4 +1,4 @@
-﻿@page "/reportexams"
+﻿@* @page "/reportexams"
 @using FastReport
 @using System.Data
 @using FastReport.Web
@@ -42,5 +42,42 @@
         DataSet dataSet = new DataSet();
         // Fetch data from your server-side data source and populate the DataSet
         return dataSet;
+    }
+} *@
+
+        @page "/reportexams"
+
+@using FastReport
+@using FastReport.Web
+
+<div>
+    @if (report != null)
+    {
+        <WebReport WebReport="report" />
+        <button @onclick="PrintReport">Print Report</button>
+    }
+</div>
+
+@code {
+    WebReport report;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load and prepare your report here
+        var reportPath = "ReprtPageTemplate.frx";
+        var report = new WebReport();
+        report.Report.Load(reportPath);
+        
+        // Optionally, you can register data sources here
+        // report.RegisterData(...);
+
+        this.report = report;
+    }
+    [Inject]
+    public IJSRuntime JSRuntime { get; set; }
+    private async Task PrintReport()
+    {
+        // Call JavaScript function to print the report
+        await JSRuntime.InvokeVoidAsync("printReport", "report-container");
     }
 }
