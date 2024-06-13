@@ -22,6 +22,7 @@ namespace CORE.MODEL
         public string GuardianFirstContact { get; set; }
         public string GuardianSecondContact { get; set; }
         public bool EnableSwitch { get; set; }
+        public string StudentMedicalReport { get; set; }
 
     }
 

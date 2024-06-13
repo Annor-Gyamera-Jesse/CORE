@@ -60,6 +60,23 @@
                 </div>
                     </RadzenFieldset>
             </div>
+
+            @* Medical Report of studernt to show *@
+            <div class="col-md-9">
+                <RadzenFieldset Text="MEDICAL REPORT">
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="card-text"><strong>Guardian FullName:</strong> @selectedStudent.GuardianFullName</p>
+                                <p class="card-text"><strong>Guardian Gender:</strong> @selectedStudent.GuardianGender</p>
+                                <p class="card-text"><strong>Guardian HouseAddress:</strong> @selectedStudent.GuardianHouseAddress</p>
+                                <p class="card-text"><strong>Guardian WorkAddress:</strong> @selectedStudent.GuardianWorkAddress</p>
+                                <p class="card-text"><strong>Guardian Email:</strong> @selectedStudent.GuardianEmail</p>
+                                <p class="card-text"><strong>Guardian Contact 1:</strong> @selectedStudent.GuardianFirstContact</p>
+                                <p class="card-text"><strong>Guardian Contact 2:</strong> @selectedStudent.GuardianSecondContact</p>
+                            </div>
+                        </div>
+                    </RadzenFieldset>
+            </div>
         </div>
     }
     else
