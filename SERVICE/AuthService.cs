@@ -1530,5 +1530,24 @@ namespace CORE.SERVICE
 
             return totalStudents;
         }
-    }
+
+        //-- Display Logs of intries into the system--//
+        public async Task<IEnumerable<UserLog>> GetUserLogsAsync()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    var query = @"SELECT LogId, UserId, EventName, Timestamp FROM SchoolManagement.UserLog";
+                    return await connection.QueryAsync<UserLog>(query);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetUserLogsAsync: {ex.Message}");
+                throw;
+            }
+        }
+    }  
 }
