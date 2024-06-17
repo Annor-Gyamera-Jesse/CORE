@@ -970,13 +970,13 @@ namespace CORE.SERVICE
                 {
                     await connection.OpenAsync();
 
-                    var query = "SELECT TOP (1) StudentID, StudentFirstName, StudentLastName, StudentDateOfBirth, StudentGender, " +
-             "StudentAddress, StudentPhoneNumber, StudentEmail, ImageData, ClassID, GuardianFullName, GuardianGender," +
-             " GuardianHouseAddress, GuardianWorkAddress, GuardianEmail, GuardianFirstContact, GuardianSecondContact " +
-             "FROM SchoolManagement.Students " +
-             "WHERE CONCAT(StudentFirstName, ' ', StudentLastName) LIKE @StudentName";
+                    var query = @"SELECT TOP (1) StudentID, StudentFirstName, StudentLastName, StudentDateOfBirth, StudentGender, 
+                          StudentAddress, StudentPhoneNumber, StudentEmail, ImageData, ClassID, GuardianFullName, GuardianGender, 
+                          GuardianHouseAddress, GuardianWorkAddress, GuardianEmail, GuardianFirstContact, GuardianSecondContact, 
+                          StudentMedicalReport 
+                          FROM SchoolManagement.Students 
+                          WHERE CONCAT(StudentFirstName, ' ', StudentLastName) LIKE @StudentName";
 
-                    // Remove the 'using' statement for the result variable
                     var result = await connection.QueryFirstOrDefaultAsync<Student>(query, new { StudentName = $"%{studentName}%" });
 
                     return result;
@@ -985,8 +985,7 @@ namespace CORE.SERVICE
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in GetStudentByNameAsync: {ex.Message}");
-                // Handle the exception as needed (log, throw, etc.)
-                throw; // Rethrow the exception after logging/handling if needed
+                throw;
             }
         }
 
