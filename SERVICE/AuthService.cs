@@ -1,4 +1,8 @@
+
 using Dapper;
+
+﻿using Dapper;
+
 using CORE.MODEL;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -1576,8 +1580,8 @@ namespace CORE.SERVICE
             return reportViewPages;
         }
     }
+
 }
 
-
-
+}
 
