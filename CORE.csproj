@@ -19,4 +19,8 @@
     <Folder Include="SERVICE\Printing\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="wwwroot\ReprtPageTemplate.frx" />
+  </ItemGroup>
+
 </Project>
