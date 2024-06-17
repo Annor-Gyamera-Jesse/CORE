@@ -1,69 +1,91 @@
 ﻿@page "/studentprofile"
 @using CORE.MODEL
+@using CORE.SECURITY.LOADER
 @using CORE.SERVICE
 @inject AuthService authService
+@using CORE.SERVICE.NOTIFICATION
 @using Radzen.Blazor
+@inject NotificationMessageService Notify
+
+<style>
+    .container {
+        background-color: khaki;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .card {
+        margin-bottom: 20px;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+    }
+
+    .card-body {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    .card-text {
+        margin-bottom: 10px;
+    }
+
+    .form-label {
+        font-weight: bold;
+    }
+
+    .input-group {
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-primary {
+        background-color: #4CAF50;
+        border-color: #4CAF50;
+    }
+</style>
 
 <RadzenFieldset Text="Student Profile">
-
-<div class="container">
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <label for="studentName" class="form-label">Search by Name:</label>
-            <div class="input-group">
-                <RadzenTextBox @bind-Value="searchName" class="form-control" />
-                <div class="input-group-append">
-                    <RadzenButton Click="@SearchStudent" Text="Search" class="btn btn-primary" />
+    <div class="container">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="studentName" class="form-label">Search by Name:</label>
+                <div class="input-group">
+                    <RadzenTextBox @bind-Value="searchName" class="form-control" />
+                    <div class="input-group-append">
+                        <RadzenButton Click="@SearchStudent" Text="Search" class="btn btn-primary" />
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    @if (selectedStudent != null)
-    {
-        <div class="row">
-            <div class="col-md-4">
+        @if (selectedStudent != null)
+        {
+            <div class="row">
+                <div class="col-md-4">
                     <RadzenFieldset Text="Image">
-                <div class="card">
-                   @* image card *@
-                    <RadzenImage Path="@($"data:image/png;base64,{Convert.ToBase64String(selectedStudent.ImageData)}")" class="card-img-top" alt="Student Image" />
-                    
-                    </div>
+                        <div class="card">
+                            <RadzenImage Path="@($"data:image/png;base64,{Convert.ToBase64String(selectedStudent.ImageData)}")" class="card-img-top" alt="Student Image" />
+                        </div>
                     </RadzenFieldset>
-                    <br/>
-
+                    <br />
                     <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">@($"{selectedStudent.StudentFirstName} {selectedStudent.StudentLastName}")</h5>
-                        <p class="card-text"><strong>Student ID:</strong> @selectedStudent.StudentID</p>
-                        <p class="card-text"><strong>Date of Birth:</strong> @selectedStudent.StudentDateOfBirth.ToShortDateString()</p>
-                        <p class="card-text"><strong>Gender:</strong> @selectedStudent.StudentGender</p>
-                        <p class="card-text"><strong>Address:</strong> @selectedStudent.StudentAddress</p>
-                        <p class="card-text"><strong>Phone Number:</strong> @selectedStudent.StudentPhoneNumber</p>
-                        <p class="card-text"><strong>Email:</strong> @selectedStudent.StudentEmail</p>
-                        <p class="card-text"><strong>Class ID:</strong> @selectedStudent.ClassID</p>
+                        <div class="card-body">
+                            <h5 class="card-title">@($"{selectedStudent.StudentFirstName} {selectedStudent.StudentLastName}")</h5>
+                            <p class="card-text"><strong>Student ID:</strong> @selectedStudent.StudentID</p>
+                            <p class="card-text"><strong>Date of Birth:</strong> @selectedStudent.StudentDateOfBirth.ToShortDateString()</p>
+                            <p class="card-text"><strong>Gender:</strong> @selectedStudent.StudentGender</p>
+                            <p class="card-text"><strong>Address:</strong> @selectedStudent.StudentAddress</p>
+                            <p class="card-text"><strong>Phone Number:</strong> @selectedStudent.StudentPhoneNumber</p>
+                            <p class="card-text"><strong>Email:</strong> @selectedStudent.StudentEmail</p>
+                            <p class="card-text"><strong>Class ID:</strong> @selectedStudent.ClassID</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-8">
-                <RadzenFieldset Text="Emergency Contacts">
-                <div class="card">
-                    <div class="card-body">
-                                <p class="card-text"><strong>Guardian FullName:</strong> @selectedStudent.GuardianFullName</p>
-                                <p class="card-text"><strong>Guardian Gender:</strong> @selectedStudent.GuardianGender</p>
-                                <p class="card-text"><strong>Guardian HouseAddress:</strong> @selectedStudent.GuardianHouseAddress</p>
-                                <p class="card-text"><strong>Guardian WorkAddress:</strong> @selectedStudent.GuardianWorkAddress</p>
-                                <p class="card-text"><strong>Guardian Email:</strong> @selectedStudent.GuardianEmail</p>
-                                <p class="card-text"><strong>Guardian Contact 1:</strong> @selectedStudent.GuardianFirstContact</p>
-                                <p class="card-text"><strong>Guardian Contact 2:</strong> @selectedStudent.GuardianSecondContact</p>
-                    </div>
-                </div>
-                    </RadzenFieldset>
-            </div>
-
-            @* Medical Report of studernt to show *@
-            <div class="col-md-9">
-                <RadzenFieldset Text="MEDICAL REPORT">
+                <div class="col-md-8">
+                    <RadzenFieldset Text="Emergency Contacts">
                         <div class="card">
                             <div class="card-body">
                                 <p class="card-text"><strong>Guardian FullName:</strong> @selectedStudent.GuardianFullName</p>
@@ -76,26 +98,61 @@
                             </div>
                         </div>
                     </RadzenFieldset>
+                </div>
+                <div class="col-md-12">
+                    <RadzenFieldset Text="Medical Report">
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="card-text"><strong>Student Medical Report:</strong> @selectedStudent.StudentMedicalReport</p>
+                            </div>
+                        </div>
+                    </RadzenFieldset>
+                </div>
             </div>
-        </div>
-    }
-    else
-    {
-        <p>No student found.</p>
-    }
-</div>
+        }
+        else
+        {
+            <p>No student found.</p>
+        }
+    </div>
 </RadzenFieldset>
 
 @code {
+    LoadTypeTrigger _loader;
+
+    protected LoadTypeTrigger Loader
+    {
+        get => _loader;
+        set
+        {
+            _loader = value;
+            StateHasChanged();
+        }
+    }
+
     string searchName = "";
     Student selectedStudent;
 
     async Task SearchStudent()
     {
-        // Call the service to search for the student by name
-        var result = await authService.GetStudentByNameAsync(searchName);
+        try
+        {
+            Loader = LoadTypeTrigger.LOADING;
+            // Call the service to search for the student by name
+            var result = await authService.GetStudentByNameAsync(searchName);
 
-        // Update the selectedStudent variable
-        selectedStudent = result;
+            // Update the selectedStudent variable
+            selectedStudent = result;
+
+            Notify.ShowNotification("Success", "", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"Failed to search student. {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            Loader = LoadTypeTrigger.LOADED;
+        }
     }
 }

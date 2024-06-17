@@ -1,0 +1,52 @@
+﻿@using CORE.Pages.ADMIN
+@using Radzen
+@inject DialogService DialogService
+
+<style>
+    /*.row {
+            margin-top: 5px;*/
+    /*margin-right:1px;*/
+    /*margin:5px;*/
+    /*}*/
+
+    /* .col-md-6 {
+            padding: 0px;
+        }
+
+        .tool-button {
+            width: 80px;
+            padding-left: 2px;
+            padding-right: 2px
+        }*/
+
+    .toolset-btn {
+        margin-bottom: 5px;
+        width: 100%;
+        font-size: 14px
+    }
+</style>
+
+<RadzenButton Text="Show User Logs" Icon="assignment" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Secondary" Click=@OpenUserLogsDialog />
+
+
+@code {
+    public async Task OpenUserLogsDialog()
+    {
+        // await DialogService.OpenAsync<View_UserLogs>("User Logs",
+        //     null,
+        //     new DialogOptions()
+        //         {
+        //             Width = "700px",
+        //             Height = "512px",
+        //             Resizable = true,
+        //             Draggable = true
+        //         });
+
+        ///compose options for Razden dialo service
+        //var dialogParams = new Dictionary<string, object>() { { "TransactionBatch", m_MBC_UIView.TransactionBatch }     };
+        var dialogOptions = new DialogOptions() { Draggable = true, ShowClose = false, Width = "1000px", Resizable = false, Height = "512px"/*, Left = "calc(30% - 350px)", Top = "calc(30% - 265px)"*/ };
+        var dialogtitle = $"User Logs";
+        //register dialog closed event with RadzenDialogService
+        await DialogService.OpenAsync<View_UserLogs>(dialogtitle, null, dialogOptions);
+    }
+}

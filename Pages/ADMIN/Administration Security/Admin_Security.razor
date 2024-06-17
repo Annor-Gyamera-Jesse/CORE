@@ -1,42 +1,71 @@
-﻿@inject AuthService authService
+﻿@page "/manage-users"
 @using CORE.MODEL
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
+@inject AuthService authService
 @inject NotificationMessageService Notify
+@inject DialogService DialogService
 
-<RadzenFieldset Text="CREATE USER">
-    <EditForm Model="@user" OnValidSubmit="@AddUser">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
+<style>
+    .right-panel {
+        position: absolute;
+        top: 40px;
+        right: 20px;
+        width: 200px;
+        height: 400px; /* Adjust the height as needed */
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        overflow-y: auto; /* Add scroll if content overflows */
+    }
+</style>
 
-        <div class="form-group">
-            <label for="username">Username:</label>
-            <RadzenTextBox id="username" class="form-control" @bind-Value="user.UserName" />
-            <ValidationMessage For="@(() => user.UserName)" />
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-9">
+            <RadzenFieldset Text="CREATE USER">
+                <EditForm Model="@user" OnValidSubmit="@AddUser">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <RadzenTextBox id="username" class="form-control" @bind-Value="user.UserName" />
+                        <ValidationMessage For="@(() => user.UserName)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <RadzenTextBox id="password" class="form-control" @bind-Value="user.Password" />
+                        <ValidationMessage For="@(() => user.Password)" />
+                    </div>
+                    <br />
+                    <RadzenButton Text="Submit" type="submit" class="btn btn-primary" />
+                </EditForm>
+            </RadzenFieldset>
+            <br />
+            <RadzenFieldset Text="VIEW USER">
+                <RadzenGrid Data="@users" TItem="User" PageSize="10">
+                    <Columns>
+                        <RadzenGridColumn TItem="User" Property="UserName" Title="Username"></RadzenGridColumn>
+                        <RadzenGridColumn TItem="User" Title="Actions">
+                            <Template Context="user">
+                                <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="() => DeleteUser(user.UserID)" />
+                            </Template>
+                        </RadzenGridColumn>
+                    </Columns>
+                </RadzenGrid>
+            </RadzenFieldset>
         </div>
-
-        <div class="form-group">
-            <label for="password">Password:</label>
-            <RadzenTextBox id="password" class="form-control" @bind-Value="user.Password" />
-            <ValidationMessage For="@(() => user.Password)" />
+        <div class="col-md-3">
+            <div class="right-panel">
+                <CORE.Pages.AdminDialogs.UserLogsDialog />
+            </div>
         </div>
-        <br />
-        <RadzenButton Text="Submit" type="submit" class="btn btn-primary"/>
-    </EditForm>
-</RadzenFieldset>
-<br />
-<RadzenFieldset Text="VIEW USER">
-    <RadzenGrid Data="@users" TItem="User" PageSize="10">
-        <Columns>
-            <RadzenGridColumn TItem="User" Property="UserName" Title="Username"></RadzenGridColumn>
-            <RadzenGridColumn TItem="User" Title="Actions">
-                <Template Context="user">
-                    <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="() => DeleteUser(user.UserID)"/>
-                </Template>
-            </RadzenGridColumn>
-        </Columns>
-    </RadzenGrid>
-</RadzenFieldset>
+    </div>
+</div>
+
 
 @code {
     private User user = new User();

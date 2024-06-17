@@ -1,6 +1,7 @@
 ﻿@using CORE.MODEL
 @using CORE.SERVICE
 @inject AuthService authService
+@inject DialogService DialogService
 
 <style>
     h1 {
@@ -49,7 +50,11 @@
         </Columns>
     </RadzenDataGrid>
 </RadzenCard>
-
+<div class="row mt-2">
+    <div class="col-md-4 d-flex justify-content-end">
+        <RadzenButton Click="CloseForm" ButtonStyle="ButtonStyle.Danger" Text="Close" Icon="close" Style="margin-bottom: 10px; width: 150px ;float:right; padding-right:15px" />
+    </div>
+</div>
 @code {
     RadzenDataGrid<UserLog> userLogsGrid;
     IEnumerable<UserLog> userLogs;
@@ -70,5 +75,10 @@
         {
             Console.WriteLine($"Error loading user logs: {ex.Message}");
         }
+    }
+
+    void CloseForm()
+    {
+        DialogService.Close(); // This closes the dialog
     }
 }

@@ -40,6 +40,8 @@
 @code {
     protected LoadTypeTrigger Loader { get; set; } = LoadTypeTrigger.LOADING;
 
+    public bool ShowLoadingButton { get; set; } = false;
+
     private string Username { get; set; }
     private string Password { get; set; }
     private bool showInvalidLoginMessage = false;
@@ -83,6 +85,8 @@
         // Show loading indicator during login process
         Loader = LoadTypeTrigger.LOADING;
 
+        ShowLoadingButton = true;
+
         if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
         {
             // Show a warning message if either Username or Password is empty
@@ -125,5 +129,6 @@
         }
 
         StateHasChanged();
+        ShowLoadingButton = false;
     }
 }
