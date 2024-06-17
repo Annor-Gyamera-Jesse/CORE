@@ -104,6 +104,12 @@
             // Set user name in session storage
             await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userName", user.UserName);
 
+            if (!string.IsNullOrEmpty(redirectUrl))
+            {
+                // If there's a redirect URL, navigate to it after successful login
+                NavigationManager.NavigateTo(redirectUrl);
+            }
+
             // Redirect to the homepage after successful login
             NavigationManager.NavigateTo("/landingpage");
             Loader = LoadTypeTrigger.LOADED;
@@ -117,15 +123,6 @@
         else
         {
             Notify.ShowNotification("ALERT", "Invalid credentials. Please try again.", NotificationSeverity.Error);
-            // Show an error message for failed login attempts
-            // showInvalidLoginMessage = true;
-
-            // // Display a RadzenAlert for the error message
-            // await JSRuntime.InvokeVoidAsync("alert", "Invalid credentials. Please try again.");
-            // errorMessage = "Invalid Credentials";
-
-            // // Reset success message
-            // successMessage = string.Empty;
         }
 
         StateHasChanged();

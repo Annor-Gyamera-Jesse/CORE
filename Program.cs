@@ -2,6 +2,8 @@ using CORE.SECURITY;
 using CORE.SECURITY.LOADER;
 using CORE.SERVICE;
 using CORE.SERVICE.NOTIFICATION;
+using FastReport.Data;
+using FastReport.Utils;
 using Radzen;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,10 +29,17 @@ builder.Services.AddScoped<NotificationMessageService>();
 // Register HttpClient
 builder.Services.AddHttpClient();
 
+//builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(builder.Configuration["BaseAddress"]) });
+builder.Services.AddFastReport();
+
+
 // Add the UserService registration
 builder.Services.AddScoped<AuthService>(provider => new AuthService("Server=ANDERSON-WALKER;Database=INTEL;Trusted_Connection=True;MultipleActiveResultSets=true;Encrypt=False;"));
 
 builder.Services.AddScoped<ContentLoaderTemplate>();
+
+//for fastreport
+RegisteredObjects.AddConnection(typeof(MsSqlDataConnection));
 
 builder.Services.AddScoped<LoadingComponent>();
 
