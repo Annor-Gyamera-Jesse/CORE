@@ -1,5 +1,8 @@
 @inherits LayoutComponentBase
+@inject AuthService authService
+@using CORE.SERVICE
 <RadzenComponents />
+<RadzenDialog/>
 
 <RadzenLayout style="grid-template-areas: 'rz-sidebar rz-header' 'rz-sidebar rz-body';">
     <RadzenHeader>
@@ -27,10 +30,12 @@
     </RadzenBody>
     <RadzenSidebar Expanded="@sidebarExpanded" style="z-index: 2">
         <RadzenStack AlignItems="Radzen.AlignItems.Center" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding); border-bottom: var(--rz-panel-menu-item-border);">
-            <RadzenImage Path="images/logo.png" style="width: 48px; height: 48px;"></RadzenImage>
+           @*  <RadzenImage Path="images/logo.png" style="width: 48px; height: 48px;"></RadzenImage> future implementation *@
             <RadzenText Text="LAMIN" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" class="rz-mb-0" style="color: var(--rz-sidebar-color);" />
         </RadzenStack>
         <RadzenPanelMenu>
+            <RadzenPanelMenuItem Text="DASHBOARD" Path="/landingpage" Icon="home" />
+
             <RadzenPanelMenuItem Text="KYC" Icon="school">
                 <RadzenPanelMenuItem Text="STUDENT PROFILE" Path="/studentprofile" Icon="group" />
             </RadzenPanelMenuItem>
@@ -90,8 +95,22 @@
             <RadzenPanelMenuItem Text="Logout" Click="@logout" Icon="power_settings_new" />
         </RadzenPanelMenu>
         <RadzenStack AlignItems="Radzen.AlignItems.Center" Gap="0" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding);">
-            <RadzenText Text="LAMIN v1.0.0" TextStyle="Radzen.Blazor.TextStyle.Caption" style="color: var(--rz-text-disabled-color);" TagName="Radzen.Blazor.TagName.P" TextAlign="Radzen.TextAlign.Center" />
-            <RadzenText Text="Copyright Ⓒ 2023" TextStyle="Radzen.Blazor.TextStyle.Caption" class="rz-mb-0" style="color: var(--rz-text-disabled-color);" TagName="Radzen.Blazor.TagName.P" TextAlign="Radzen.TextAlign.Center" />
+          @*   <RadzenText Text="LAMIN v1.0.0" TextStyle="Radzen.Blazor.TextStyle.Caption" style="color: var(--rz-text-disabled-color);" TagName="Radzen.Blazor.TagName.P" TextAlign="Radzen.TextAlign.Center" /> *@
+            <RadzenText Text="@($"INTEL v{SoftwareVersion}, Copyright Ⓒ {CompanyRegisteredYear}")" TextStyle="Radzen.Blazor.TextStyle.Caption" class="rz-mb-0" style="color: var(--rz-text-disabled-color);" TagName="Radzen.Blazor.TagName.P" TextAlign="Radzen.TextAlign.Center" />
         </RadzenStack>
     </RadzenSidebar>
 </RadzenLayout>
+
+@code {
+    string SoftwareVersion;
+    int CompanyRegisteredYear;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Retrieve software version from the AuthService
+        SoftwareVersion = await authService.GetSoftwareVersionAsync();
+
+        // Retrieve company registered date from the AuthService
+        CompanyRegisteredYear = authService.GetCompanyRegisteredYear();
+    }
+}

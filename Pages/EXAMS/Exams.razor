@@ -2,8 +2,9 @@
 @using CORE.MODEL
 @using CORE.SERVICE
 @inject AuthService authService
+@using CORE.SERVICE.NOTIFICATION
 @using Radzen
-@using Radzen.Blazor
+@inject NotificationMessageService Notify
 @using System.Globalization
 
 <div class="container mt-4">
@@ -283,12 +284,14 @@
             if (insertResult > 0)
             {
                 // Insertion successful
-                Console.WriteLine($"Exam for {result.StudentName} Upload successfully!");
+                // Console.WriteLine($"Exam for {result.StudentName} Upload successfully!");
+                Notify.ShowNotification("success", "Exam for user Upload successfully!", NotificationSeverity.Success);
             }
             else
             {
                 // Insertion failed
-                Console.WriteLine($"Exam for {result.StudentName} Upload failed!");          
+                // Console.WriteLine($"Exam for {result.StudentName} Upload failed!"); 
+                Notify.ShowNotification("Error", "Exam for user Upload failed!", NotificationSeverity.Warning);
             }
         }
 

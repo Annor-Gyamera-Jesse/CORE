@@ -1,8 +1,83 @@
 ﻿@page "/landingpage"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
 
-<RadzenButton Text="Welcome to INTEL CORE"></RadzenButton>
-<RadzenIcon Icon="accessibility" />
+<style>
+    .tab-container {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .tab {
+        background: linear-gradient(to right, #4facfe, #00f2fe);
+        border-radius: 10px;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        margin: 10px;
+        flex: 1 1 200px; /* Flex-grow, flex-shrink, and flex-basis */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s;
+    }
+
+        .tab:hover {
+            transform: scale(1.05);
+        }
+
+        .tab i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .tab h1 {
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .tab h2 {
+            font-size: 2rem;
+            margin: 10px 0 0;
+        }
+</style>
+
+<div class="container mt-5">
+
+        <div class="tab-container">
+            <div class="tab">
+                <i class="fas fa-users"></i>
+                <h1>Total Students</h1>
+                <h2><b>@totalStudentsCount</b></h2>
+            </div>
+            <div class="tab">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <h1>Total Teachers</h1>
+                <h2><b>@totalTeachersCount</b></h2>
+            </div>
+            <div class="tab">
+                <i class="fas fa-graduation-cap"></i>
+                <h1>Total Graduates</h1>
+                <h2><b>@totalGraduatesCount</b></h2>
+            </div>
+        </div>
+</div>
 
 @code {
+    private int totalStudentsCount;
+    private int totalTeachersCount;
+    private int totalGraduatesCount;
 
+    protected override async Task OnInitializedAsync()
+    {
+        totalStudentsCount = await authService.GetTotalStudentsCount();
+        // totalTeachersCount = await authService.GetTotalTeachersCount();
+        // totalGraduatesCount = await authService.GetTotalGraduatesCount();
+        StateHasChanged();
+    }
 }

@@ -162,6 +162,21 @@
    
 </RadzenFieldset>
 
+<RadzenFieldset Text="Medical Report" AllowCollapse="true" Collapsed="true">
+    <div class="row">
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Student Medical Report" Component="textstudentmedicalreport" />
+        </div>
+        <div class="col-md-6">
+            <RadzenTextArea class="form-control form-control-sm"
+                            @bind-Value="@student.StudentMedicalReport"
+                            Rows="5"
+                            Style="resize: both;" />
+        </div>
+    </div>
+</RadzenFieldset>
+
+
 <div class="row mt-2">
     <div class="col-md-3">      
         <RadzenButton Text="New" Icon="add" ButtonStyle="ButtonStyle.Info" Click="@ResetForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />

@@ -1,0 +1,84 @@
+﻿@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
+@inject DialogService DialogService
+
+<style>
+    h1 {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 2em;
+        color: #4CAF50;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .RadzenCard {
+        margin: 20px auto;
+        padding: 20px;
+        max-width: 1200px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        background-color: #f8f9fa;
+    }
+
+    .RadzenDataGrid {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .RadzenDataGridColumn {
+        text-align: left;
+        padding: 10px;
+    }
+
+    .RadzenButton {
+        margin: 10px;
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 5px;
+    }
+</style>
+
+<RadzenCard>
+    <RadzenDataGrid @ref="userLogsGrid" Data="@userLogs" TItem="UserLog" LoadData="@LoadUserLogs"
+                    AllowSorting="true" AllowPaging="true" PageSize="10" ColumnWidth="200px"
+                    FilterMode="FilterMode.Advanced">
+        <Columns>
+            <RadzenDataGridColumn TItem="UserLog" Property="LogId" Title="Log ID" Width="50px" />
+            <RadzenDataGridColumn TItem="UserLog" Property="UserId" Title="User ID" />
+            <RadzenDataGridColumn TItem="UserLog" Property="EventName" Title="Event Name" />
+            <RadzenDataGridColumn TItem="UserLog" Property="Timestamp" Title="Timestamp" FormatString="{0:yyyy-MM-dd HH:mm:ss}" />
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+<div class="row mt-2">
+    <div class="col-md-4 d-flex justify-content-end">
+        <RadzenButton Click="CloseForm" ButtonStyle="ButtonStyle.Danger" Text="Close" Icon="close" Style="margin-bottom: 10px; width: 150px ;float:right; padding-right:15px" />
+    </div>
+</div>
+@code {
+    RadzenDataGrid<UserLog> userLogsGrid;
+    IEnumerable<UserLog> userLogs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserLogs(new LoadDataArgs());
+    }
+
+    async Task LoadUserLogs(LoadDataArgs args)
+    {
+        try
+        {
+            userLogs = await authService.GetUserLogsAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user logs: {ex.Message}");
+        }
+    }
+
+    void CloseForm()
+    {
+        DialogService.Close(); // This closes the dialog
+    }
+}
