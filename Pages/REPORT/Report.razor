@@ -1,2 +1,91 @@
 ﻿@page "/report"
+@inject AuthService authService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@using CORE.MODEL
+@using CORE.SERVICE
 
+<RadzenGrid TItem="ReportViewPage" Data="@reportPages">
+    <Columns>
+        <RadzenGridColumn TItem="ReportViewPage" Property="Title" Title="Title" />
+        <RadzenGridColumn TItem="ReportViewPage" Property="Description" Title="Description" />
+        <RadzenGridColumn TItem="ReportViewPage">
+            <Template Context="page">
+                <RadzenLink @onclick="() => PrintReport()">Print Exams Reports</RadzenLink>
+            </Template>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+
+
+@code {
+    List<ReportViewPage> reportPages;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch data from the database using the service
+        reportPages = await authService.GetAllReportViewPagesAsync();
+    }
+
+    async Task PrintReport()
+    {
+        try
+        {
+            // Load the FastReport template from FRX file
+            var report = new FastReport.Report();
+            report.Load("wwwroot/ReprtPageTemplate.frx"); // Adjust path as per your project structure
+
+            // Prepare report (optional)
+            report.Prepare();
+
+            // Export report to PDF
+            var exportService = new FastReport.Export.Pdf.PDFExport();
+            var stream = new MemoryStream();
+            exportService.Export(report, stream);
+
+            // Convert MemoryStream to byte array
+            var data = stream.ToArray();
+
+            // Convert byte array to base64 string
+            var base64pdf = Convert.ToBase64String(data);
+
+            // Call JavaScript function to print PDF
+            await JSRuntime.InvokeVoidAsync("printJS", base64pdf);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error printing report: {ex.Message}");
+            // Handle error as needed
+        }
+    }
+
+    // protected async Task NavigateToExamsPage()
+    // {
+    //     Console.WriteLine("Navigating to exams page...");
+    //     await JS.InvokeVoidAsync("open", "/reportexams", "_blank");
+    //     // NavigationManager.NavigateTo("/reportexams");
+    // }
+
+    // protected async Task NavigateToExamsPage()
+    // {
+    //     string templateName = "ReprtPageTemplate.frx";
+    //     string reportName = "example_report";
+    //     string url = $"/reportexams?template={templateName}&report={reportName}";
+
+    //     Console.WriteLine($"Navigating to exams page: {url}");
+    //     await JS.InvokeVoidAsync("window.open", url, "_blank");
+    // }
+
+    // protected async Task NavigateToExamsPage()
+    // {
+    //     Console.WriteLine("Navigating to exams page...");
+
+    //     // Generate the URL for the report page
+    //     var url = NavigationManager.ToAbsoluteUri("/reportexams").ToString();
+
+    //     // Open the URL in a new tab using JavaScript interop
+    //     await JS.InvokeVoidAsync("open", url, "_blank");
+    // }
+
+
+}
