@@ -3,6 +3,7 @@
 @using CORE.MODEL
 @using CORE.SERVICE
 @inject AuthService authService
+@inject IJSRuntime JSRuntime
 
 @* Adding custom CSS *@
 <style>
@@ -124,11 +125,20 @@
     LessonNote lessonNote = new LessonNote();
     string uploadMessage = "";
     List<SchoolCourse> courseList = new List<SchoolCourse>();
+    int userId; // Add a field to store the UserId
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            // Fetch the logged-in user's ID
+            var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", new object[] { "userName" });
+            var user = await authService.GetUserByUsernameAsync(username);
+            if (user != null)
+            {
+                userId = user.UserID;
+            }
+
             courseList = await authService.GetLessonNotSchoolCoursesAsync();
         }
         catch (Exception ex)
@@ -141,7 +151,9 @@
     {
         try
         {
-            lessonNote.UserId = 1; // Set the user ID here, adjust as needed based on your authentication mechanism
+            // Assign UserId to lessonNote object
+            lessonNote.UserId = userId;
+
             var result = await authService.AddLessonNoteAsync(lessonNote);
 
             if (result > 0)
@@ -157,7 +169,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error in SubmitLessonNote: {ex.Message}");
-            uploadMessage = "An error occurred while submitting lesson note.";
+            uploadMessage = $"An error occurred while submitting lesson note: {ex.Message}";
         }
     }
 
