@@ -1589,10 +1589,20 @@ namespace CORE.SERVICE
                     await connection.OpenAsync();
 
                     var query = @"INSERT INTO SchoolManagement.lessonnotes 
-                              (UserId, SchoolCourse, Topic, OBJECTIVES, TLMTLA, INTRODUCTION, COREPOINTS, EVALUATIONREMARKS, RecDateCreated) 
-                              VALUES (@UserId, @SchoolCourse, @Topic, @OBJECTIVES, @TLMTLA, @INTRODUCTION, @COREPOINTS, @EVALUATIONREMARKS, @RecDateCreated)";
+                        (UserId, SchoolCourse, Topic, OBJECTIVES, TLMTLA, INTRODUCTION, COREPOINTS, EVALUATIONREMARKS) 
+                        VALUES (@UserId, @SchoolCourse, @Topic, @OBJECTIVES, @TLMTLA, @INTRODUCTION, @COREPOINTS, @EVALUATIONREMARKS)";
 
-                    return await connection.ExecuteAsync(query, lessonNote);
+                    return await connection.ExecuteAsync(query, new
+                    {
+                        lessonNote.UserId,
+                        lessonNote.SchoolCourse,
+                        lessonNote.Topic,
+                        lessonNote.OBJECTIVES,
+                        lessonNote.TLMTLA,
+                        lessonNote.INTRODUCTION,
+                        lessonNote.COREPOINTS,
+                        lessonNote.EVALUATIONREMARKS
+                    });
                 }
             }
             catch (Exception ex)
@@ -1601,6 +1611,7 @@ namespace CORE.SERVICE
                 throw;
             }
         }
+
 
         public async Task<IEnumerable<LessonNote>> GetLessonNotesByUserIdAsync(int userId)
         {
