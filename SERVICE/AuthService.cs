@@ -7,6 +7,7 @@ using System;
 using System.Data;
 using System.Security.Claims;
 using System.Data.SqlClient;
+using CORE.Pages.LESSON_NOTE;
 
 namespace CORE.SERVICE
 {
@@ -1577,5 +1578,95 @@ namespace CORE.SERVICE
 
             return reportViewPages;
         }
+
+        //-------FOR LESSON NOTE-----------//
+        public async Task<int> AddLessonNoteAsync(LessonNote lessonNote)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = @"INSERT INTO SchoolManagement.lessonnotes 
+                              (UserId, SchoolCourse, Topic, OBJECTIVES, TLMTLA, INTRODUCTION, COREPOINTS, EVALUATIONREMARKS, RecDateCreated) 
+                              VALUES (@UserId, @SchoolCourse, @Topic, @OBJECTIVES, @TLMTLA, @INTRODUCTION, @COREPOINTS, @EVALUATIONREMARKS, @RecDateCreated)";
+
+                    return await connection.ExecuteAsync(query, lessonNote);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in AddLessonNoteAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<LessonNote>> GetLessonNotesByUserIdAsync(int userId)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = "SELECT * FROM SchoolManagement.lessonnotes WHERE UserId = @UserId";
+
+                    return await connection.QueryAsync<LessonNote>(query, new { UserId = userId });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetLessonNotesByUserIdAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<LessonNote> GetLessonNoteByIdAsync(int lessonNoteId)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = "SELECT * FROM SchoolManagement.lessonnotes WHERE LessonnotesID = @LessonNoteId";
+
+                    return await connection.QueryFirstOrDefaultAsync<LessonNote>(query, new { LessonNoteId = lessonNoteId });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetLessonNoteByIdAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<List<SchoolCourse>> GetLessonNotSchoolCoursesAsync()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = "SELECT SCID, SchoolCourse AS SchoolCourseName FROM SchoolManagement.SchoolCourse";
+                    return (await connection.QueryAsync<SchoolCourse>(query)).ToList();
+                }
+            }
+            catch (SqlException ex)
+            {
+                // Log SQL exceptions
+                Console.WriteLine($"SQL Exception: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                // Log other exceptions
+                Console.WriteLine($"Exception: {ex.Message}");
+            }
+
+            return new List<SchoolCourse>();
+        }
+
     }
 }
