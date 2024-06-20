@@ -1,7 +1,9 @@
 ﻿@page "/assignteachers"
 @using CORE.MODEL
 @using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
+@inject NotificationMessageService Notify
 
 <RadzenHeader>
     <ChildContent>
@@ -102,11 +104,12 @@
                 await authService.AssignTeacherToClassAsync(int.Parse(selectedTeacherId), classId);
                 ClearFields();
                 teacherList = await authService.GetAllTeachersAsync();
-                showSuccessMessage = true;
+                Notify.ShowNotification("Saved Teacher", "Assigned", NotificationSeverity.Success);
             }
             else
             {
-                Console.WriteLine("Please select a teacher and enter a class ID before assigning.");
+               
+                Notify.ShowNotification("Please select a class.", "", NotificationSeverity.Warning);
             }
         }
         catch (Exception ex)
@@ -130,11 +133,12 @@
                 await authService.AddAssignmentAsync(int.Parse(selectedTeacherId), classId);
                 ClearFields();
                 teacherList = await authService.GetAllTeachersAsync();
-                showSuccessMessage = true;
+                Notify.ShowNotification("Assignment", "Added", NotificationSeverity.Success);
             }
             else
             {
-                Console.WriteLine("Please select a teacher and enter a class ID before adding assignment.");
+             
+                Notify.ShowNotification("Please select a teacher and enter a class ID before adding assignment.", "", NotificationSeverity.Warning);
             }
         }
         catch (Exception ex)
@@ -162,7 +166,7 @@
             }
             else
             {
-                Console.WriteLine("Please select a teacher and enter a class ID before deleting assignment.");
+                Notify.ShowNotification("Please select a teacher and enter a class ID before deleting assignment..", "", NotificationSeverity.Warning);
             }
         }
         catch (Exception ex)
