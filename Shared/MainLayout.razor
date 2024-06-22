@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @inject AuthService authService
+@inject AuthStateService AuthStateService
 @using CORE.SERVICE
 <RadzenComponents />
 <RadzenDialog/>
@@ -105,6 +106,7 @@
 @code {
     string SoftwareVersion;
     int CompanyRegisteredYear;
+    private bool _isFirstRender = true;
 
     protected override async Task OnInitializedAsync()
     {

@@ -19,6 +19,7 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddScoped<NotificationMessageService>();
+builder.Services.AddScoped<AuthStateService>();
 // Configure the database context
 //builder.Services.AddDbContext<INTELDbContext>(options =>
 //{

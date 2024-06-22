@@ -45,6 +45,9 @@ namespace CORE.Shared
             if (firstRender)
             {
                 userName = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName") ?? "Guest";
+
+                _isFirstRender = false;
+                await AuthStateService.EnsureAuthenticated();
                 StateHasChanged();
             }
         }
