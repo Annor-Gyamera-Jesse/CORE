@@ -36,7 +36,7 @@
         {
             // Load the FastReport template from FRX file
             var report = new FastReport.Report();
-            report.Load("wwwroot/ReprtPageTemplate.frx"); // Adjust path as per your project structure
+            report.Load("wwwroot/ReprtPageTemplate.frx");
 
             // Prepare report (optional)
             report.Prepare();
@@ -65,33 +65,4 @@
             // Handle error as needed
         }
     }
-    // protected async Task NavigateToExamsPage()
-    // {
-    //     Console.WriteLine("Navigating to exams page...");
-    //     await JS.InvokeVoidAsync("open", "/reportexams", "_blank");
-    //     // NavigationManager.NavigateTo("/reportexams");
-    // }
-
-    // protected async Task NavigateToExamsPage()
-    // {
-    //     string templateName = "ReprtPageTemplate.frx";
-    //     string reportName = "example_report";
-    //     string url = $"/reportexams?template={templateName}&report={reportName}";
-
-    //     Console.WriteLine($"Navigating to exams page: {url}");
-    //     await JS.InvokeVoidAsync("window.open", url, "_blank");
-    // }
-
-    // protected async Task NavigateToExamsPage()
-    // {
-    //     Console.WriteLine("Navigating to exams page...");
-
-    //     // Generate the URL for the report page
-    //     var url = NavigationManager.ToAbsoluteUri("/reportexams").ToString();
-
-    //     // Open the URL in a new tab using JavaScript interop
-    //     await JS.InvokeVoidAsync("open", url, "_blank");
-    // }
-
-
 }
