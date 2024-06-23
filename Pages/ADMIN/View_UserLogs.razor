@@ -1,7 +1,9 @@
 ﻿@using CORE.MODEL
 @using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
 @inject DialogService DialogService
+@inject NotificationMessageService Notify
 
 <style>
     h1 {
@@ -70,10 +72,12 @@
         {
             userLogs = await authService.GetUserLogsAsync();
             await InvokeAsync(StateHasChanged);
+            Notify.ShowNotification($"Loadded", "", NotificationSeverity.Success);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading user logs: {ex.Message}");
+         
+            Notify.ShowNotification($"ALERT Error loading user logs: {ex.Message}", "", NotificationSeverity.Error);
         }
     }
 
