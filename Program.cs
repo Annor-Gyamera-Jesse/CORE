@@ -1,9 +1,11 @@
 using CORE.SECURITY;
 using CORE.SECURITY.LOADER;
 using CORE.SERVICE;
+using CORE.SERVICE.MainLayout;
 using CORE.SERVICE.NOTIFICATION;
 using FastReport.Data;
 using FastReport.Utils;
+using Microsoft.Win32;
 using Radzen;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,6 +38,9 @@ builder.Services.AddFastReport();
 
 // Add the UserService registration
 builder.Services.AddScoped<AuthService>(provider => new AuthService("Server=ANDERSON-WALKER;Database=INTEL;Trusted_Connection=True;MultipleActiveResultSets=true;Encrypt=False;"));
+
+// Register MenuService with the necessary connection string
+builder.Services.AddScoped<MenuService>(provider => new MenuService("Server=ANDERSON-WALKER;Database=INTEL;Trusted_Connection=True;MultipleActiveResultSets=true;Encrypt=False;"));
 
 builder.Services.AddScoped<ContentLoaderTemplate>();
 

@@ -1,9 +1,13 @@
 @inherits LayoutComponentBase
+@inject MenuService menuService
 @inject AuthService authService
 @inject AuthStateService AuthStateService
 @using CORE.SERVICE
+@using CORE.SERVICE.MainLayout
+@using CORE.SERVICE.MainLayout.Module
+
 <RadzenComponents />
-<RadzenDialog/>
+<RadzenDialog />
 
 <RadzenLayout style="grid-template-areas: 'rz-sidebar rz-header' 'rz-sidebar rz-body';">
     <RadzenHeader>
@@ -18,7 +22,6 @@
                 <RadzenText Text="@userName"
                             TextStyle="Radzen.Blazor.TextStyle.Body2"
                             Style="font-weight: bold; color: #007bff; margin-left: 8px;" />
-
             </RadzenColumn>
         </RadzenRow>
     </RadzenHeader>
@@ -31,73 +34,32 @@
     </RadzenBody>
     <RadzenSidebar Expanded="@sidebarExpanded" style="z-index: 2">
         <RadzenStack AlignItems="Radzen.AlignItems.Center" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding); border-bottom: var(--rz-panel-menu-item-border);">
-           @*  <RadzenImage Path="images/logo.png" style="width: 48px; height: 48px;"></RadzenImage> future implementation *@
+            @*  <RadzenImage Path="images/logo.png" style="width: 48px; height: 48px;"></RadzenImage> future implementation *@
             <RadzenText Text="LAMIN" TextStyle="Radzen.Blazor.TextStyle.Subtitle1" class="rz-mb-0" style="color: var(--rz-sidebar-color);" />
         </RadzenStack>
         <RadzenPanelMenu>
-            <RadzenPanelMenuItem Text="DASHBOARD" Path="/landingpage" Icon="home" />
-
-            <RadzenPanelMenuItem Text="KYC" Icon="school">
-                <RadzenPanelMenuItem Text="STUDENT PROFILE" Path="/studentprofile" Icon="group" />
-            </RadzenPanelMenuItem>
-
-            <RadzenPanelMenuItem Text="CLASSES" Icon="class">
-                <RadzenPanelMenuItem Text="CLASS" Path="/class" Icon="view_list" />
-                <RadzenPanelMenuItem Text="ASSIGNED TEACHERS" Path="/teachersassignclasses" Icon="house" />
-            </RadzenPanelMenuItem>
-
-            <RadzenPanelMenuItem Text="REGISTRATIONS" Icon="group">
-                <RadzenPanelMenuItem Text="REGISTRATION" Path="/registration" Icon="people" />
-                @*        <RadzenPanelMenuItem Text="COURSE REGISTRATION" Path="" Icon="assignment" />
-                <RadzenPanelMenuItem Text="TEACHERS REGISTRATION" Path="" Icon="group" />
-                <RadzenPanelMenuItem Text="NON TEACHING STAFFS REGISTRATION" Path="" Icon="chat" /> *@
-            </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="COURSES" Icon="view_list">
-                <RadzenPanelMenuItem Text="SCHOOL COURSES" Path="/schoolcourse" Icon="class" />
-            </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="TIME TABLE" Icon="task">
-                <RadzenPanelMenuItem Text="EXAMS" Path="" Icon="event" />
-                <RadzenPanelMenuItem Text="SCHOOL TIME TABLE" Path="" Icon="task" />
-            </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="GRADES" Icon="check_circle">
-                @*      <RadzenPanelMenuItem Text="CLASS SCORE" Path="/classscore" Icon="attach_file" /> //will impliment it later*@
-                <RadzenPanelMenuItem Text="MID SEM" Path="/midsem" Icon="assignment" />
-                <RadzenPanelMenuItem Text="MOCK SCORE" Path="/mockscore" Icon="view_list" />
-                <RadzenPanelMenuItem Text="EXAMS" Path="/exams" Icon="note_add" />
-                <RadzenPanelMenuItem Text="REPORT" Path="/report" Icon="report" />
-            </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="ATTENDANCE" Icon="access_time">
-                <RadzenPanelMenuItem Text="STUDENTS ATTENDANCE" Path="/schoolattendance" Icon="group" />
-                <RadzenPanelMenuItem Text="STAFF ATTENDANCE" Path="/attendancetab" Icon="supervised_user_circle" />
-                <RadzenPanelMenuItem Text="NON TEACHING STAFF ATTENDANCE" Path="" Icon="people" />
-            </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="TEACHERS" Icon="task">
-                <RadzenPanelMenuItem Text="TEACHERS TASKS" Path="" Icon="schedule" />
-                <RadzenPanelMenuItem Text="TEACHERS TABLE" Path="" Icon="book" />
-                <RadzenPanelMenuItem Text="TEACHERS" Path="/teacherslist" Icon="group" />
-                <RadzenPanelMenuItem Text="LEASON NOTE" Path="/lessonnote" Icon="chrome_reader_mode" />
-            </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="NON TEACHING STAFFS" Icon="people">
-                <RadzenPanelMenuItem Text="TASKS" Path="" Icon="task" />
-                <RadzenPanelMenuItem Text="ATTENDANCE" Path="" Icon="access_time" />
-            </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="INBOX" Icon="report">
-                <RadzenPanelMenuItem Text="REPORT" Path="/report" Icon="report" />
-            </RadzenPanelMenuItem>
-            <RadzenPanelMenuItem Text="SECURITY" Icon="settings">
-                <RadzenPanelMenuItem Text="ADMIN" Path="/admin" Icon="house" />
-                @*   <RadzenPanelMenuItem Text="ACCOUNTS" Path="" Icon="account_circle" />
-                <RadzenPanelMenuItem Text="PERMISSIONS" Path="" Icon="lock" />
-                <RadzenPanelMenuItem Text="Assign_Teachers" Path="/assignteachers" Icon="share" />
-                <RadzenPanelMenuItem Text="MONITOR" Path="" Icon="tv" />
-                <RadzenPanelMenuItem Text="EMERGENCY" Path="" Icon="warning" /> *@
-            </RadzenPanelMenuItem>
-
-            <!-- Logout button -->
-            <RadzenPanelMenuItem Text="Logout" Click="@logout" Icon="power_settings_new" />
+            @if (mainMenuItems != null)
+            {
+                @foreach (var menuItem in mainMenuItems)
+                {
+                    if (subMenuItems.ContainsKey(menuItem.MenuID))
+                    {
+                        <RadzenPanelMenuItem Text="@menuItem.Text" Icon="@menuItem.Icon">
+                            @foreach (var subMenuItem in subMenuItems[menuItem.MenuID])
+                            {
+                                <RadzenPanelMenuItem Text="@subMenuItem.Text" Path="@subMenuItem.Path" Icon="@subMenuItem.Icon" />
+                            }
+                        </RadzenPanelMenuItem>
+                    }
+                    else
+                    {
+                        <RadzenPanelMenuItem Text="@menuItem.Text" Path="@menuItem.Path" Icon="@menuItem.Icon" />
+                    }
+                }
+            }
         </RadzenPanelMenu>
         <RadzenStack AlignItems="Radzen.AlignItems.Center" Gap="0" class="rz-py-4 rz-py-lg-6" Style="padding: var(--rz-panel-menu-item-padding);">
-          @*   <RadzenText Text="LAMIN v1.0.0" TextStyle="Radzen.Blazor.TextStyle.Caption" style="color: var(--rz-text-disabled-color);" TagName="Radzen.Blazor.TagName.P" TextAlign="Radzen.TextAlign.Center" /> *@
+            @*   <RadzenText Text="LAMIN v1.0.0" TextStyle="Radzen.Blazor.TextStyle.Caption" style="color: var(--rz-text-disabled-color);" TagName="Radzen.Blazor.TagName.P" TextAlign="Radzen.TextAlign.Center" /> *@
             <RadzenText Text="@($"INTEL v{SoftwareVersion}, Copyright Ⓒ {CompanyRegisteredYear}")" TextStyle="Radzen.Blazor.TextStyle.Caption" class="rz-mb-0" style="color: var(--rz-text-disabled-color);" TagName="Radzen.Blazor.TagName.P" TextAlign="Radzen.TextAlign.Center" />
         </RadzenStack>
     </RadzenSidebar>
@@ -107,6 +69,8 @@
     string SoftwareVersion;
     int CompanyRegisteredYear;
     private bool _isFirstRender = true;
+    private List<MenuItem> mainMenuItems;
+    private Dictionary<int, List<SubMenuItem>> subMenuItems = new Dictionary<int, List<SubMenuItem>>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -115,5 +79,18 @@
 
         // Retrieve company registered date from the AuthService
         CompanyRegisteredYear = authService.GetCompanyRegisteredYear();
+
+        // Fetch main menu items
+        mainMenuItems = (await menuService.GetMainMenuItemsAsync()).ToList();
+
+        // Fetch sub-menu items for each main menu item
+        foreach (var menuItem in mainMenuItems)
+        {
+            var items = (await menuService.GetSubMenuItemsAsync(menuItem.MenuID)).ToList();
+            if (items.Count > 0)
+            {
+                subMenuItems[menuItem.MenuID] = items;
+            }
+        }
     }
 }
