@@ -1,4 +1,4 @@
-﻿namespace CORE
+﻿namespace CORE.MODEL
 {
     public enum TaskStatus
     {

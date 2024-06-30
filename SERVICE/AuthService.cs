@@ -1799,5 +1799,22 @@ namespace CORE.SERVICE
             }
         }
 
+        //----For viewing Lesson Note submitted in the View lesson note dialog----//
+        public async Task<IEnumerable<LessonNote>> GetSubmittedLessonNotesAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Query to retrieve lesson notes along with user names
+                string query = @"
+                    SELECT ln.*, u.FullName AS UserName
+                    FROM SchoolManagement.lessonnotes ln
+                    INNER JOIN SchoolManagement.Users u ON ln.UserId = u.UserID";
+
+                var lessonNotes = await connection.QueryAsync<LessonNote>(query);
+                return lessonNotes;
+            }
+        }
     }
 }

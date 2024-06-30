@@ -3,6 +3,7 @@
     public class LessonNote
     {
         public int LessonnotesID { get; set; }
+        public string UserName { get; set; }
         public int UserId { get; set; }
         public string SchoolCourse { get; set; }
         public string Topic { get; set; }

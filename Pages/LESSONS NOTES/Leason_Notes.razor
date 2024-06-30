@@ -7,6 +7,16 @@
 
 @* Adding custom CSS *@
 <style>
+    .right-panel {
+        position: absolute;
+        top: 40px;
+        right: 20px;
+        width: 200px;
+        height: 400px; /* Adjust the height as needed */
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        overflow-y: auto; /* Add scroll if content overflows */
+    }
     .container {
         max-width: 800px;
         margin: auto;
@@ -120,6 +130,10 @@
         }
     </div>
 </RadzenFieldset>
+<div class="right-panel">
+    <CORE.Pages.AdminDialogs.Submitted_Lesson_Note_Dialog />
+</div>
+
 
 @code {
     LessonNote lessonNote = new LessonNote();

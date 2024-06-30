@@ -8,6 +8,7 @@
 
 	<ItemGroup>
 	  <Content Remove="Pages\AdminDialogs\AddEditTaskDialog.razor" />
+	  <Content Remove="Pages\AdminDialogs\ApprovedLessonNotesDialog.razor" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -32,10 +33,15 @@
 
 	<ItemGroup>
 	  <_ContentIncludedByDefault Remove="Pages\AdminDialogs\AddEditTaskDialog.razor" />
+	  <_ContentIncludedByDefault Remove="Pages\AdminDialogs\ApprovedLessonNotesDialog.razor" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <None Include="Pages\AdminDialogs\AddEditTaskDialog.razor" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <UpToDateCheckInput Remove="Pages\AdminDialogs\ApprovedLessonNotesDialog.razor" />
 	</ItemGroup>
 
 </Project>

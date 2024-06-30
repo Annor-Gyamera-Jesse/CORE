@@ -1,0 +1,47 @@
+﻿@using CORE.Pages.LESSON_NOTE
+@using CORE.SERVICE
+@inject AuthService lessonNoteService
+@using CORE.MODEL
+@inject DialogService DialogService
+
+
+@if (lessonNotes != null && lessonNotes.Any())
+{
+    <RadzenGrid Data="@lessonNotes" TItem="LessonNote" RowSelect="@OnRowSelect" Style="height: 400px;">
+        <Columns>
+            <RadzenGridColumn TItem="LessonNote" Property="UserName" Title="User" />
+            <RadzenGridColumn TItem="LessonNote" Property="SchoolCourse" Title="School Course" />
+            <RadzenGridColumn TItem="LessonNote" Property="Topic" Title="Topic" />
+            <RadzenGridColumn TItem="LessonNote" Property="OBJECTIVES" Title="Objectives" />
+            <RadzenGridColumn TItem="LessonNote" Property="TLMTLA" Title="TLMTLA" />
+            <RadzenGridColumn TItem="LessonNote" Property="INTRODUCTION" Title="Introduction" />
+            <RadzenGridColumn TItem="LessonNote" Property="COREPOINTS" Title="Core Points" />
+            <RadzenGridColumn TItem="LessonNote" Property="EVALUATIONREMARKS" Title="Evaluation Remarks" />
+        </Columns>
+    </RadzenGrid>
+}
+else
+{
+    <p>No lesson notes have been submitted yet.</p>
+}
+
+
+@code {
+    private IEnumerable<LessonNote> lessonNotes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        lessonNotes = await lessonNoteService.GetSubmittedLessonNotesAsync();
+    }
+
+
+    void OnRowSelect(LessonNote lessonNote)
+    {
+        DialogService.Close(lessonNote);
+    }
+
+    void CloseForm()
+    {
+        DialogService.Close(); // This closes the dialog
+    }
+}
