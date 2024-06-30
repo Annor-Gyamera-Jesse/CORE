@@ -1,4 +1,6 @@
 ﻿@page "/clockout"
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
 @using CORE.MODEL
 @using CORE.SERVICE
 @inject AuthService authService
@@ -6,6 +8,7 @@
 @using CORE.SERVICE.NOTIFICATION
 @using Radzen
 @using Radzen.Blazor
+@using System.Timers
 
 <style>
     .warning-message {
@@ -16,42 +19,36 @@
 </style>
 
 <div class="row">
-   
     <div class="col-md-4">
-         <RadzenFieldset Text="TEACHERS">
-        <RadzenListBox @bind-Value="selectedTeacherId" AllowFiltering="true" AllowVirtualization="true"
-                       Data="@teachersAttendance" TextProperty="TeacherFirstName" ValueProperty="TeachersAttendanceID"
-                       Style="width: 100%; height: 300px;" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                       Change="@(args => OnTeacherSelectionChange((int)args))">
-        </RadzenListBox>
+        <RadzenFieldset Text="TEACHERS">
+            <RadzenListBox @bind-Value="selectedTeacherId" AllowFiltering="true" AllowVirtualization="true"
+                           Data="@teachersAttendance" TextProperty="TeacherFirstName" ValueProperty="TeachersAttendanceID"
+                           Style="width: 100%; height: 300px;" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                           Change="@(args => OnTeacherSelectionChange((int)args))">
+            </RadzenListBox>
         </RadzenFieldset>
     </div>
-
-
     <div class="col-md-8">
         <form @ref="clockOutForm" @onsubmit="@ClockOut">
             <RadzenForm Data="@attendanceOutModel">
                 <RadzenField Property="SelectedTeacher" Title="Selected Teacher">
                     <RadzenTextBox @bind-Value="@attendanceOutModel.SelectedTeacher" ReadOnly="true"></RadzenTextBox>
                 </RadzenField>
-
                 <RadzenLabel Text="Clocked In At"/>
                 <RadzenField Property="ClockInTime" Title="Clock In Time">
                     <RadzenTextBox @bind-Value="@attendanceOutModel.ClockInTime" ReadOnly="true"></RadzenTextBox>
                 </RadzenField>
-
                 <RadzenLabel Text="Clock Out"/>
-                  <RadzenField Property="IsClockedOut" Title="Clocked Out">
-                  <RadzenSwitch @bind-Value="@attendanceOutModel.IsClockedOut"></RadzenSwitch>
+                <RadzenField Property="IsClockedOut" Title="Clocked Out">
+                    <RadzenSwitch @bind-Value="@attendanceOutModel.IsClockedOut"></RadzenSwitch>
                 </RadzenField>
-
                 <div class="text-right">
                     <RadzenButton Text="Clock Out" Click="@ClockOut" Disabled="!attendanceOutModel.IsClockedOut"></RadzenButton>
-                      @if (!attendanceOutModel.IsClockedOut)
-                        {
-                         <div class="warning-message">Please turn on the switch before submitting.</div>
-                        }
-                 </div>
+                    @if (!attendanceOutModel.IsClockedOut)
+                    {
+                        <div class="warning-message">Please turn on the switch before submitting.</div>
+                    }
+                </div>
             </RadzenForm>
         </form>
     </div>
@@ -61,6 +58,7 @@
     <thead>
         <tr>
             <th>Teacher First Name</th>
+            <th>Last Name</th>
             <th>Enable Switch</th>
             <th>Clock In</th>
             <th>Clock Out</th>
@@ -86,13 +84,14 @@
     ClockOutModel attendanceOutModel = new ClockOutModel();
     int selectedTeacherId;
     ElementReference clockOutForm;
-
-    // [Inject]
-    // protected IJSRuntime JSRuntime { get; set; }
+    private Timer timer;
+    private const string LastResetTimeKey = "lastResetTime";
 
     protected override async Task OnInitializedAsync()
     {
         teachersAttendance = await authService.GetTeacherAttendanceAsync();
+        await CheckAndResetAttendanceRecords();
+        SetTimer();
     }
 
     void OnTeacherSelectionChange(int selectedValue)
@@ -133,18 +132,48 @@
             if (saved)
             {
                 attendanceOutRecords.Add(newRecord);
-                // Console.WriteLine($"Teacher: {newRecord.TeacherFirstName}, Clock Out: {newRecord.ClockOUT}");
-                Notify.ShowNotification($"Teacher", "{newRecord.TeacherFirstName}, Clock Out: {newRecord.ClockOUT}", NotificationSeverity.Success);
+                Notify.ShowNotification($"Teacher", $"{newRecord.TeacherFirstName}, Clock Out: {newRecord.ClockOUT}", NotificationSeverity.Success);
 
                 attendanceOutModel = new ClockOutModel();
                 StateHasChanged();
             }
             else
             {
-                // Console.WriteLine("Failed to clock out.");
                 Notify.ShowNotification("ALERT", "Failed to clock out.", NotificationSeverity.Error);
             }
         }
+    }
+
+    private void SetTimer()
+    {
+        timer = new Timer(86400000); // 24 hours in milliseconds
+        timer.Elapsed += async (sender, e) => await CheckAndResetAttendanceRecords();
+        timer.Start();
+    }
+
+    private async Task CheckAndResetAttendanceRecords()
+    {
+        var lastResetTimeString = await JSRuntime.InvokeAsync<string>("localStorage.getItem", LastResetTimeKey);
+        DateTime lastResetTime;
+        if (DateTime.TryParse(lastResetTimeString, out lastResetTime))
+        {
+            if ((DateTime.Now - lastResetTime).TotalHours >= 24)
+            {
+                ResetAttendanceRecords();
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", LastResetTimeKey, DateTime.Now.ToString());
+            }
+        }
+        else
+        {
+            // First time setup
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", LastResetTimeKey, DateTime.Now.ToString());
+        }
+    }
+
+    private void ResetAttendanceRecords()
+    {
+        attendanceOutRecords.Clear();
+        StateHasChanged(); // Update the UI
     }
 
     public class ClockOutModel
