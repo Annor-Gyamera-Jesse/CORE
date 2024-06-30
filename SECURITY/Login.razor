@@ -53,6 +53,7 @@
 
         if (user != null && user.Password == Password)
         {
+            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userID", user.UserID.ToString());
             await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userName", user.UserName);
             NavigationManager.NavigateTo("/landingpage");
 

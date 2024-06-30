@@ -1679,5 +1679,125 @@ namespace CORE.SERVICE
             return new List<SchoolCourse>();
         }
 
+        //------------------Teachers-Task------------------------------//
+
+        public async Task<IEnumerable<TeachersTask>> GetAllTasksAsync()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    return await connection.QueryAsync<TeachersTask>("SELECT * FROM SchoolManagement.TeachersTask");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching tasks from database.", ex);
+            }
+        }
+
+        public async Task<TeachersTask> GetTaskByIdAsync(int taskId)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    return await connection.QuerySingleOrDefaultAsync<TeachersTask>(
+                        "SELECT * FROM SchoolManagement.TeachersTask WHERE TeacherTaskID = @TaskId", new { TaskId = taskId });
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error fetching task with ID {taskId} from database.", ex);
+            }
+        }
+
+        public async Task AddTaskAsync(TeachersTask task)
+        {
+            try
+            {
+                var userExists = await DoesUserExistAsync(task.UserID);
+                if (!userExists)
+                {
+                    throw new Exception($"User with ID {task.UserID} does not exist.");
+                }
+
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = @"
+                INSERT INTO SchoolManagement.TeachersTask (TeachersName, TeacherTask, SwitchBar, StartDate, EndDate, Status, UserID)
+                VALUES (@TeachersName, @TeacherTask, @SwitchBar, @StartDate, @EndDate, @Status, @UserID);
+            ";
+
+                    await connection.ExecuteAsync(query, task);
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Exception: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                throw;
+            }
+        }
+
+        private async Task<bool> DoesUserExistAsync(int userId)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = "SELECT COUNT(*) FROM SchoolManagement.Users WHERE UserID = @UserId";
+                    var count = await connection.ExecuteScalarAsync<int>(query, new { UserId = userId });
+
+                    return count > 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task UpdateTaskAsync(TeachersTask task)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.ExecuteAsync(
+                        "UPDATE SchoolManagement.TeachersTask SET TeachersName = @TeachersName, TeacherTask = @TeacherTask, SwitchBar = @SwitchBar, StartDate = @StartDate, EndDate = @EndDate, Status = @Status, UserID = @UserID WHERE TeacherTaskID = @TeacherTaskID",
+                        task);
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw new Exception("Error updating task in database.", ex);
+            }
+        }
+
+        public async Task DeleteTaskAsync(int taskId)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.ExecuteAsync("DELETE FROM SchoolManagement.TeachersTask WHERE TeacherTaskID = @TaskId", new { TaskId = taskId });
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw new Exception("Error deleting task from database.", ex);
+            }
+        }
+
     }
 }
