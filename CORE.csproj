@@ -7,6 +7,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Content Remove="Pages\AdminDialogs\AddEditTaskDialog.razor" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Dapper" Version="2.1.28" />
 		<PackageReference Include="FastReport.Core" Version="2024.2.9-demo" />
 
@@ -20,6 +24,18 @@
 
 	<ItemGroup>
 		<Folder Include="Pages\COMPONENTS\DIALOG SERVICE\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <UpToDateCheckInput Remove="Pages\AdminDialogs\AddEditTaskDialog.razor" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <_ContentIncludedByDefault Remove="Pages\AdminDialogs\AddEditTaskDialog.razor" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="Pages\AdminDialogs\AddEditTaskDialog.razor" />
 	</ItemGroup>
 
 </Project>

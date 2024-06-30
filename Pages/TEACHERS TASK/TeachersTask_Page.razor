@@ -1,0 +1,222 @@
+﻿@page "/teacher-tasks"
+@inject AuthService TeachersTaskService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+@using CORE.MODEL
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using System.Timers
+
+<style>
+    .container {
+        margin-top: 5rem;
+    }
+
+    .card-spacing {
+        background-color: #f0f8ff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+
+    .card-header {
+        background-color: #007bff;
+        color: white;
+        padding: 1rem;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-control {
+        width: 100%;
+    }
+
+    .table th, .table td {
+        vertical-align: middle;
+    }
+
+    .status-active {
+        color: green;
+    }
+
+    .status-inactive {
+        color: red;
+    }
+
+    .margin-bottom {
+        margin-bottom: 2rem; /* Add space between cards */
+    }
+</style>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 margin-bottom">
+            <div class="card-spacing">
+                <div class="card-header">
+                    <h3>Teacher Task Management</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <RadzenLabel Text="Teacher's Name" />
+                        <RadzenTextBox @bind-Value="task.TeachersName" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <RadzenLabel Text="Teacher Task" />
+                        <RadzenTextBox @bind-Value="task.TeacherTask" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <RadzenLabel Text="Enable" />
+                        <RadzenCheckBox @bind-Value="task.SwitchBar" />
+                    </div>
+                    <div class="form-group">
+                        <RadzenLabel Text="Start Date" />
+                        <RadzenDatePicker @bind-Value="task.StartDate" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <RadzenLabel Text="End Date" />
+                        <RadzenDatePicker @bind-Value="task.EndDate" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <RadzenLabel Text="Status" />
+                        <RadzenDropDown @bind-Value="task.Status" Data="@(Enum.GetValues(typeof(CORE.TaskStatus)))" class="form-control" />
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <RadzenButton Text="Save" Click="SaveTask" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary" Style="margin-right: 10px;" />
+                        <RadzenButton Text="Reset" Click="ResetForm" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div class="card-spacing">
+                <div class="card-header">
+                    <h3>Task List</h3>
+                </div>
+                <div class="card-body">
+                    <RadzenGrid Data="@tasks" TItem="TeachersTask" RowSelect="@OnRowSelect" class="table">
+                        <Columns>
+                            <RadzenGridColumn TItem="TeachersTask" Property="TeachersName" Title="Teacher's Name" />
+                            <RadzenGridColumn TItem="TeachersTask" Property="TeacherTask" Title="Task" />
+                            <RadzenGridColumn TItem="TeachersTask" Property="StartDate" Title="Start Date" />
+                            <RadzenGridColumn TItem="TeachersTask" Property="EndDate" Title="End Date" />
+                            <RadzenGridColumn TItem="TeachersTask" Property="Status" Title="Status" />
+                            <RadzenGridColumn TItem="TeachersTask" Title="Enable">
+                                <Template Context="task">
+                                    <span class="@(task.SwitchBar ? "status-active" : "status-inactive")">
+                                        @(task.SwitchBar ? "Active" : "Inactive")
+                                    </span>
+                                </Template>
+                            </RadzenGridColumn>
+                            <RadzenGridColumn TItem="TeachersTask">
+                                <Template Context="task">
+                                    <div class="action-buttons">
+                                        <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Secondary" Click="@(args => EditTask(task))" />
+                                        <RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Click="@(args => DeleteTask(task.TeacherTaskID))" />
+                                    </div>
+                                </Template>
+                            </RadzenGridColumn>
+                        </Columns>
+                    </RadzenGrid>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<TeachersTask> tasks = new List<TeachersTask>();
+    private TeachersTask task = new TeachersTask();
+    private List<UserRoleViewModel> users = new List<UserRoleViewModel>();
+    private Timer timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        tasks = (await TeachersTaskService.GetAllTasksAsync()).ToList();
+        users = (await TeachersTaskService.GetUsersAsync()).ToList();
+        await UpdateTaskStatuses();
+        SetTimer();
+    }
+
+    private void SetTimer()
+    {
+        timer = new Timer(86400000); // 24 hours in milliseconds
+        timer.Elapsed += async (sender, e) => await UpdateTaskStatuses();
+        timer.Start();
+    }
+
+    private async Task UpdateTaskStatuses()
+    {
+        foreach (var task in tasks)
+        {
+            if (task.EndDate < DateTime.Today)
+            {
+                task.Status = CORE.TaskStatus.Ended; //TaskStatus has an Ended status
+                task.SwitchBar = false;
+                await TeachersTaskService.UpdateTaskAsync(task);
+            }
+        }
+
+        tasks = (await TeachersTaskService.GetAllTasksAsync()).ToList();
+        InvokeAsync(StateHasChanged); // Update the UI
+    }
+
+    private async Task SaveTask()
+    {
+        var userIDString = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userID");
+
+        if (int.TryParse(userIDString, out int userID))
+        {
+            task.UserID = userID;
+
+            try
+            {
+                if (task.TeacherTaskID == 0)
+                {
+                    await TeachersTaskService.AddTaskAsync(task);
+                    Notify.ShowNotification("Success", "Task added successfully!", NotificationSeverity.Success);
+                }
+                else
+                {
+                    await TeachersTaskService.UpdateTaskAsync(task);
+                    Notify.ShowNotification("Success", "Task updated successfully!", NotificationSeverity.Success);
+                }
+                tasks = (await TeachersTaskService.GetAllTasksAsync()).ToList();
+                ResetForm();
+            }
+            catch (Exception ex)
+            {
+                Notify.ShowNotification("Error", $"Failed to save task. {ex.Message}", NotificationSeverity.Error);
+            }
+        }
+        else
+        {
+            Notify.ShowNotification("Error", "Failed to retrieve valid user ID from session.", NotificationSeverity.Error);
+        }
+    }
+
+    private void ResetForm()
+    {
+        task = new TeachersTask();
+    }
+
+    private void EditTask(TeachersTask selectedTask)
+    {
+        task = selectedTask;
+    }
+
+    private async Task DeleteTask(int taskId)
+    {
+        await TeachersTaskService.DeleteTaskAsync(taskId);
+        tasks = (await TeachersTaskService.GetAllTasksAsync()).ToList();
+        Notify.ShowNotification("Success", "Task deleted successfully!", NotificationSeverity.Success);
+    }
+
+    private void OnRowSelect(TeachersTask selectedTask)
+    {
+        task = selectedTask;
+    }
+}
