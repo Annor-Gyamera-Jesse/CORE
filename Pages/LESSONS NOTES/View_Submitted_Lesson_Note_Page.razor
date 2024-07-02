@@ -4,27 +4,46 @@
 @using CORE.MODEL
 @inject DialogService DialogService
 
-
 @if (lessonNotes != null && lessonNotes.Any())
 {
-    <RadzenGrid Data="@lessonNotes" TItem="LessonNote" RowSelect="@OnRowSelect" Style="height: 400px;">
+    <RadzenGrid Data="@lessonNotes" TItem="LessonNote" AllowPaging="true" PageSize="10" AllowSorting=true AllowColumnResize=true EditMode="DataGridEditMode.Single" Style="height: 400px;">
         <Columns>
-            <RadzenGridColumn TItem="LessonNote" Property="UserName" Title="User" />
-            <RadzenGridColumn TItem="LessonNote" Property="SchoolCourse" Title="School Course" />
-            <RadzenGridColumn TItem="LessonNote" Property="Topic" Title="Topic" />
-            <RadzenGridColumn TItem="LessonNote" Property="OBJECTIVES" Title="Objectives" />
-            <RadzenGridColumn TItem="LessonNote" Property="TLMTLA" Title="TLMTLA" />
-            <RadzenGridColumn TItem="LessonNote" Property="INTRODUCTION" Title="Introduction" />
-            <RadzenGridColumn TItem="LessonNote" Property="COREPOINTS" Title="Core Points" />
-            <RadzenGridColumn TItem="LessonNote" Property="EVALUATIONREMARKS" Title="Evaluation Remarks" />
+            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="UserName" Title="User" />
+            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SchoolCourse" Title="School Course" />
+            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="Topic" Title="Topic" />
+            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="OBJECTIVES" Title="Objectives" />
+            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="TLMTLA" Title="TLMTLA" />
+            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="INTRODUCTION" Title="Introduction" />
+            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="COREPOINTS" Title="Core Points" />
+            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="EVALUATIONREMARKS" Title="Evaluation Remarks" />
+            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Title="Status">
+                <Template Context="note">
+                    @if (note.Status == Lesson_Note_Dialog_Status.New)
+                    {
+                        <span style="color: green; font-weight: bold;">New</span>
+                    }
+                    else if (note.Status == Lesson_Note_Dialog_Status.Reject)
+                    {
+                        <span style="color: red; font-weight: bold;">Rejected</span>
+                    }
+                    else if (note.Status == Lesson_Note_Dialog_Status.Accepted)
+                    {
+                        <span style="color: blue; font-weight: bold;">Accepted</span>
+                    }
+                </Template>
+            </RadzenGridColumn>
         </Columns>
     </RadzenGrid>
+    <div class="row mt-2">
+        <div class="col-md-4 d-flex justify-content-end">
+            <RadzenButton Click="CloseForm" ButtonStyle="ButtonStyle.Danger" Text="Close" Icon="close" Style="margin-bottom: 10px; width: 150px ;float:right; padding-right:15px" />
+        </div>
+    </div>
 }
 else
 {
     <p>No lesson notes have been submitted yet.</p>
 }
-
 
 @code {
     private IEnumerable<LessonNote> lessonNotes;
@@ -32,12 +51,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         lessonNotes = await lessonNoteService.GetSubmittedLessonNotesAsync();
-    }
-
-
-    void OnRowSelect(LessonNote lessonNote)
-    {
-        DialogService.Close(lessonNote);
     }
 
     void CloseForm()
