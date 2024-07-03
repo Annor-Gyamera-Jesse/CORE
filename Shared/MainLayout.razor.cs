@@ -57,7 +57,7 @@ namespace CORE.Shared
 
             // Clear the user name from session storage
             await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "userName");
-
+            await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "userID");
             // Redirect to the login page after logout
             NavigationManager.NavigateTo("/login");
         }
