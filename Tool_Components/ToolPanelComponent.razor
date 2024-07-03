@@ -1,0 +1,18 @@
+﻿
+
+<style>
+
+    .toolset-btn {
+        margin-bottom: 5px;
+        width: 100%;
+        font-size: 14px
+    }
+</style>
+
+<div class="row mt-2">
+<RadzenButton Text="New Lesson Notes" Icon="assignment" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Secondary" Click=@OnOpenSubmittedLessonNotesDialog />
+</div>
+
+@code{
+    [Parameter] public Action OnOpenSubmittedLessonNotesDialog { get; set; }
+}
