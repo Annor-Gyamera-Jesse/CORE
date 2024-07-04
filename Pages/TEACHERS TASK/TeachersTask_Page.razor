@@ -1,4 +1,6 @@
 ﻿@page "/teacher-tasks"
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
 @inject AuthService TeachersTaskService
 @inject NotificationMessageService Notify
 @inject IJSRuntime JSRuntime
@@ -82,7 +84,7 @@
                     </div>
                     <div class="form-group">
                         <RadzenLabel Text="Status" />
-                        <RadzenDropDown @bind-Value="task.Status" Data="@(Enum.GetValues(typeof(CORE.TaskStatus)))" class="form-control" />
+                        <RadzenDropDown @bind-Value="task.Status" Data="@(Enum.GetValues(typeof(MODEL.TaskStatus)))" class="form-control" />
                     </div>
                     <div class="d-flex justify-content-end">
                         <RadzenButton Text="Save" Click="SaveTask" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary" Style="margin-right: 10px;" />
@@ -154,7 +156,7 @@
         {
             if (task.EndDate < DateTime.Today)
             {
-                task.Status = CORE.TaskStatus.Ended; //TaskStatus has an Ended status
+                task.Status = MODEL.TaskStatus.Ended; //TaskStatus has an Ended status
                 task.SwitchBar = false;
                 await TeachersTaskService.UpdateTaskAsync(task);
             }

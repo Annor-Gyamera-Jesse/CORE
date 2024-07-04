@@ -67,5 +67,6 @@ app.UseRouting();
 app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+//app.MapFallbackToFile("index.html");
 
 app.Run();

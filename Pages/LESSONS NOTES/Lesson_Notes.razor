@@ -2,11 +2,27 @@
 @using CORE.Pages.LESSON_NOTE
 @using CORE.MODEL
 @using CORE.SERVICE
+@using CORE.Tool_Components
 @inject AuthService authService
 @inject IJSRuntime JSRuntime
+@inherits Lesson_Notes_Codebehind
 
 @* Adding custom CSS *@
 <style>
+    .rz-fieldset-content {
+        padding: 0;
+        /*margin-left:2em;*/
+    }
+    .right-panel {
+        position: absolute;
+        top: 40px;
+        right: 20px;
+        width: 200px;
+        height: 400px;  /*Adjust the height as needed */
+        border-radius: 8px;
+       /*  background-color: #f8f9fa; */
+      /*  overflow-y: auto; */ /* Add scroll if content overflows */
+    }
     .container {
         max-width: 800px;
         margin: auto;
@@ -120,12 +136,28 @@
         }
     </div>
 </RadzenFieldset>
+<div class="right-panel">
+    <div class="row">
+    <div class="row mt-2">
+            <div class="col-md">
+                @* dialog *@
+    <ToolPanelComponent OnOpenSubmittedLessonNotesDialog="SubmittedLessonNotesDialog" />
+    </div>
+    </div>
+    </div>
+</div>
+
 
 @code {
     LessonNote lessonNote = new LessonNote();
     string uploadMessage = "";
     List<SchoolCourse> courseList = new List<SchoolCourse>();
     int userId; // Add a field to store the UserId
+
+    async void SubmittedLessonNotesDialog()
+    {
+        await OpenSubmittedLessonNotesDialog();
+    }
 
     protected override async Task OnInitializedAsync()
     {
