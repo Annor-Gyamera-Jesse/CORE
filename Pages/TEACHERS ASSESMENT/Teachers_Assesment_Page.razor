@@ -6,47 +6,62 @@
 @inject NotificationMessageService Notify
 @inject IJSRuntime JSRuntime
 
+<RadzenCard Style="margin: 20px; padding: 20px;">
+    <RadzenHeading Size="H1" Text="Teachers' Assessment" Style="text-align: center; margin-bottom: 20px;" />
+    <RadzenPanel Style="background: #f4f4f9; padding: 20px; border-radius: 10px;">
+        <RadzenRow>
+            <RadzenColumn Size="6">
+                <RadzenDropDown @bind-Value="selectedClass" Data="@classes" TextProperty="ClassID" ValueProperty="ClassID" Placeholder="Select a class" Change="@(args => OnClassChange(args))" Style="width: 100%; margin-bottom: 10px;" />
+            </RadzenColumn>
+            <RadzenColumn Size="6">
+                <RadzenDropDown @bind-Value="selectedStudent" Data="@students" TextProperty="FullName" ValueProperty="StudentID" Placeholder="Select a student" Style="width: 100%; margin-bottom: 10px;" />
+            </RadzenColumn>
+        </RadzenRow>
 
-<RadzenDropDown @bind-Value="selectedClass" Data="@classes" TextProperty="ClassID" ValueProperty="ClassID" Placeholder="Select a class" Change="@(args => OnClassChange(args))" Style="width: 200px;" />
-<RadzenDropDown @bind-Value="selectedStudent" Data="@students" TextProperty="FullName" ValueProperty="StudentID" Placeholder="Select a student" Style="width: 200px;" />
+        @if (selectedStudent != 0)
+        {
+            <RadzenFieldset Text="Assessment Details" Style="margin-top: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); padding: 20px;">
+                <RadzenRow>
+                    <RadzenColumn Size="6">
+                        <RadzenLabel Text="TEST1 (15)" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenNumeric @bind-Value="assessment.TEST1" Style="width: 100%; margin-bottom: 10px;" Change="@((int value) => OnScoreChange())" />
 
-@if (selectedStudent != 0)
-{
-    <RadzenFieldset Text="Assessment Details" Style="width: 400px;">
-        <RadzenLabel Text="TEST1 (15)" />
-        <RadzenNumeric @bind-Value="assessment.TEST1" Style="width: 100%;" Change="@((int value) => OnScoreChange())" />
+                        <RadzenLabel Text="TEST2 (15)" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenNumeric @bind-Value="assessment.TEST2" Style="width: 100%; margin-bottom: 10px;" Change="@((int value) => OnScoreChange())" />
 
-        <RadzenLabel Text="TEST2 (15)" />
-        <RadzenNumeric @bind-Value="assessment.TEST2" Style="width: 100%;" Change="@((int value) => OnScoreChange())" />
+                        <RadzenLabel Text="GROUPWORK (20)" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenNumeric @bind-Value="assessment.GROUPWORK" Style="width: 100%; margin-bottom: 10px;" Change="@((int value) => OnScoreChange())" />
 
-        <RadzenLabel Text="GROUPWORK (20)" />
-        <RadzenNumeric @bind-Value="assessment.GROUPWORK" Style="width: 100%;" Change="@((int value) => OnScoreChange())" />
+                        <RadzenLabel Text="HOMEWORK" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenNumeric @bind-Value="assessment.HOMEWORK" Style="width: 100%; margin-bottom: 10px;" Change="@((int value) => OnScoreChange())" />
 
-        <RadzenLabel Text="HOMEWORK" />
-        <RadzenNumeric @bind-Value="assessment.HOMEWORK" Style="width: 100%;" Change="@((int value) => OnScoreChange())" />
+                        <RadzenLabel Text="CLASSTEST" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenNumeric @bind-Value="assessment.CLASSTEST" Style="width: 100%; margin-bottom: 10px;" Change="@((int value) => OnScoreChange())" />
 
-        <RadzenLabel Text="CLASSTEST" />
-        <RadzenNumeric @bind-Value="assessment.CLASSTEST" Style="width: 100%;" Change="@((int value) => OnScoreChange())" />
+                        <RadzenLabel Text="Total (50)" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenNumeric @bind-Value="assessment.TOTAL_X" Disabled="true" Style="width: 100%; margin-bottom: 10px;" />
+                    </RadzenColumn>
 
-        <RadzenLabel Text="Total (50)" />
-        <RadzenNumeric @bind-Value="assessment.TOTAL_X" Disabled="true" Style="width: 100%;" />
+                    <RadzenColumn Size="6">
+                        <RadzenLabel Text="EXAMS_SCORE (100)" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenNumeric @bind-Value="assessment.EXAMS_SCORE" Style="width: 100%; margin-bottom: 10px;" Change="@((int value) => OnExamScoreChange())" />
 
-        <RadzenLabel Text="EXAMS_SCORE (100)" />
-        <RadzenNumeric @bind-Value="assessment.EXAMS_SCORE" Style="width: 100%;" Change="@((int value) => OnExamScoreChange())" />
+                        <RadzenLabel Text="Y" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenNumeric @bind-Value="y" Disabled="true" Style="width: 100%; margin-bottom: 10px;" />
 
-        <RadzenLabel Text="Y" />
-        <RadzenNumeric @bind-Value="y" Disabled="true" Style="width: 100%;" />
+                        <RadzenLabel Text="X_Y" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenNumeric @bind-Value="x_y" Disabled="true" Style="width: 100%; margin-bottom: 10px;" />
 
-        <RadzenLabel Text="X_Y" />
-        <RadzenNumeric @bind-Value="x_y" Disabled="true" Style="width: 100%;" />
+                        <RadzenLabel Text="POSITION" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenNumeric @bind-Value="assessment.POSITION" Style="width: 100%; margin-bottom: 10px;" />
+                    </RadzenColumn>
+                </RadzenRow>
 
-        <RadzenLabel Text="POSITION" />
-        <RadzenNumeric @bind-Value="assessment.POSITION" Style="width: 100%;" />
-
-        <RadzenButton Text="Save" Click="@SaveAssessment" />
-    </RadzenFieldset>
-}
-
+                <RadzenButton Text="Save" Click="@SaveAssessment" Style="margin-top: 20px; width: 100%;" />
+            </RadzenFieldset>
+        }
+    </RadzenPanel>
+</RadzenCard>
 
 @code {
     private List<Class> classes;
@@ -56,14 +71,13 @@
     private TeachersAssessment assessment = new TeachersAssessment();
     private double y;
     private double x_y;
-    private int userId; // Add a field to store the UserId
-    private string uploadMessage; // Add a variable to store the upload message
+    private int userId;
+    private string uploadMessage;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // Fetch the logged-in user's ID
             var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", new object[] { "userName" });
             var user = await teacherAssessmentService.GetUserByUsernameAsync(username);
             if (user != null)
@@ -82,7 +96,7 @@
     private async Task OnClassChange(object value)
     {
         selectedClass = (string)value;
-        selectedStudent = 0; // Reset selected student
+        selectedStudent = 0;
         students = (await teacherAssessmentService.GetStudentsByClasssAsync(selectedClass)).ToList();
     }
 
@@ -116,7 +130,7 @@
             assessment.ClassID = selectedClass;
             assessment.Y = y;
             assessment.X_Y = x_y;
-            assessment.UserID = userId; // Assign the UserID of the logged-in user
+            assessment.UserID = userId;
 
             var result = await teacherAssessmentService.SaveAssessmentAsync(assessment);
 
@@ -126,7 +140,7 @@
                 ResetFields();
             }
             else
-            {                
+            {
                 Notify.ShowNotification("Error", $"Failed to submit assessment.", NotificationSeverity.Error);
             }
         }
