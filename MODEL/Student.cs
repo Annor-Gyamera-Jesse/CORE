@@ -23,6 +23,8 @@ namespace CORE.MODEL
         public string GuardianSecondContact { get; set; }
         public bool EnableSwitch { get; set; }
         public string StudentMedicalReport { get; set; }
+        public int UserID { get; set; }
+        public string FullName => $"{StudentFirstName} {StudentLastName}";
 
     }
 

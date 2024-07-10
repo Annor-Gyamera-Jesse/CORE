@@ -1,0 +1,146 @@
+﻿@page "/teachers-assessment"
+@using CORE.MODEL
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService teacherAssessmentService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+
+
+<RadzenDropDown @bind-Value="selectedClass" Data="@classes" TextProperty="ClassID" ValueProperty="ClassID" Placeholder="Select a class" Change="@(args => OnClassChange(args))" Style="width: 200px;" />
+<RadzenDropDown @bind-Value="selectedStudent" Data="@students" TextProperty="FullName" ValueProperty="StudentID" Placeholder="Select a student" Style="width: 200px;" />
+
+@if (selectedStudent != 0)
+{
+    <RadzenFieldset Text="Assessment Details" Style="width: 400px;">
+        <RadzenLabel Text="TEST1 (15)" />
+        <RadzenNumeric @bind-Value="assessment.TEST1" Style="width: 100%;" Change="@((int value) => OnScoreChange())" />
+
+        <RadzenLabel Text="TEST2 (15)" />
+        <RadzenNumeric @bind-Value="assessment.TEST2" Style="width: 100%;" Change="@((int value) => OnScoreChange())" />
+
+        <RadzenLabel Text="GROUPWORK (20)" />
+        <RadzenNumeric @bind-Value="assessment.GROUPWORK" Style="width: 100%;" Change="@((int value) => OnScoreChange())" />
+
+        <RadzenLabel Text="HOMEWORK" />
+        <RadzenNumeric @bind-Value="assessment.HOMEWORK" Style="width: 100%;" Change="@((int value) => OnScoreChange())" />
+
+        <RadzenLabel Text="CLASSTEST" />
+        <RadzenNumeric @bind-Value="assessment.CLASSTEST" Style="width: 100%;" Change="@((int value) => OnScoreChange())" />
+
+        <RadzenLabel Text="Total (50)" />
+        <RadzenNumeric @bind-Value="assessment.TOTAL_X" Disabled="true" Style="width: 100%;" />
+
+        <RadzenLabel Text="EXAMS_SCORE (100)" />
+        <RadzenNumeric @bind-Value="assessment.EXAMS_SCORE" Style="width: 100%;" Change="@((int value) => OnExamScoreChange())" />
+
+        <RadzenLabel Text="Y" />
+        <RadzenNumeric @bind-Value="y" Disabled="true" Style="width: 100%;" />
+
+        <RadzenLabel Text="X_Y" />
+        <RadzenNumeric @bind-Value="x_y" Disabled="true" Style="width: 100%;" />
+
+        <RadzenLabel Text="POSITION" />
+        <RadzenNumeric @bind-Value="assessment.POSITION" Style="width: 100%;" />
+
+        <RadzenButton Text="Save" Click="@SaveAssessment" />
+    </RadzenFieldset>
+}
+
+
+@code {
+    private List<Class> classes;
+    private List<Student> students;
+    private string selectedClass;
+    private int selectedStudent;
+    private TeachersAssessment assessment = new TeachersAssessment();
+    private double y;
+    private double x_y;
+    private int userId; // Add a field to store the UserId
+    private string uploadMessage; // Add a variable to store the upload message
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Fetch the logged-in user's ID
+            var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", new object[] { "userName" });
+            var user = await teacherAssessmentService.GetUserByUsernameAsync(username);
+            if (user != null)
+            {
+                userId = user.UserID;
+            }
+
+            classes = (await teacherAssessmentService.GetClasssesAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"Error in OnInitializedAsync: {ex.Message}", NotificationSeverity.Error);
+        }
+    }
+
+    private async Task OnClassChange(object value)
+    {
+        selectedClass = (string)value;
+        selectedStudent = 0; // Reset selected student
+        students = (await teacherAssessmentService.GetStudentsByClasssAsync(selectedClass)).ToList();
+    }
+
+    private void OnScoreChange()
+    {
+        assessment.TOTAL_X = assessment.TEST1 + assessment.TEST2 + assessment.GROUPWORK + assessment.HOMEWORK + assessment.CLASSTEST;
+        if (assessment.TOTAL_X > 50)
+        {
+            assessment.TOTAL_X = 50;
+        }
+        CalculateXY();
+    }
+
+    private void OnExamScoreChange()
+    {
+        CalculateXY();
+    }
+
+    private void CalculateXY()
+    {
+        y = (assessment.EXAMS_SCORE / 100.0) * 50;
+        x_y = assessment.TOTAL_X + y;
+    }
+
+    private async Task SaveAssessment()
+    {
+        try
+        {
+            assessment.StudentID = selectedStudent;
+            assessment.StudentName = students.FirstOrDefault(s => s.StudentID == selectedStudent)?.FullName;
+            assessment.ClassID = selectedClass;
+            assessment.Y = y;
+            assessment.X_Y = x_y;
+            assessment.UserID = userId; // Assign the UserID of the logged-in user
+
+            var result = await teacherAssessmentService.SaveAssessmentAsync(assessment);
+
+            if (result > 0)
+            {
+                Notify.ShowNotification("Success", "Assessment submitted successfully!", NotificationSeverity.Success);
+                ResetFields();
+            }
+            else
+            {                
+                Notify.ShowNotification("Error", $"Failed to submit assessment.", NotificationSeverity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"An error occurred while submitting the assessment: {ex.Message}", NotificationSeverity.Info);
+        }
+    }
+
+    private void ResetFields()
+    {
+        assessment = new TeachersAssessment();
+        selectedStudent = 0;
+        y = 0;
+        x_y = 0;
+    }
+}

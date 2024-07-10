@@ -1,11 +1,6 @@
 
 using Dapper;
-
 using CORE.MODEL;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Data;
-using System.Security.Claims;
 using System.Data.SqlClient;
 using CORE.Pages.LESSON_NOTE;
 
@@ -1813,5 +1808,38 @@ namespace CORE.SERVICE
                 return lessonNotes;
             }
         }
+
+        //----For Teacher Assesment--//
+
+        public async Task<IEnumerable<Class>> GetClasssesAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var sql = "SELECT * FROM SchoolManagement.Class";
+                return await connection.QueryAsync<Class>(sql);
+            }
+        }
+
+        public async Task<IEnumerable<Student>> GetStudentsByClasssAsync(string classID)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var sql = "SELECT * FROM SchoolManagement.Students WHERE ClassID = @ClassID";
+                return await connection.QueryAsync<Student>(sql, new { ClassID = classID });
+            }
+        }
+
+        public async Task<int> SaveAssessmentAsync(TeachersAssessment assessment)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var sql = @"
+            INSERT INTO SchoolManagement.TeachersAssesment (StudentName, ClassID, TEST1, TEST2, GROUPWORK, HOMEWORK, CLASSTEST, TOTAL_X, EXAMS_SCORE, Y, X_Y, POSITION, UserID)
+            VALUES (@StudentName, @ClassID, @TEST1, @TEST2, @GROUPWORK, @HOMEWORK, @CLASSTEST, @TOTAL_X, @EXAMS_SCORE, @Y, @X_Y, @POSITION, @UserID)";
+
+                return await connection.ExecuteAsync(sql, assessment);
+            }
+        }
+
     }
 }
