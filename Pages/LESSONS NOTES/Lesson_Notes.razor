@@ -141,7 +141,7 @@
     <div class="row mt-2">
             <div class="col-md">
                 @* dialog *@
-    <ToolPanelComponent OnOpenSubmittedLessonNotesDialog="SubmittedLessonNotesDialog" />
+                <ToolPanelComponent OnOpenSubmittedLessonNotesDialog="SubmittedLessonNotesDialog" OnOpenAssesmentDialog="AssesmentDialog" />
     </div>
     </div>
     </div>
@@ -157,6 +157,11 @@
     async void SubmittedLessonNotesDialog()
     {
         await OpenSubmittedLessonNotesDialog();
+    }
+
+    async void AssesmentDialog()
+    {
+        await OpenAssesmentsDialog();
     }
 
     protected override async Task OnInitializedAsync()

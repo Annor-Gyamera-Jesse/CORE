@@ -18,6 +18,7 @@ builder.Services.AddServerSideBlazor().AddHubOptions(o =>
 });
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddScoped<NotificationMessageService>();

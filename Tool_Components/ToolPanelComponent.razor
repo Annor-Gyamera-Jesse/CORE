@@ -11,8 +11,11 @@
 
 <div class="row mt-2">
 <RadzenButton Text="New Lesson Notes" Icon="assignment" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Secondary" Click=@OnOpenSubmittedLessonNotesDialog />
+<RadzenButton Text="Assesment Sheet" Icon="assignment" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnOpenAssesmentDialog />
 </div>
 
 @code{
     [Parameter] public Action OnOpenSubmittedLessonNotesDialog { get; set; }
+
+    [Parameter] public Action OnOpenAssesmentDialog { get; set; }
 }
