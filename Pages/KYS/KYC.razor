@@ -1,0 +1,72 @@
+﻿@page "/kyc"
+@using CORE.MODEL
+@using CORE.SECURITY.LOADER
+@using CORE.SERVICE
+@inject AuthService authService
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen.Blazor
+@inject NotificationMessageService Notify
+
+<RadzenFieldset Text="Search For Student">
+    <div class="d-flex flex-row">
+        <RadzenTextBox @bind-Value="searchName" class="form-control" />
+    </div>
+    <div class="input-group-append">
+        <RadzenButton Click="@SearchStudent" Text="Search" ButtonStyle="ButtonStyle.Secondary" Icon="search" />
+    </div>
+</RadzenFieldset>
+
+@if (selectedStudent != null)
+{
+    <RadzenFieldset Text="Image">
+        @if (selectedStudent?.ImageData != null)
+        {
+            <img src="data:image/png;base64,@Convert.ToBase64String(selectedStudent.ImageData)" alt="Student Image" style="width: 150px; height: 150px;" />
+        }
+        else
+        {
+            <p>No image available</p>
+        }
+    </RadzenFieldset>
+
+    <RadzenFieldset Text="Student Details">
+        <RadzenTextBox @bind-Value="selectedStudent.StudentFirstName" Label="First Name" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.StudentLastName" Label="Last Name" Disabled="true" />
+        <RadzenDatePicker @bind-Value="selectedStudent.StudentDateOfBirth" Label="Date of Birth" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.StudentGender" Label="Gender" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.StudentAddress" Label="Address" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.StudentPhoneNumber" Label="Phone Number" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.StudentEmail" Label="Email" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.ClassID" Label="Class" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.GuardianFullName" Label="Guardian Full Name" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.GuardianGender" Label="Guardian Gender" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.GuardianHouseAddress" Label="Guardian House Address" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.GuardianWorkAddress" Label="Guardian Work Address" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.GuardianEmail" Label="Guardian Email" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.GuardianFirstContact" Label="Guardian First Contact" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.GuardianSecondContact" Label="Guardian Second Contact" Disabled="true" />
+        <RadzenTextBox @bind-Value="selectedStudent.StudentMedicalReport" Label="Medical Report" Disabled="true" />
+    </RadzenFieldset>
+}
+
+@code
+{
+    string searchName = "";
+    Student selectedStudent;
+
+    async Task SearchStudent()
+    {
+        try
+        {
+            // Call the service to search for the student by name
+            selectedStudent = await authService.GetStudentByNameAsync(searchName);
+
+            Notify.ShowNotification("Success", "Student details loaded successfully", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            selectedStudent = null;
+            Notify.ShowNotification("Error", $"Failed to search student. {ex.Message}", NotificationSeverity.Error);
+        }
+    }
+}
