@@ -5,8 +5,6 @@
 @inject IJSRuntime JSRuntime
 @inject NotificationService NotificationService
 
-<h3>Teacher's Timetable</h3>
-
 <RadzenGrid @ref="grid" Data="@timetables" TItem="AssignTeachersSchoolTimetable" AllowPaging="true" AllowSorting="true" PageSize="10">
     <Columns>
         <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="ClassID" Title="Class ID" />
