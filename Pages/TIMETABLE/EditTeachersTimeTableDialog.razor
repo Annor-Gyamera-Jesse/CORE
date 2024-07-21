@@ -7,43 +7,69 @@
 
 <PageTitle>Assign Teacher to Subject</PageTitle>
 
-<RadzenCard>
+<RadzenCard Style="max-width: 800px; margin: auto;">
     <ChildContent>
         <RadzenTemplateForm TItem="AssignTeachersSchoolTimetable" Data="@timetableEntry" Submit="@(async args => await OnSubmit(args))">
-            <RadzenFieldset Text="Assign Teacher to Subject">
+            <RadzenFieldset Text="Assign Teacher to Subject" Style="padding: 20px;">
                 <RadzenGrid>
                     <Columns>
                         <RadzenColumn>
-                            <RadzenDropDown @bind-Value="timetableEntry.TeacherID" Data="@teachers" TextProperty="TeacherFirstName" ValueProperty="TeacherID" Style="width: 100%" Placeholder="Select Teacher" />
+                            <RadzenDropDown @bind-Value="timetableEntry.TeacherID"
+                                            Data="@teachers"
+                                            TextProperty="TeacherFirstName"
+                                            ValueProperty="TeacherID"
+                                            Style="width: 100%; margin-bottom: 15px;"
+                                            Placeholder="Select Teacher"
+                                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" />
                         </RadzenColumn>
                         <RadzenColumn>
-                            <RadzenDropDown @bind-Value="timetableEntry.ClassID" Data="@classes" TextProperty="ClassID" ValueProperty="ClassID" Style="width: 100%" Placeholder="Select Class" />
+                            <RadzenDropDown @bind-Value="timetableEntry.ClassID"
+                                            Data="@classes"
+                                            TextProperty="ClassID"
+                                            ValueProperty="ClassID"
+                                            Style="width: 100%; margin-bottom: 15px;"
+                                            Placeholder="Select Class" />
                         </RadzenColumn>
                         <RadzenColumn>
-                            <RadzenDropDown @bind-Value="timetableEntry.SchoolCourseName" Data="@courses"
+                            <RadzenDropDown @bind-Value="timetableEntry.SchoolCourseName"
+                                            Data="@courses"
                                             TextProperty="SchoolCourseName"
                                             ValueProperty="SCID"
-                                            Style="width: 100%"
+                                            Style="width: 100%; margin-bottom: 15px;"
                                             Placeholder="Select Course" />
                         </RadzenColumn>
                         <RadzenColumn>
-                            <RadzenDropDown @bind-Value="timetableEntry.Period" Data="@periods" Style="width: 100%" Placeholder="Select Period" />
+                            <RadzenDropDown @bind-Value="timetableEntry.Period"
+                                            Data="@periods"
+                                            Style="width: 100%; margin-bottom: 15px;"
+                                            Placeholder="Select Period" />
                         </RadzenColumn>
                         <RadzenColumn>
-                            <RadzenTextBox @bind-Value="timetableEntry.Day" Style="width: 100%" Placeholder="Enter Day" />
+                            <RadzenTextBox @bind-Value="timetableEntry.Day"
+                                           Style="width: 100%; margin-bottom: 15px;"
+                                           Placeholder="Enter Day" />
                         </RadzenColumn>
                         <RadzenColumn>
-                            <RadzenDatePicker @bind-Value="timetableEntry.StartTime" Style="width: 100%" Placeholder="Select Start Time" />
+                            <RadzenDatePicker @bind-Value="timetableEntry.StartTime"
+                                              Style="width: 100%; margin-bottom: 15px;"
+                                              Placeholder="Select Start Time" />
                         </RadzenColumn>
                         <RadzenColumn>
-                            <RadzenDatePicker @bind-Value="timetableEntry.EndTime" Style="width: 100%" Placeholder="Select End Time" />
+                            <RadzenDatePicker @bind-Value="timetableEntry.EndTime"
+                                              Style="width: 100%; margin-bottom: 15px;"
+                                              Placeholder="Select End Time" />
                         </RadzenColumn>
                         <RadzenColumn>
-                            <RadzenTextBox @bind-Value="timetableEntry.Note" Style="width: 100%" Placeholder="Enter Note (Optional)" />
+                            <RadzenTextBox @bind-Value="timetableEntry.Note"
+                                           Style="width: 100%; margin-bottom: 15px;"
+                                           Placeholder="Enter Note (Optional)" />
                         </RadzenColumn>
                     </Columns>
                 </RadzenGrid>
-                <RadzenButton Text="Submit" Type="Submit" Style="margin-top: 10px;" />
+                <RadzenButton Text="Submit"
+                              Type="Submit"
+                              Style="width: 100%; margin-top: 20px; background-color: #007bff; color: white;"
+                              ButtonStyle="ButtonStyle.Primary" />
             </RadzenFieldset>
         </RadzenTemplateForm>
     </ChildContent>

@@ -1,24 +1,21 @@
-﻿@page "/timetable"
+﻿@page "/teacherstimetable"
 @using CORE.MODEL
 @using CORE.SERVICE
 @inject AuthService TimetableService
 
-<h3>School Timetable</h3>
-
-<RadzenGrid Data="@timetables" TItem="AssignTeachersSchoolTimetable">
+<RadzenGrid AllowPaging="true" AllowSorting="true" AllowColumnResize="true"PageSize="10" Data="@timetables" TItem="AssignTeachersSchoolTimetable">
     <Columns>
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="ClassSchedulingID" Title="ID" />
+     @*    <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="ClassSchedulingID" Title="ID" /> *@
         <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="ClassID" Title="Class ID" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="CourseID" Title="Course ID" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="PeriodID" Title="Period ID" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="Subjects" Title="Subjects" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="SchoolCourseName" Title="Subject" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="Period" Title="Period" />
         <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="Day" Title="Day" />
         <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="TeacherID" Title="Teacher ID" />
         <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="StartTime" Title="Start Time" />
         <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="EndTime" Title="End Time" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="UserID" Title="User ID" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="UserID" Title="Submitted By UserID" />
         <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="Note" Title="Note" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="RecDateCreated" Title="Date Created" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="RecDateCreated" Title="Date Created" FormatString="{0:MM/dd/yyyy HH:mm:ss}" />
     </Columns>
 </RadzenGrid>
 
