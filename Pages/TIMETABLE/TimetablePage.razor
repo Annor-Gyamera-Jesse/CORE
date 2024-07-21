@@ -1,0 +1,32 @@
+﻿@page "/timetable"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService TimetableService
+
+<h3>School Timetable</h3>
+
+<RadzenGrid Data="@timetables" TItem="SchoolTimetable">
+    <Columns>
+        <RadzenGridColumn TItem="SchoolTimetable" Property="ClassSchedulingID" Title="ID" />
+        <RadzenGridColumn TItem="SchoolTimetable" Property="ClassID" Title="Class ID" />
+        <RadzenGridColumn TItem="SchoolTimetable" Property="CourseID" Title="Course ID" />
+        <RadzenGridColumn TItem="SchoolTimetable" Property="PeriodID" Title="Period ID" />
+        <RadzenGridColumn TItem="SchoolTimetable" Property="Subjects" Title="Subjects" />
+        <RadzenGridColumn TItem="SchoolTimetable" Property="Day" Title="Day" />
+        <RadzenGridColumn TItem="SchoolTimetable" Property="TeacherID" Title="Teacher ID" />
+        <RadzenGridColumn TItem="SchoolTimetable" Property="StartTime" Title="Start Time" />
+        <RadzenGridColumn TItem="SchoolTimetable" Property="EndTime" Title="End Time" />
+        <RadzenGridColumn TItem="SchoolTimetable" Property="UserID" Title="User ID" />
+        <RadzenGridColumn TItem="SchoolTimetable" Property="Note" Title="Note" />
+        <RadzenGridColumn TItem="SchoolTimetable" Property="RecDateCreated" Title="Date Created" />
+    </Columns>
+</RadzenGrid>
+
+@code {
+    private IEnumerable<SchoolTimetable> timetables;
+
+    protected override async Task OnInitializedAsync()
+    {
+        timetables = await TimetableService.GetAllTimetablesAsync();
+    }
+}

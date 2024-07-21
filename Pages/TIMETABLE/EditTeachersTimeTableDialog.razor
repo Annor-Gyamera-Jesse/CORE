@@ -1,0 +1,116 @@
+﻿@page "/edit-teachers-dialog"
+@using CORE.MODEL
+@inject DialogService DialogService
+
+<style>
+    /* custom.css */
+    .form-container {
+        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    }
+
+        .form-container .row {
+            margin-bottom: 1rem;
+        }
+
+        .form-container .col-md-6 {
+            margin-bottom: 1rem;
+        }
+
+    .radzen-dropdown,
+    .radzen-textbox,
+    .radzen-datepicker {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        padding: 0.5rem;
+        font-size: 1rem;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .radzen-button {
+        background-color: #4CAF50; /* Green */
+        color: white;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        font-size: 1rem;
+    }
+
+        .radzen-button:hover {
+            background-color: #45a049;
+        }
+
+    .radzen-dropdown .ui-dropdown-panel {
+        border-radius: 8px;
+    }
+
+    .radzen-datepicker .ui-datepicker {
+        border-radius: 8px;
+    }
+
+    .radzen-textbox textarea {
+        border-radius: 8px;
+    }
+
+</style>
+
+
+<EditForm Model="@Assignment" OnValidSubmit="@HandleValidSubmit" class="form-container">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row">
+        <div class="col-md-6">
+            <RadzenDropDown @bind-Value="Assignment.ClassID" Data="@Classes" TextProperty="ClassID" ValueProperty="ClassID" Placeholder="Select Class" />
+        </div>
+        <div class="col-md-6">
+            <RadzenDropDown @bind-Value="Assignment.TeacherID" Data="@Teachers" TextProperty="TeacherName" ValueProperty="TeacherID" Placeholder="Select Teacher" />
+        </div>
+        <div class="col-md-6">
+            <RadzenDropDown @bind-Value="Assignment.CourseID" Data="@Courses" TextProperty="CourseName" ValueProperty="CourseID" Placeholder="Select Course" />
+        </div>
+        <div class="col-md-6">
+            <RadzenTextBox @bind-Value="Assignment.Day" Placeholder="Day (e.g., Monday)" />
+        </div>
+        <div class="col-md-6">
+            <RadzenDropDown @bind-Value="Assignment.Period" Data="@Periods" Placeholder="Select Period" />
+        </div>
+        <div class="col-md-6">
+            <RadzenDatePicker @bind-Value="Assignment.StartTime" Placeholder="Select Start Time" ShowTime="true" />
+        </div>
+        <div class="col-md-6">
+            <RadzenDatePicker @bind-Value="Assignment.EndTime" Placeholder="Select End Time" ShowTime="true" />
+        </div>
+        <div class="col-md-6">
+            <RadzenTextBox @bind-Value="Assignment.Note" Placeholder="Optional Note" />
+        </div>
+    </div>
+
+    <RadzenButton ButtonType="ButtonType.Submit" Text="Save" />
+</EditForm>
+
+@code {
+    [Parameter] public TeacherAssignment Assignment { get; set; }
+    [Parameter] public IEnumerable<Class> Classes { get; set; }
+    [Parameter] public IEnumerable<Course> Courses { get; set; }
+    [Parameter] public IEnumerable<TeachersRegistration> Teachers { get; set; }
+    public List<string> Periods { get; set; } = new List<string> { "First Period", "Second Period" };
+
+    protected override void OnInitialized()
+    {
+        if (Assignment == null)
+        {
+            Assignment = new TeacherAssignment();
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        DialogService.Close(true);
+    }
+}

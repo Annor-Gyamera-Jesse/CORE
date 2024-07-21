@@ -1841,5 +1841,171 @@ namespace CORE.SERVICE
             }
         }
 
+
+        /*For TimeTable*/
+        public async Task<IEnumerable<SchoolTimetable>> GetAllTimetablesAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"SELECT st.*, c.CourseName 
+                              FROM SchoolManagement.AssignTeachersSchoolTimetable st
+                              JOIN SchoolManagement.Courses c ON st.CourseID = c.CourseID";
+                return await connection.QueryAsync<SchoolTimetable>(query);
+            }
+        }
+
+        public async Task<SchoolTimetable> GetTimetableByIdAsync(int id)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"SELECT st.*, c.CourseName 
+                              FROM SchoolManagement.AssignTeachersSchoolTimetable st
+                              JOIN SchoolManagement.Courses c ON st.CourseID = c.CourseID
+                              WHERE st.ClassSchedulingID = @Id";
+                return await connection.QueryFirstOrDefaultAsync<SchoolTimetable>(query, new { Id = id });
+            }
+        }
+
+        public async Task AddTimetableAsync(SchoolTimetable timetable)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"INSERT INTO SchoolManagement.AssignTeachersSchoolTimetable 
+                            (ClassID, CourseID, PeriodID, Day, TeacherID, StartTime, EndTime, UserID, Note, RecDateCreated)
+                            VALUES (@ClassID, @CourseID, @PeriodID, @Day, @TeacherID, @StartTime, @EndTime, @UserID, @Note, @RecDateCreated)";
+                await connection.ExecuteAsync(query, timetable);
+            }
+        }
+
+        public async Task UpdateTimetableAsync(SchoolTimetable timetable)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"UPDATE SchoolManagement.AssignTeachersSchoolTimetable SET 
+                            ClassID = @ClassID, CourseID = @CourseID, PeriodID = @PeriodID, Day = @Day, 
+                            TeacherID = @TeacherID, StartTime = @StartTime, EndTime = @EndTime, 
+                            UserID = @UserID, Note = @Note, RecDateCreated = @RecDateCreated
+                            WHERE ClassSchedulingID = @ClassSchedulingID";
+                await connection.ExecuteAsync(query, timetable);
+            }
+        }
+
+        public async Task DeleteTimetableAsync(int id)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.ExecuteAsync("DELETE FROM SchoolManagement.AssignTeachersSchoolTimetable WHERE ClassSchedulingID = @Id", new { Id = id });
+            }
+        }
+
+
+        /*for the assinging teachers to subjects*/
+        public async Task<IEnumerable<TeacherAssignment>> GetAllAssignmentsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+                    SELECT st.ClassSchedulingID, st.ClassID, c.CourseID, c.CourseName, t.TeacherID, CONCAT(t.TeacherFirstName, ' ', t.TeacherLastName) AS TeacherName, 
+                           st.Day, st.PeriodID AS Period, st.StartTime, st.EndTime, st.Note
+                    FROM SchoolManagement.AssignTeachersSchoolTimetable st
+                    JOIN SchoolManagement.Courses c ON st.CourseID = c.CourseID
+                    JOIN SchoolManagement.Teacher t ON st.TeacherID = t.TeacherID";
+                return await connection.QueryAsync<TeacherAssignment>(query);
+            }
+        }
+
+        public async Task<TeacherAssignment> GetAssignmentByIdAsync(int id)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+                    SELECT st.ClassSchedulingID, st.ClassID, c.CourseID, c.CourseName, t.TeacherID, CONCAT(t.TeacherFirstName, ' ', t.TeacherLastName) AS TeacherName, 
+                           st.Day, st.PeriodID AS Period, st.StartTime, st.EndTime, st.Note
+                    FROM SchoolManagement.AssignTeachersSchoolTimetable st
+                    JOIN SchoolManagement.Courses c ON st.CourseID = c.CourseID
+                    JOIN SchoolManagement.Teacher t ON st.TeacherID = t.TeacherID
+                    WHERE st.ClassSchedulingID = @Id";
+                return await connection.QueryFirstOrDefaultAsync<TeacherAssignment>(query, new { Id = id });
+            }
+        }
+
+        public async Task AddAssignmentAsync(TeacherAssignment assignment)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+                    INSERT INTO SchoolManagement.AssignTeachersSchoolTimetable (ClassID, CourseID, PeriodID, Day, TeacherID, StartTime, EndTime, Note)
+                    VALUES (@ClassID, @CourseID, @PeriodID, @Day, @TeacherID, @StartTime, @EndTime, @Note)";
+                await connection.ExecuteAsync(query, new
+                {
+                    assignment.ClassID,
+                    assignment.CourseID,
+                    PeriodID = assignment.Period == "First Period" ? 1 : 2,
+                    assignment.Day,
+                    assignment.TeacherID,
+                    assignment.StartTime,
+                    assignment.EndTime,
+                    assignment.Note
+                });
+            }
+        }
+
+        public async Task UpdateAssignmentAsync(TeacherAssignment assignment)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+                    UPDATE SchoolManagement.AssignTeachersSchoolTimetable SET 
+                        ClassID = @ClassID, PeriodID = @PeriodID, Day = @Day, 
+                        TeacherID = @TeacherID, StartTime = @StartTime, EndTime = @EndTime, 
+                        Note = @Note
+                    WHERE ClassSchedulingID = @ClassSchedulingID";
+                await connection.ExecuteAsync(query, new
+                {
+                    assignment.ClassID,
+                    PeriodID = assignment.Period == "First Period" ? 1 : 2,
+                    assignment.Day,
+                    assignment.TeacherID,
+                    assignment.StartTime,
+                    assignment.EndTime,
+                    assignment.Note,
+                    assignment.ClassSchedulingID
+                });
+            }
+        }
+
+        public async Task DeleteAssignmentAsync(int id)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.ExecuteAsync("DELETE FROM SchoolManagement.AssignTeachersSchoolTimetable WHERE ClassSchedulingID = @Id", new { Id = id });
+            }
+        }
+
+        public async Task<IEnumerable<Class>> GetsAllClassesAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<Class>("SELECT * FROM SchoolManagement.Class");
+            }
+        }
+
+        public async Task<IEnumerable<Course>> GetsAllCoursesAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<Course>("SELECT * FROM SchoolManagement.Courses");
+            }
+        }
+
+        public async Task<IEnumerable<TeachersRegistration>> GetsAllTeachersAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<TeachersRegistration>("SELECT TeacherID, CONCAT(TeacherFirstName, ' ', TeacherLastName) AS TeacherName FROM SchoolManagement.Teacher");
+            }
+        }
+
+
     }
 }

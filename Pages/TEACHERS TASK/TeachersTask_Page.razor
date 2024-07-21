@@ -8,6 +8,8 @@
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
 @using System.Timers
+@using CORE.Tool_Components
+@inherits TeachersTask_Page_Codebehind
 
 <style>
     .container {
@@ -51,6 +53,17 @@
 
     .margin-bottom {
         margin-bottom: 2rem; /* Add space between cards */
+    }
+
+    .right-panel {
+        position: absolute;
+        top: 40px;
+        right: 20px;
+        width: 200px;
+        height: 400px; /*Adjust the height as needed */
+        border-radius: 8px;
+        /*  background-color: #f8f9fa; */
+        /*  overflow-y: auto; */ /* Add scroll if content overflows */
     }
 </style>
 
@@ -128,6 +141,17 @@
         </div>
     </div>
 </div>
+<div class="right-panel">
+ <div class="row">
+<div class="row mt-2">
+<div class="col-md">
+ 
+    <TeacherTimeTableToolPanel OnManageTeachersTimeTable="TeachersTimeTable" OnTeacherTimeTable="TeacherTimeTable"/>
+
+</div>
+</div>
+</div>
+</div>
 
 @code {
     private List<TeachersTask> tasks = new List<TeachersTask>();
@@ -141,6 +165,17 @@
         users = (await TeachersTaskService.GetUsersAsync()).ToList();
         await UpdateTaskStatuses();
         SetTimer();
+    }
+
+
+    async void TeachersTimeTable()
+    {
+        await OpenManageTeachersTimeTable();
+    }
+
+    async void TeacherTimeTable()
+    {
+        await OpenTeacherTimeTable();
     }
 
     private void SetTimer()
