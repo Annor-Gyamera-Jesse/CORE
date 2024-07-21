@@ -5,25 +5,25 @@
 
 <h3>School Timetable</h3>
 
-<RadzenGrid Data="@timetables" TItem="SchoolTimetable">
+<RadzenGrid Data="@timetables" TItem="AssignTeachersSchoolTimetable">
     <Columns>
-        <RadzenGridColumn TItem="SchoolTimetable" Property="ClassSchedulingID" Title="ID" />
-        <RadzenGridColumn TItem="SchoolTimetable" Property="ClassID" Title="Class ID" />
-        <RadzenGridColumn TItem="SchoolTimetable" Property="CourseID" Title="Course ID" />
-        <RadzenGridColumn TItem="SchoolTimetable" Property="PeriodID" Title="Period ID" />
-        <RadzenGridColumn TItem="SchoolTimetable" Property="Subjects" Title="Subjects" />
-        <RadzenGridColumn TItem="SchoolTimetable" Property="Day" Title="Day" />
-        <RadzenGridColumn TItem="SchoolTimetable" Property="TeacherID" Title="Teacher ID" />
-        <RadzenGridColumn TItem="SchoolTimetable" Property="StartTime" Title="Start Time" />
-        <RadzenGridColumn TItem="SchoolTimetable" Property="EndTime" Title="End Time" />
-        <RadzenGridColumn TItem="SchoolTimetable" Property="UserID" Title="User ID" />
-        <RadzenGridColumn TItem="SchoolTimetable" Property="Note" Title="Note" />
-        <RadzenGridColumn TItem="SchoolTimetable" Property="RecDateCreated" Title="Date Created" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="ClassSchedulingID" Title="ID" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="ClassID" Title="Class ID" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="CourseID" Title="Course ID" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="PeriodID" Title="Period ID" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="Subjects" Title="Subjects" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="Day" Title="Day" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="TeacherID" Title="Teacher ID" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="StartTime" Title="Start Time" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="EndTime" Title="End Time" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="UserID" Title="User ID" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="Note" Title="Note" />
+        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="RecDateCreated" Title="Date Created" />
     </Columns>
 </RadzenGrid>
 
 @code {
-    private IEnumerable<SchoolTimetable> timetables;
+    private IEnumerable<AssignTeachersSchoolTimetable> timetables;
 
     protected override async Task OnInitializedAsync()
     {

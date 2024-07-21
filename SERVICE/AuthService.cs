@@ -1843,18 +1843,18 @@ namespace CORE.SERVICE
 
 
         /*For TimeTable*/
-        public async Task<IEnumerable<SchoolTimetable>> GetAllTimetablesAsync()
+        public async Task<IEnumerable<AssignTeachersSchoolTimetable>> GetAllTimetablesAsync()
         {
             using (var connection = new SqlConnection(connectionString))
             {
                 var query = @"SELECT st.*, c.CourseName 
                               FROM SchoolManagement.AssignTeachersSchoolTimetable st
                               JOIN SchoolManagement.Courses c ON st.CourseID = c.CourseID";
-                return await connection.QueryAsync<SchoolTimetable>(query);
+                return await connection.QueryAsync<AssignTeachersSchoolTimetable>(query);
             }
         }
 
-        public async Task<SchoolTimetable> GetTimetableByIdAsync(int id)
+        public async Task<AssignTeachersSchoolTimetable> GetTimetableByIdAsync(int id)
         {
             using (var connection = new SqlConnection(connectionString))
             {
@@ -1862,11 +1862,11 @@ namespace CORE.SERVICE
                               FROM SchoolManagement.AssignTeachersSchoolTimetable st
                               JOIN SchoolManagement.Courses c ON st.CourseID = c.CourseID
                               WHERE st.ClassSchedulingID = @Id";
-                return await connection.QueryFirstOrDefaultAsync<SchoolTimetable>(query, new { Id = id });
+                return await connection.QueryFirstOrDefaultAsync<AssignTeachersSchoolTimetable>(query, new { Id = id });
             }
         }
 
-        public async Task AddTimetableAsync(SchoolTimetable timetable)
+        public async Task AddTimetableAsync(AssignTeachersSchoolTimetable timetable)
         {
             using (var connection = new SqlConnection(connectionString))
             {
@@ -1877,7 +1877,7 @@ namespace CORE.SERVICE
             }
         }
 
-        public async Task UpdateTimetableAsync(SchoolTimetable timetable)
+        public async Task UpdateTimetableAsync(AssignTeachersSchoolTimetable timetable)
         {
             using (var connection = new SqlConnection(connectionString))
             {
@@ -2006,6 +2006,62 @@ namespace CORE.SERVICE
             }
         }
 
+        /*For the edit teachers time tbl*/
 
+
+        public async Task<IEnumerable<Class>> GetTeacherClassesAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            return await connection.QueryAsync<Class>("SELECT * FROM SchoolManagement.Class");
+        }
+
+        public async Task<List<SchoolCourse>> GetCoursesAsync()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = "SELECT SCID, SchoolCourse AS SchoolCourseName FROM SchoolManagement.SchoolCourse";
+                    return (await connection.QueryAsync<SchoolCourse>(query)).ToList();
+                }
+            }
+            catch (SqlException ex)
+            {
+                // Log SQL exceptions
+                Console.WriteLine($"SQL Exception: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                // Log other exceptions
+                Console.WriteLine($"Exception: {ex.Message}");
+            }
+
+            return new List<SchoolCourse>();
+        }
+        public async Task AddTimetableEntryAsync(AssignTeachersSchoolTimetable timetableEntry)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var query = @"
+                INSERT INTO SchoolManagement.AssignTeachersSchoolTimetable 
+                (ClassID, SchoolCourseName, Period, Day, TeacherID, StartTime, EndTime, UserID, Note, RecDateCreated) 
+                VALUES 
+                (@ClassID, @SchoolCourseName, @Period, @Day, @TeacherID, @StartTime, @EndTime, @UserID, @Note, @RecDateCreated)";
+
+            await connection.ExecuteAsync(query, new
+            {
+                timetableEntry.ClassID,
+                timetableEntry.SchoolCourseName,
+                timetableEntry.Period,
+                timetableEntry.Day,
+                timetableEntry.TeacherID,
+                timetableEntry.StartTime,
+                timetableEntry.EndTime,
+                timetableEntry.UserID,
+                timetableEntry.Note,
+                RecDateCreated = DateTime.Now
+            });
+        }
     }
 }
