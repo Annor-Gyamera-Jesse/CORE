@@ -1850,6 +1850,36 @@ namespace CORE.SERVICE
             }
         }
 
+        public async Task UpdateTimetableAsync(AssignTeachersSchoolTimetable timetable)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+            UPDATE SchoolManagement.AssignTeachersSchoolTimetable
+            SET ClassID = @ClassID,
+                SchoolCourseName = @SchoolCourseName,
+                Period = @Period,
+                Day = @Day,
+                TeacherID = @TeacherID,
+                StartTime = @StartTime,
+                EndTime = @EndTime,
+                UserID = @UserID,
+                UpdatedBy = @UpdatedBy,
+                Note = @Note
+            WHERE ClassSchedulingID = @ClassSchedulingID";
+                await connection.ExecuteAsync(query, timetable);
+            }
+        }
+
+        public async Task DeleteTimetableAsync(int classSchedulingID)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = "DELETE FROM SchoolManagement.AssignTeachersSchoolTimetable WHERE ClassSchedulingID = @ClassSchedulingID";
+                await connection.ExecuteAsync(query, new { ClassSchedulingID = classSchedulingID });
+            }
+        }
+
 
         /*For the edit teachers time tbl*/
 

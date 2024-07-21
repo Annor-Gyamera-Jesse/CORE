@@ -11,6 +11,7 @@
         public DateTime EndTime { get; set; }
         public int TeacherID { get; set; }
         public int UserID { get; set; }
+        public int? UpdatedBy { get; set; }
         public string Note { get; set; }
         public DateTime RecDateCreated { get; set; }
     }
