@@ -38,6 +38,7 @@
 
 	<ItemGroup>
 	  <None Include="Pages\AdminDialogs\AddEditTaskDialog.razor" />
+	  <None Include="Tool_Components\TeacherTimeTableToolPanel.razor" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,0 +1,25 @@
+﻿
+<style>
+
+    .toolset-btn {
+        margin-bottom: 5px;
+        width: 100%;
+        font-size: 14px
+    }
+</style>
+
+<div class="row mt-2">
+    <RadzenButton Text="Manage Teachers Time Table" Icon="assignment" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Secondary" Click=@OnManageTeachersTimeTable />
+    <RadzenButton Text="View Teachers Time Table" Icon="assignment" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnTeacherTimeTable />
+</div>
+
+
+
+@code {
+    [Parameter] public Action OnManageTeachersTimeTable {
+        get; set;
+    }
+
+    [Parameter] public Action OnTeacherTimeTable{ get; set; }
+
+}

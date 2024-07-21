@@ -1,0 +1,117 @@
+﻿@page "/edit-teachers-dialog"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject NotificationService NotificationService
+@inject AuthService AuthService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Assign Teacher to Subject</PageTitle>
+
+<RadzenCard Style="max-width: 800px; margin: auto;">
+    <ChildContent>
+        <RadzenTemplateForm TItem="AssignTeachersSchoolTimetable" Data="@timetableEntry" Submit="@(async args => await OnSubmit(args))">
+            <RadzenFieldset Text="Assign Teacher to Subject" Style="padding: 20px;">
+                <RadzenGrid>
+                    <Columns>
+                        <RadzenColumn>
+                            <RadzenDropDown @bind-Value="timetableEntry.TeacherID"
+                                            Data="@teachers"
+                                            TextProperty="TeacherFirstName"
+                                            ValueProperty="TeacherID"
+                                            Style="width: 100%; margin-bottom: 15px;"
+                                            Placeholder="Select Teacher"
+                                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" />
+                        </RadzenColumn>
+                        <RadzenColumn>
+                            <RadzenDropDown @bind-Value="timetableEntry.ClassID"
+                                            Data="@classes"
+                                            TextProperty="ClassID"
+                                            ValueProperty="ClassID"
+                                            Style="width: 100%; margin-bottom: 15px;"
+                                            Placeholder="Select Class" />
+                        </RadzenColumn>
+                        <RadzenColumn>
+                            <RadzenDropDown @bind-Value="timetableEntry.SchoolCourseName"
+                                            Data="@courses"
+                                            TextProperty="SchoolCourseName"
+                                            ValueProperty="SCID"
+                                            Style="width: 100%; margin-bottom: 15px;"
+                                            Placeholder="Select Course" />
+                        </RadzenColumn>
+                        <RadzenColumn>
+                            <RadzenDropDown @bind-Value="timetableEntry.Period"
+                                            Data="@periods"
+                                            Style="width: 100%; margin-bottom: 15px;"
+                                            Placeholder="Select Period" />
+                        </RadzenColumn>
+                        <RadzenColumn>
+                            <RadzenTextBox @bind-Value="timetableEntry.Day"
+                                           Style="width: 100%; margin-bottom: 15px;"
+                                           Placeholder="Enter Day" />
+                        </RadzenColumn>
+                        <RadzenColumn>
+                            <RadzenDatePicker @bind-Value="timetableEntry.StartTime"
+                                              Style="width: 100%; margin-bottom: 15px;"
+                                              Placeholder="Select Start Time" />
+                        </RadzenColumn>
+                        <RadzenColumn>
+                            <RadzenDatePicker @bind-Value="timetableEntry.EndTime"
+                                              Style="width: 100%; margin-bottom: 15px;"
+                                              Placeholder="Select End Time" />
+                        </RadzenColumn>
+                        <RadzenColumn>
+                            <RadzenTextBox @bind-Value="timetableEntry.Note"
+                                           Style="width: 100%; margin-bottom: 15px;"
+                                           Placeholder="Enter Note (Optional)" />
+                        </RadzenColumn>
+                    </Columns>
+                </RadzenGrid>
+                <RadzenButton Text="Submit"
+                              Type="Submit"
+                              Style="width: 100%; margin-top: 20px; background-color: #007bff; color: white;"
+                              ButtonStyle="ButtonStyle.Primary" />
+            </RadzenFieldset>
+        </RadzenTemplateForm>
+    </ChildContent>
+</RadzenCard>
+
+@code {
+    private AssignTeachersSchoolTimetable timetableEntry = new AssignTeachersSchoolTimetable();
+    private IEnumerable<TeachersRegistration> teachers;
+    private IEnumerable<Class> classes;
+    private IEnumerable<SchoolCourse> courses;
+    private List<string> periods = new List<string> { "First Period", "Second Period" };
+    int userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch the logged-in user's ID
+        var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", new object[] { "userName" });
+        var user = await AuthService.GetUserByUsernameAsync(username);
+        if (user != null)
+        {
+            userId = user.UserID;
+        }
+
+        teachers = await AuthService.GetTeachersAsync();
+        classes = await AuthService.GetTeacherClassesAsync();
+        courses = await AuthService.GetCoursesAsync();
+    }
+
+    private async Task OnSubmit(AssignTeachersSchoolTimetable args)
+    {
+        // Assign UserID to the timetable entry
+        args.UserID = userId;
+
+        try
+        {
+            await AuthService.AddTimetableEntryAsync(args);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "Timetable entry added successfully!");
+            timetableEntry = new AssignTeachersSchoolTimetable();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Failed to add timetable entry: {ex.Message}");
+        }
+    }
+}
