@@ -1,8 +1,10 @@
 ﻿@page "/landingpage"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
-
+@inject NotificationMessageService Notify
 <style>
     .tab-container {
         display: flex;
@@ -46,7 +48,9 @@
             margin: 10px 0 0;
         }
 </style>
-
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
 <div class="container mt-5">
 
         <div class="tab-container">
@@ -67,17 +71,30 @@
             </div>
         </div>
 </div>
-
+}
 @code {
     private int totalStudentsCount;
     private int totalTeachersCount;
     private int totalGraduatesCount;
+    private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        totalStudentsCount = await authService.GetTotalStudentsCount();
-        // totalTeachersCount = await authService.GetTotalTeachersCount();
-        // totalGraduatesCount = await authService.GetTotalGraduatesCount();
-        StateHasChanged();
+        try
+        {
+            totalStudentsCount = await authService.GetTotalStudentsCount();
+            // totalTeachersCount = await authService.GetTotalTeachersCount();
+            // totalGraduatesCount = await authService.GetTotalGraduatesCount();
+            StateHasChanged();
+        }
+        catch(Exception ex)
+        {
+            Notify.ShowNotification("", $" .{ex.Message}", NotificationSeverity.Info);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
     }
 }

@@ -1,9 +1,15 @@
 ﻿@using CORE.Pages.LESSON_NOTE
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService lessonNoteService
 @using CORE.MODEL
+@using CORE.SERVICE.NOTIFICATION
 @inject DialogService DialogService
+@inject NotificationMessageService Notify
 
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
 @if (lessonNotes != null && lessonNotes.Any())
 {
     <RadzenGrid Data="@lessonNotes" TItem="LessonNote" AllowPaging="true" PageSize="10" AllowSorting=true AllowColumnResize=true EditMode="DataGridEditMode.Single" Style="height: 400px;">
@@ -45,13 +51,28 @@ else
     <p>No lesson notes have been submitted yet.</p>
 }
 
+}
+
 @code {
     private IEnumerable<LessonNote> lessonNotes;
-
+    private bool isLoading = false;
     protected override async Task OnInitializedAsync()
     {
-        lessonNotes = await lessonNoteService.GetSubmittedLessonNotesAsync();
-    }
+        try
+        {
+            isLoading = true;
+            lessonNotes = await lessonNoteService.GetSubmittedLessonNotesAsync();
+        }
+        catch(Exception mistake)
+        {
+            Notify.ShowNotification("Error", $"OnInitializedAsync. {mistake.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
+}
 
     void CloseForm()
     {

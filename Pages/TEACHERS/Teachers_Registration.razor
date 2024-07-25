@@ -2,7 +2,9 @@
 @using CORE.MODEL
 @using CORE.SERVICE
 @using System.ComponentModel.DataAnnotations
+@using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
+@inject NotificationMessageService Notify
 
 <style>
     form .row {
@@ -105,27 +107,11 @@
     </div>
 </RadzenFieldset>
 
-<!-- Bootstrap alert for success message -->
-@if (!string.IsNullOrEmpty(successMessage))
-{
-    <div class="alert alert-success">
-        <strong>Success!</strong> @successMessage
-    </div>
-}
-<!-- Bootstrap alert for error message -->
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger">
-        <strong>Error!</strong> @errorMessage
-    </div>
-}
 
 @code {
     TeachersRegistration teachersRegistration = new TeachersRegistration();
     byte[] imageData;
     int newTeacherId;
-    string successMessage;
-    string errorMessage;
     private IBrowserFile selectedFile;
     private int inputFileKey = 0;
 
@@ -152,18 +138,13 @@
 
             if (newTeacherId > 0)
             {
-                Console.WriteLine($"Teacher successfully registered. TeacherID: {newTeacherId}");
-                successMessage = "Teacher successfully registered.";
                 // Reset error message
-                errorMessage = string.Empty;
+                Notify.ShowNotification("", "Teacher successfully registered.", NotificationSeverity.Success);
             }
             else
             {
-                Console.WriteLine("Failed to register the teacher.");
-                errorMessage = "Failed to register the teacher. Please try again.";
-                // Reset success message
-                successMessage = string.Empty;
                 // Handle failure, show error messages, etc.
+                Notify.ShowNotification("Error", "Failed to register the teacher. Please try again.", NotificationSeverity.Warning);
             }
         }
     }
@@ -183,18 +164,24 @@
 
     void ResetForm()
     {
-        // Create a new instance of the TeachersRegistration class to clear all fields
-        teachersRegistration = new TeachersRegistration();
+        try
+        {
+            // Create a new instance of the TeachersRegistration class to clear all fields
+            teachersRegistration = new TeachersRegistration();
 
-        // Reset other variables as needed
-        selectedFile = null;
-        imageData = null;
-        newTeacherId = 0;
-        successMessage = string.Empty;
-        errorMessage = string.Empty;
+            // Reset other variables as needed
+            selectedFile = null;
+            imageData = null;
+            newTeacherId = 0;
+            Notify.ShowNotification("", "FORM RESET", NotificationSeverity.Info);
 
-        // Create a new instance of InputFile to replace the existing one
-        inputFileKey++;
-        StateHasChanged();
+            // Create a new instance of InputFile to replace the existing one
+            inputFileKey++;
+        }
+        catch
+        {
+            Notify.ShowNotification("", "Error reseting", NotificationSeverity.Error);   
+        }
+
     }
 }

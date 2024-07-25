@@ -1,0 +1,12 @@
+﻿<!-- LoadingSpinner.razor -->
+<div class="spinner-overlay" style="@(Visible ? "display:flex;" : "display:none;")">
+    <div class="spinner"></div>
+</div>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+    private bool _isFirstRender = true;
+}

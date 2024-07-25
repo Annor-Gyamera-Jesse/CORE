@@ -1,8 +1,14 @@
 ﻿@inherits LayoutComponentBase
 @inject AuthService authService
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject NotificationMessageService Notify
 
-<RadzenDialog />
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
+    <RadzenDialog />
 <RadzenNotification />
 <RadzenTooltip />
 <RadzenContextMenu />
@@ -36,23 +42,34 @@
         </RadzenStack>
     </RadzenBody>
 </RadzenLayout>
-
+}
 @code {
     string SoftwareVersion;
     int CompanyRegisteredYear;
-
+    private bool isLoading = false;
     string SchoolName;
     string CompanyRegisteredName;
 
     protected override async Task OnInitializedAsync()
     {
-        // Retrieve software version from the AuthService
-        SoftwareVersion = await authService.GetSoftwareVersionAsync();
+        try
+        {
+            // Retrieve software version from the AuthService
+            SoftwareVersion = await authService.GetSoftwareVersionAsync();
 
-        // Retrieve company registered date from the AuthService
-        CompanyRegisteredYear = authService.GetCompanyRegisteredYear();
+            // Retrieve company registered date from the AuthService
+            CompanyRegisteredYear = authService.GetCompanyRegisteredYear();
 
-        // Retrieve login screen details from the service
-        (SchoolName, CompanyRegisteredName) = await authService.GetLoginScreenDetailsAsync();
+            // Retrieve login screen details from the service
+            (SchoolName, CompanyRegisteredName) = await authService.GetLoginScreenDetailsAsync();
+        }
+        catch(Exception ex)
+        {
+            Notify.ShowNotification("", $"{ex.Message}", NotificationSeverity.Warning);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }

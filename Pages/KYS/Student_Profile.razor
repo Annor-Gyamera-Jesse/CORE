@@ -1,5 +1,6 @@
 ﻿@page "/studentprofile"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SECURITY.LOADER
 @using CORE.SERVICE
 @inject AuthService authService
@@ -47,6 +48,9 @@
     }
 </style>
 
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
 <RadzenFieldset Text="Student Profile">
     <div class="container">
         <div class="row mb-3">
@@ -116,19 +120,11 @@
         }
     </div>
 </RadzenFieldset>
+}
 
 @code {
-    LoadTypeTrigger _loader;
 
-    protected LoadTypeTrigger Loader
-    {
-        get => _loader;
-        set
-        {
-            _loader = value;
-            StateHasChanged();
-        }
-    }
+    private bool isLoading = false;
 
     string searchName = "";
     Student selectedStudent;
@@ -137,7 +133,7 @@
     {
         try
         {
-            Loader = LoadTypeTrigger.LOADING;
+            isLoading = true;
             // Call the service to search for the student by name
             var result = await authService.GetStudentByNameAsync(searchName);
 
@@ -152,7 +148,7 @@
         }
         finally
         {
-            Loader = LoadTypeTrigger.LOADED;
+            isLoading = false;
         }
     }
 }
