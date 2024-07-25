@@ -2,13 +2,19 @@
 @inject MenuService menuService
 @inject AuthService authService
 @inject AuthStateService AuthStateService
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.MainLayout
 @using CORE.SERVICE.MainLayout.Module
+@using CORE.SERVICE.NOTIFICATION
+@using System.Text.Json
+
 
 <RadzenComponents />
 <RadzenDialog />
-
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
 <RadzenLayout style="grid-template-areas: 'rz-sidebar rz-header' 'rz-sidebar rz-body';">
     <RadzenHeader>
         <RadzenRow JustifyContent="JustifyContent.Start" AlignItems="AlignItems.Center" Gap="0">
@@ -65,33 +71,50 @@
         </RadzenStack>
     </RadzenSidebar>
 </RadzenLayout>
-
+}
 @code {
     string SoftwareVersion;
     int CompanyRegisteredYear;
     private bool _isFirstRender = true;
     private List<MenuItem> mainMenuItems;
-    private Dictionary<int, List<SubMenuItem>> subMenuItems = new Dictionary<int, List<SubMenuItem>>();
+    private Dictionary<int, List<SubMenuItem>> subMenuItems = new Dictionary<int, List<SubMenuItem>>();    
 
     protected override async Task OnInitializedAsync()
     {
-        // Retrieve software version from the AuthService
-        SoftwareVersion = await authService.GetSoftwareVersionAsync();
-
-        // Retrieve company registered date from the AuthService
-        CompanyRegisteredYear = authService.GetCompanyRegisteredYear();
-
-        // Fetch main menu items
-        mainMenuItems = (await menuService.GetMainMenuItemsAsync()).ToList();
-
-        // Fetch sub-menu items for each main menu item
-        foreach (var menuItem in mainMenuItems)
+        try
         {
-            var items = (await menuService.GetSubMenuItemsAsync(menuItem.MenuID)).ToList();
-            if (items.Count > 0)
+            isLoading = true;
+            // Retrieve software version from the AuthService
+            SoftwareVersion = await authService.GetSoftwareVersionAsync();
+
+            // Retrieve company registered date from the AuthService
+            CompanyRegisteredYear = authService.GetCompanyRegisteredYear();
+
+            // Get user menu items from session storage
+            var menuItemsJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userMenuItems");
+            if (!string.IsNullOrWhiteSpace(menuItemsJson))
             {
-                subMenuItems[menuItem.MenuID] = items;
+                mainMenuItems = JsonSerializer.Deserialize<List<MenuItem>>(menuItemsJson);
+            }
+
+            // Fetch sub-menu items for each main menu item
+            foreach (var menuItem in mainMenuItems)
+            {
+                var items = (await menuService.GetSubMenuItemsAsync(menuItem.MenuID)).ToList();
+                if (items.Count > 0)
+                {
+                    subMenuItems[menuItem.MenuID] = items;
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"Failed to load. {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
+
 }

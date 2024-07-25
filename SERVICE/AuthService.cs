@@ -3,6 +3,7 @@ using Dapper;
 using CORE.MODEL;
 using System.Data.SqlClient;
 using CORE.Pages.LESSON_NOTE;
+using CORE.SERVICE.MainLayout.Module;
 
 namespace CORE.SERVICE
 {
@@ -58,6 +59,28 @@ namespace CORE.SERVICE
             return null;
         }
 
+        public async Task<UserRoleAndMenuAccess> GetUserRoleAndMenuAccessAsync(int userId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var userRoleAndMenuAccess = new UserRoleAndMenuAccess();
+
+                // Get user role
+                userRoleAndMenuAccess.Role = await connection.QuerySingleAsync<string>(
+                    "SELECT r.RoleName FROM SchoolManagementSecurity.MainSystemRoles r " +
+                    "JOIN SchoolManagement.Users u ON r.RoleID = u.RoleID WHERE u.UserID = @UserID",
+                    new { UserID = userId });
+
+                // Get menu items accessible to this role
+                userRoleAndMenuAccess.MenuItems = (await connection.QueryAsync<MenuItem>(
+                    "SELECT m.* FROM SchoolManagementSecurity.MainMenu m " +
+                    "JOIN SchoolManagementSecurity.MenuAccess a ON m.MenuID = a.MenuID " +
+                    "WHERE a.RoleID = (SELECT RoleID FROM SchoolManagement.Users WHERE UserID = @UserID) AND a.CanAccess = 1",
+                    new { UserID = userId })).ToList();
+
+                return userRoleAndMenuAccess;
+            }
+        }
 
 
         //--- For company LoginLayout display--///

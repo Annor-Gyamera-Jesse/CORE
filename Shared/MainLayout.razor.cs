@@ -1,14 +1,7 @@
-using System.Net.Http;
-using Microsoft.AspNetCore.Authorization;
+using CORE.SERVICE.NOTIFICATION;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Components.Routing;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Components.Web.Virtualization;
 using Microsoft.JSInterop;
 using Radzen;
-using Radzen.Blazor;
 
 namespace CORE.Shared
 {
@@ -30,10 +23,10 @@ namespace CORE.Shared
         protected ContextMenuService ContextMenuService { get; set; }
 
         [Inject]
-        protected NotificationService NotificationService { get; set; }
+        protected NotificationMessageService Notify { get; set; }
 
         private bool sidebarExpanded = true;
-
+        private bool isLoading = false;
         void SidebarToggleClick()
         {
             sidebarExpanded = !sidebarExpanded;
@@ -54,12 +47,24 @@ namespace CORE.Shared
 
         private async Task logout()
         {
-
-            // Clear the user name from session storage
-            await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "userName");
-            await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "userID");
-            // Redirect to the login page after logout
-            NavigationManager.NavigateTo("/login");
+            try
+            {
+                isLoading = true;
+                // Clear the user name from session storage
+                await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "userName");
+                await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "userID");
+                // Redirect to the login page after logout
+                NavigationManager.NavigateTo("/login");
+                Notify.ShowNotification("", "LogOut", NotificationSeverity.Success);
+            }
+            catch (Exception ex)
+            {
+                Notify.ShowNotification("", $"{ex.Message}", NotificationSeverity.Info);
+            }
+            finally
+            {
+                isLoading = false;
+            }
         }
     }
 }

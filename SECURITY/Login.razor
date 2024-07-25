@@ -1,4 +1,5 @@
 ﻿@page "/login"
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SECURITY.LOADER
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
@@ -8,38 +9,46 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @layout LoginLayout
+@using System.Text.Json
 @inject NotificationMessageService Notify
 @attribute [AllowAnonymous]
 
-<div class="container">
-    <div class="login-container">
-        <RadzenText Text="Login" TextStyle="Radzen.Blazor.TextStyle.H3" class="mb-4" />
 
-        @if (showInvalidLoginMessage)
-        {
-            <RadzenAlert Text="Invalid credentials. Please try again." Severity="Radzen.AlertSeverity.Error" />
-        }
 
-        <div class="form-group">
-            <label for="username">Username:</label>
-            <input type="text" id="username" @bind="@Username" class="form-control" />
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
+    <div class="container">
+        <div class="login-container">
+            <RadzenText Text="Login" TextStyle="Radzen.Blazor.TextStyle.H3" class="mb-4" />
+
+            @if (showInvalidLoginMessage)
+            {
+                <RadzenAlert Text="Invalid credentials. Please try again." Severity="Radzen.AlertSeverity.Error" />
+            }
+
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" @bind="@Username" class="form-control" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" @bind="@Password" class="form-control" />
+            </div>
+            <br />
+            <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2" Class="mb-4">
+                <RadzenButton Text="Login" ButtonStyle="Radzen.ButtonStyle.Primary" Click="@login" />
+            </RadzenText>
         </div>
-
-        <div class="form-group">
-            <label for="password">Password:</label>
-            <input type="password" id="password" @bind="@Password" class="form-control" />
-        </div>
-        <br />
-        <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2" Class="mb-4">
-            <RadzenButton Text="Login" ButtonStyle="Radzen.ButtonStyle.Primary" Click="@login" />
-        </RadzenText>
     </div>
-</div>
+}
 
 @code {
     private string Username { get; set; }
     private string Password { get; set; }
     private bool showInvalidLoginMessage = false;
+    private bool isLoading = false; // Add a field to manage loading state
 
     private async Task login()
     {
@@ -49,19 +58,36 @@
             return;
         }
 
-        var user = await authService.GetUserByUsernameAsync(Username);
-
-        if (user != null && user.Password == Password)
+        try
         {
-            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userID", user.UserID.ToString());
-            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userName", user.UserName);
-            NavigationManager.NavigateTo("/landingpage");
+            isLoading = true; // Show the spinner while processing
 
-            Notify.ShowNotification("PERFECT", "Happy Working.", NotificationSeverity.Success);
+            var user = await authService.GetUserByUsernameAsync(Username);
+
+            if (user != null && user.Password == Password)
+            {
+                var userRoleAndMenuAccess = await authService.GetUserRoleAndMenuAccessAsync(user.UserID);
+                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userID", user.UserID.ToString());
+                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userName", user.UserName);
+                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userRole", userRoleAndMenuAccess.Role);
+                await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userMenuItems", JsonSerializer.Serialize(userRoleAndMenuAccess.MenuItems));
+                NavigationManager.NavigateTo("/landingpage");
+
+                Notify.ShowNotification("PERFECT", "Happy Working.", NotificationSeverity.Success);
+            }
+            else
+            {
+                Notify.ShowNotification("ALERT", "Invalid credentials. Please try again.", NotificationSeverity.Error);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Notify.ShowNotification("ALERT", "Invalid credentials. Please try again.", NotificationSeverity.Error);
+            Notify.ShowNotification("ERROR", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false; // Hide the spinner once done
         }
     }
+
 }
