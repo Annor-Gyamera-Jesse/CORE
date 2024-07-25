@@ -1,0 +1,146 @@
+﻿@page "/menu"
+@using CORE.SERVICE.MainLayout
+@using CORE.SERVICE.MainLayout.Module
+@inject MenuService MenuService
+
+<h3>Main Menu</h3>
+<RadzenGrid @ref="menuGrid" Data="@menuItems" TItem="MenuItem" AllowFiltering="true" AllowPaging="true" AllowSorting="true" RowCreate="OnCreateRow" RowUpdate="OnUpdateRow" RowDelete="OnDeleteRow">
+    <Columns>
+        <RadzenGridColumn TItem="MenuItem" Property="Text" Title="Text" Width="70px">
+            <EditTemplate Context="menuItem">
+                <RadzenTextBox @bind-Value="menuItem.Text" Style="width:100%" Name="Text" />
+            </EditTemplate>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="MenuItem" Property="Path" Title="Path" Width="60px">
+            <EditTemplate Context="menuItem">
+                <RadzenTextBox @bind-Value="menuItem.Path" Style="width:100%" Name="Path" />
+            </EditTemplate>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="MenuItem" Property="Icon" Title="Icon" Width="50px">
+            <EditTemplate Context="menuItem">
+                <RadzenTextBox @bind-Value="menuItem.Icon" Style="width:100%" Name="Icon" />
+            </EditTemplate>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="MenuItem" Context="menuItem" Width="70px">
+            <Template Context="menuItem">
+                <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="edit" Size="ButtonSize.Small" Click="@(args => menuGrid.EditRow(menuItem))" />
+                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Size="ButtonSize.Small" Click="@(args => OnDeleteRow(menuItem))" Style="margin-left: 5px" />
+                <RadzenButton Icon="list" ButtonStyle="ButtonStyle.Dark" Size="ButtonSize.Small" Click="@(args => LoadSubMenus(menuItem))" Style="margin-left: 5px" />
+            </Template>
+            <EditTemplate Context="menuItem">
+                <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" Click="@(args => menuGrid.UpdateRow(menuItem))" />
+                <RadzenButton Icon="cancel" ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Click="@(args => menuGrid.CancelEditRow(menuItem))" Style="margin-left: 5px" />
+            </EditTemplate>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+
+<RadzenButton Text="Add Main Menu Item" Click="AddMainMenuRow" />
+
+@if (selectedMenuItem != null)
+{
+    <h3>Sub Menu Items for: @selectedMenuItem.Text</h3>
+    <RadzenGrid @ref="subMenuGrid" Data="@subMenuItems" TItem="SubMenuItem" AllowFiltering="true" AllowPaging="true" AllowSorting="true" RowCreate="OnCreateSubMenuRow" RowUpdate="OnUpdateSubMenuRow" RowDelete="OnDeleteSubMenuRow">
+        <Columns>
+            <RadzenGridColumn TItem="SubMenuItem" Property="Text" Title="Text">
+                <EditTemplate Context="subMenuItem">
+                    <RadzenTextBox @bind-Value="subMenuItem.Text" Style="width:100%" Name="Text" />
+                </EditTemplate>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="SubMenuItem" Property="Path" Title="Path">
+                <EditTemplate Context="subMenuItem">
+                    <RadzenTextBox @bind-Value="subMenuItem.Path" Style="width:100%" Name="Path" />
+                </EditTemplate>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="SubMenuItem" Property="Icon" Title="Icon">
+                <EditTemplate Context="subMenuItem">
+                    <RadzenTextBox @bind-Value="subMenuItem.Icon" Style="width:100%" Name="Icon" />
+                </EditTemplate>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="SubMenuItem" Context="subMenuItem" Width="70px">
+                <Template Context="subMenuItem">
+                    <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(args => subMenuGrid.EditRow(subMenuItem))" />
+                    <RadzenButton Icon="delete" Size="ButtonSize.Small" Click="@(args => OnDeleteSubMenuRow(subMenuItem))" Style="margin-left: 5px" />
+                </Template>
+                <EditTemplate Context="subMenuItem">
+                    <RadzenButton Icon="save" Size="ButtonSize.Small" Click="@(args => subMenuGrid.UpdateRow(subMenuItem))" />
+                    <RadzenButton Icon="cancel" Size="ButtonSize.Small" Click="@(args => subMenuGrid.CancelEditRow(subMenuItem))" Style="margin-left: 5px" />
+                </EditTemplate>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
+
+    <RadzenButton Text="Add Sub Menu Item" Click="AddSubMenuRow" />
+}
+
+@code {
+    private RadzenGrid<MenuItem> menuGrid;
+    private RadzenGrid<SubMenuItem> subMenuGrid;
+    private IEnumerable<MenuItem> menuItems;
+    private IEnumerable<SubMenuItem> subMenuItems;
+    private MenuItem selectedMenuItem;
+
+    protected override async Task OnInitializedAsync()
+    {
+        menuItems = await MenuService.GetMainMenuItemsAsync();
+    }
+
+    void AddMainMenuRow()
+    {
+        menuGrid.InsertRow(new MenuItem());
+    }
+
+    async Task OnCreateRow(MenuItem menuItem)
+    {
+        await MenuService.AddMainMenuItemAsync(menuItem);
+        menuItems = await MenuService.GetMainMenuItemsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnUpdateRow(MenuItem menuItem)
+    {
+        await MenuService.UpdateMainMenuItemAsync(menuItem);
+        menuItems = await MenuService.GetMainMenuItemsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnDeleteRow(MenuItem menuItem)
+    {
+        await MenuService.DeleteMainMenuItemAsync(menuItem.MenuID);
+        menuItems = await MenuService.GetMainMenuItemsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadSubMenus(MenuItem menuItem)
+    {
+        selectedMenuItem = menuItem;
+        subMenuItems = await MenuService.GetSubMenuItemsAsync(menuItem.MenuID);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void AddSubMenuRow()
+    {
+        subMenuGrid.InsertRow(new SubMenuItem { MainMenuID = selectedMenuItem.MenuID });
+    }
+
+    async Task OnCreateSubMenuRow(SubMenuItem subMenuItem)
+    {
+        await MenuService.AddSubMenuItemAsync(subMenuItem);
+        subMenuItems = await MenuService.GetSubMenuItemsAsync(subMenuItem.MainMenuID);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnUpdateSubMenuRow(SubMenuItem subMenuItem)
+    {
+        await MenuService.UpdateSubMenuItemAsync(subMenuItem);
+        subMenuItems = await MenuService.GetSubMenuItemsAsync(subMenuItem.MainMenuID);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task OnDeleteSubMenuRow(SubMenuItem subMenuItem)
+    {
+        await MenuService.DeleteSubMenuItemAsync(subMenuItem.SubMenuID);
+        subMenuItems = await MenuService.GetSubMenuItemsAsync(subMenuItem.MainMenuID);
+        await InvokeAsync(StateHasChanged);
+    }
+}
