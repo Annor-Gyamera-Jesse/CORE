@@ -59,6 +59,7 @@ namespace CORE.SERVICE
             return null;
         }
 
+        //FOR CHECKING USER ROLE ND IT MENU ITEM
         public async Task<UserRoleAndMenuAccess> GetUserRoleAndMenuAccessAsync(int userId)
         {
             using (var connection = new SqlConnection(connectionString))
