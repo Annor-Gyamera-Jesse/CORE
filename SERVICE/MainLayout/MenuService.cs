@@ -1,4 +1,5 @@
-﻿using CORE.SERVICE.MainLayout.Module;
+﻿using CORE.MODEL;
+using CORE.SERVICE.MainLayout.Module;
 using Dapper;
 using System.Data.SqlClient;
 
