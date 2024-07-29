@@ -1,1 +1,70 @@
-﻿
+﻿@page "/teacher-subject-assignment"
+@inject AuthService authService
+@using CORE.MODEL
+@using CORE.SERVICE
+@using static CORE.MODEL.Teachers_Time_Table
+
+<PageTitle>Teacher Subject Assignment</PageTitle>
+
+<RadzenTemplateForm Data="@assignment" TItem="TeacherSubjectAssignment" Submit="@HandleValidSubmit">
+    <div class="form-group">
+        <label>Teacher</label>
+        <RadzenDropDown @bind-Value="assignment.TeacherID" Data="@teachers" TextProperty="FullName" ValueProperty="TeacherID" AllowClear="true" />
+    </div>
+
+    <div class="form-group">
+        <label>Course</label>
+        <RadzenDropDown @bind-Value="assignment.SCID" Data="courses" TextProperty="SchoolCourseName" ValueProperty="SCID" AllowClear="true" />
+    </div>
+
+    <div class="form-group">
+        <label>Class</label>
+        <RadzenDropDown @bind-Value="assignment.ClassID" Data="@classes" TextProperty="ClassID" ValueProperty="ClassID" AllowClear="true" />
+    </div>
+    <div class="form-group">
+        <label>Day</label>
+        <RadzenDropDown @bind-Value="assignment.DayID" Data="@days" TextProperty="DayName" ValueProperty="DayID" AllowClear="true" />
+    </div>
+    <div class="form-group">
+        <label>Start Time</label>
+        <RadzenDatePicker @bind-Value="assignment.SubjectStartTime" />
+    </div>
+    <div class="form-group">
+        <label>End Time</label>
+        <RadzenDatePicker @bind-Value="assignment.SubjectEndTime" />
+    </div>
+
+    <RadzenButton ButtonType="ButtonType.Submit" Text="Assign" Style="margin-top: 20px;" />
+</RadzenTemplateForm>
+
+<RadzenNotification />
+
+@code {
+    private TeacherSubjectAssignment assignment = new TeacherSubjectAssignment();
+    private IEnumerable<TeachersRegistration> teachers;
+    private IEnumerable<SchoolCourse> courses;
+    private IEnumerable<Class> classes;
+    private IEnumerable<Day> days;
+
+    protected override async Task OnInitializedAsync()
+    {
+        teachers = await authService.GetTeachers();
+        courses = await authService.GetsSchoolCoursesAsync();
+        classes = await authService.GetTClassesAsync();
+        days = await authService.GetDaysAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        var success = await authService.AssignTeacherToSubject(assignment);
+        if (success)
+        {
+            assignment = new TeacherSubjectAssignment(); // Reset the form
+            //Radzen.NotificationService.Notify(NotificationSeverity.Success, "Success", "Teacher assigned successfully.");
+        }
+        else
+        {
+            //Radzen.NotificationService.Notify(NotificationSeverity.Error, "Error", "There was an error assigning the teacher.");
+        }
+    }
+}

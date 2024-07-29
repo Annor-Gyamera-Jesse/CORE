@@ -1989,5 +1989,108 @@ namespace CORE.SERVICE
             }
         }
 
+
+        //Assigning Teachers To their Subject
+        public async Task<bool> AssignTeacherToSubject(TeacherSubjectAssignment assignment)
+        {
+            const string sql = @"
+                INSERT INTO SchoolManagement.TeacherSubjectAssignment (
+                    TeacherID, SCID, ClassID, DayID, SubjectStartTime, 
+                    SubjectEndTime, RecDateCreated)
+                VALUES (
+                    @TeacherID, @SCID, @ClassID, @DayID, @SubjectStartTime, 
+                    @SubjectEndTime, GETDATE())";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var result = await connection.ExecuteAsync(sql, assignment);
+                return result > 0;
+            }
+        }
+
+        public async Task<List<TeachersRegistration>> GetTeachers()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    var query = "SELECT TeacherID, TeacherFirstName, TeacherLastName FROM SchoolManagement.Teacher";
+
+                    using (var command = new SqlCommand(query, connection))
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        var teachers = new List<TeachersRegistration>();
+
+                        while (await reader.ReadAsync())
+                        {
+                            var teacher = new TeachersRegistration
+                            {
+                                TeacherID = reader.GetInt32(0), // Ensure this matches the correct index
+                                TeacherFirstName = reader.GetString(1),
+                                TeacherLastName = reader.GetString(2)
+                            };
+
+                            teachers.Add(teacher);
+                        }
+
+                        return teachers;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetTeachers: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        public async Task<IEnumerable<Class>> GetTClassesAsync()
+        {
+            const string sql = "SELECT ClassID FROM SchoolManagement.Class";
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<Class>(sql);
+            }
+        }
+
+        public async Task<List<SchoolCourse>> GetsSchoolCoursesAsync()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = "SELECT SCID, SchoolCourse FROM SchoolManagement.SchoolCourse";
+
+                    using (var command = new SqlCommand(query, connection))
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        var schoolCourses = new List<SchoolCourse>();
+
+                        while (await reader.ReadAsync())
+                        {
+                            var schoolCourse = new SchoolCourse
+                            {
+                                SCID = reader.IsDBNull(0) ? null : reader.GetString(0),
+                                SchoolCourseName = reader.IsDBNull(1) ? null : reader.GetString(1)
+                            };
+
+                            schoolCourses.Add(schoolCourse);
+                        }
+
+                        return schoolCourses;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetSchoolCoursesAsync: {ex.Message}");
+                throw;
+            }
+        }
+
     }
 }
