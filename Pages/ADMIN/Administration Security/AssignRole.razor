@@ -1,92 +1,102 @@
-﻿@inject AuthService authService
-@inject NotificationMessageService Notify
+﻿@page "/user-role-management"
 @using CORE.MODEL
-@using CORE.SERVICE
-@using CORE.SERVICE.NOTIFICATION
+@using CORE.SERVICE.MainLayout
+@using CORE.SERVICE.MainLayout.Module
+@inject UserService UserService
 
-<style>
-    .right-panel {
-        position: absolute;
-        top: 40px;
-        right: 20px;
-        width: 200px;
-        height: 400px; /* Adjust the height as needed */
-        padding: 20px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-        background-color: #f8f9fa;
-        overflow-y: auto; /* Add scroll if content overflows */
-    }
-</style>
+<h3>User Role Management</h3>
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <RadzenCard Style="max-width: 400px;">
-                <RadzenCardContent>
-                    <h3 class="mb-4 text-center">User Role Management</h3>
+<div class="row">
+    <div class="col-md-4">
+        <RadzenFieldset Legend="Users">
+            <RadzenDropDown @bind-Value="@selectedUser" Data="@users" TextProperty="UserName" ValueProperty="UserID"
+                            Change="@(args => OnUserSelected(args))" Placeholder="Select a user" Style="width: 100%;" />
+        </RadzenFieldset>
+    </div>
 
-                    <div class="form-group">
-                        <label for="selectedUser">Select User:</label>
-                        <RadzenDropDown @bind-Value="selectedUser" Data="@users" TextProperty="UserName" ValueProperty="UserID" class="form-control"></RadzenDropDown>
-                    </div>
+    <div class="col-md-8">
+        <RadzenFieldset Legend="Management" Disabled="@(!selectedUser.HasValue)">
+            @if (selectedUser.HasValue)
+            {
+                <RadzenDropDown @bind-Value="@selectedRole" Data="@roles" TextProperty="RoleName" ValueProperty="RoleID"
+                                Change="@(args => OnRoleSelected(args))" Placeholder="Select a role" Style="margin-bottom: 20px; width: 100%;" />
 
-                    <div class="form-group">
-                        <label for="selectedRole">Select Role:</label>
-                        <RadzenDropDown @bind-Value="selectedRole" Data="@roles" TextProperty="RoleName" ValueProperty="RoleName" class="form-control"></RadzenDropDown>
-                    </div>
+                @if (selectedRole.HasValue)
+                {
+                    <h4>Menu Access</h4>
+                    <RadzenGrid TItem="MenuItem" Data="@allMenus">
+                        <Columns>
+                            <RadzenGridColumn TItem="MenuItem" Property="Text" Title="Menu" />
+                            <RadzenGridColumn TItem="MenuItem" Title="Can Access">
+                                <Template Context="menu">
+                                    <RadzenSwitch TValue="bool" Value="@(menuAccessDict[menu.MenuID])"
+                                                  Change="@(args => UpdateAccess(menu.MenuID, args))" />
 
-                    <div class="form-group">
-                        <label for="enable">Enable Account:</label>
-                        <RadzenCheckBox @bind-Value="enable"></RadzenCheckBox>
-                    </div>
-
-                    <div class="d-flex justify-content-end">
-                        <RadzenButton Text="Save" Click="SaveUserRoles" ButtonStyle="ButtonStyle.Primary" Style="margin-right: 10px;"></RadzenButton>
-                        <RadzenButton Text="Reset" Click="ResetForm" ButtonStyle="ButtonStyle.Danger"></RadzenButton>
-                    </div>
-                </RadzenCardContent>
-            </RadzenCard>
-        </div>
-        <div class="col-md-3">
-            <div class="right-panel">
-                <CORE.Pages.AdminDialogs.UserLogsDialog />
-            </div>
-        </div>
+                                </Template>
+                            </RadzenGridColumn>
+                        </Columns>
+                    </RadzenGrid>
+                }
+            }
+        </RadzenFieldset>
     </div>
 </div>
 
 @code {
-    List<UserRoleViewModel> users = new List<UserRoleViewModel>();
-    List<Role> roles = new List<Role>();
-    int selectedUser;
-    string selectedRole;
-    bool enable;
+    private IEnumerable<User> users;
+    private IEnumerable<Role> roles;
+    private IEnumerable<MenuItem> allMenus;
+    private Dictionary<int, bool> menuAccessDict; // To track access for each menu
+    private int? selectedUser;
+    private int? selectedRole;
 
     protected override async Task OnInitializedAsync()
     {
-        users = await authService.GetUsersAsync();
-        roles = await authService.GetRolesAsync();
+        users = await UserService.GetUsersAsync();
+        roles = await UserService.GetRolesAsync();
+        allMenus = await UserService.GetMenusAsync(); // Get all menus for display
+        menuAccessDict = allMenus.ToDictionary(menu => menu.MenuID, menu => false); // Initialize access to false
     }
 
-    async Task SaveUserRoles()
+    private async Task OnUserSelected(object args)
     {
-        try
+        selectedUser = Convert.ToInt32(args);
+        selectedRole = null; // Reset the selected role when a new user is selected
+
+        // Reset menu access tracking to false
+        menuAccessDict = allMenus.ToDictionary(menu => menu.MenuID, menu => false);
+
+        StateHasChanged(); // Update the UI
+    }
+
+    private async Task OnRoleSelected(object args)
+    {
+        selectedRole = Convert.ToInt32(args);
+        if (selectedRole.HasValue)
         {
-            await authService.SaveUserRolesAsync(selectedUser, selectedRole, enable);
-            Notify.ShowNotification("Success", "Role for user saved!", NotificationSeverity.Success);
-            ResetForm();
-        }
-        catch (Exception ex)
-        {
-            Notify.ShowNotification("Error", $"Failed to save user role. {ex.Message}", NotificationSeverity.Error);
+            var menuAccess = await UserService.GetMenuAccessAsync(selectedRole.Value);
+
+            // Initialize menu access dictionary based on selected role
+            foreach (var menu in allMenus)
+            {
+                menuAccessDict[menu.MenuID] = menuAccess.Any(ma => ma.MenuID == menu.MenuID && ma.CanAccess);
+            }
+
+            StateHasChanged(); // Update the UI
         }
     }
 
-    void ResetForm()
+    private async Task UpdateAccess(int menuId, bool canAccess)
     {
-        selectedUser = 0;
-        selectedRole = null;
-        enable = false;
+        var access = new MenuAccess
+            {
+                RoleID = selectedRole.Value,
+                MenuID = menuId,
+                CanAccess = canAccess
+            };
+
+        await UserService.UpdateMenuAccessAsync(access);
+        menuAccessDict[menuId] = canAccess; // Update the dictionary
+        StateHasChanged(); // Update the UI
     }
 }
