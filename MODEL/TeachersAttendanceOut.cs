@@ -8,5 +8,6 @@
         public bool EnableSwitch { get; set; }
         public DateTime ClockOUT { get; set; }
         public DateTime ClockIN { get; set; }
+        public int UserID { get; set; }
     }
 }

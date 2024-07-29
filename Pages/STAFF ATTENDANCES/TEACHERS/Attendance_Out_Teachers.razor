@@ -86,9 +86,16 @@
     ElementReference clockOutForm;
     private Timer timer;
     private const string LastResetTimeKey = "lastResetTime";
+    private int userId;
 
     protected override async Task OnInitializedAsync()
     {
+        var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var user = await authService.GetUserByUsernameAsync(username);
+        if (user != null)
+        {
+            userId = user.UserID;
+        }
         teachersAttendance = await authService.GetTeacherAttendanceAsync();
         await CheckAndResetAttendanceRecords();
         SetTimer();
@@ -124,7 +131,8 @@
                 TeacherLastName = selectedTeacher.TeacherLastName,
                 EnableSwitch = attendanceOutModel.IsClockedOut,
                 ClockIN = selectedTeacher.ClockIN,
-                ClockOUT = DateTime.Now
+                ClockOUT = DateTime.Now,
+                UserID = userId  // Set the UserID here
             };
 
             bool saved = await authService.SaveTeachersAttendanceOutAsync(newRecord);

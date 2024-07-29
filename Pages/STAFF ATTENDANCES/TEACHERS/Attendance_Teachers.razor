@@ -6,6 +6,7 @@
 @using CORE.SERVICE.NOTIFICATION
 @using Radzen
 @using Radzen.Blazor
+@inject IJSRuntime JSRuntime
 
 <style>
     .header {
@@ -137,11 +138,16 @@
     int selectedTeacher;
     ElementReference attendanceForm;
 
-    // [Inject]
-    // protected IJSRuntime JSRuntime { get; set; }
+    private int userId;
 
     protected override async Task OnInitializedAsync()
     {
+        var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var user = await AuthService.GetUserByUsernameAsync(username);
+        if (user != null)
+        {
+            userId = user.UserID;
+        }
         teachers = await AuthService.GetTeachersAsync();
     }
 
@@ -162,10 +168,10 @@
         var newRecord = new TeacherAttendance
             {
                 TeacherFirstName = attendanceModel.SelectedTeacher,
-                TeacherLastName = "",
+                TeacherLastName = "", // You can set this if you have last name available
                 EnableSwitch = attendanceModel.IsClockedIn,
                 ClockIN = attendanceModel.SelectedDate,
-                // ClockOUT = DateTime.Now
+                UserID = userId  // Set the UserID here
             };
 
         bool saved = await AuthService.SaveTeachersAttendanceAsync(newRecord);
@@ -173,24 +179,16 @@
         if (saved)
         {
             attendanceRecords.Add(newRecord);
-            // Console.WriteLine($"Teacher: {newRecord.TeacherFirstName}, Date: {newRecord.ClockIN}, Clocked In: {newRecord.EnableSwitch}");
-
-
             attendanceModel = new AttendanceModel();
-           
-
             StateHasChanged();
-            // Show success message using JavaScript Interop
-            // await JSRuntime.InvokeVoidAsync("alert", "Attendance saved successfully!");
-            Notify.ShowNotification($"Teacher", "{newRecord.TeacherFirstName}, Date: {newRecord.ClockIN}, Clocked In: {newRecord.EnableSwitch}", NotificationSeverity.Success);
+            Notify.ShowNotification($"Teacher", $"{newRecord.TeacherFirstName}, Date: {newRecord.ClockIN}, Clocked In: {newRecord.EnableSwitch}", NotificationSeverity.Success);
         }
         else
         {
-            // Show error message using JavaScript Interop
-            // await JSRuntime.InvokeVoidAsync("alert", "Failed to save attendance.");
             Notify.ShowNotification("ALERT", "Failed to save attendance.", NotificationSeverity.Error);
         }
     }
+
     
 
     public class AttendanceModel
@@ -198,5 +196,6 @@
         public string SelectedTeacher { get; set; }
         public DateTime SelectedDate { get; set; } = DateTime.Now;
         public bool IsClockedIn { get; set; }
+        public int UserID { get; set; }
     }
 }

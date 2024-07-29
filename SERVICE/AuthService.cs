@@ -1168,7 +1168,7 @@ namespace CORE.SERVICE
             return null;
         }
 
-        public async Task SaveAttendanceAsync(List<Student> students, string classID)
+        public async Task SaveAttendanceAsync(List<Student> students, string classID, int userID)
         {
             try
             {
@@ -1176,18 +1176,18 @@ namespace CORE.SERVICE
                 {
                     await connection.OpenAsync();
 
-                    // Iterate through the list of students and save attendance for each student
                     foreach (var student in students)
                     {
-                        var query = "INSERT INTO SchoolManagement.StudentsAttendance (StudentFirstName, StudentLastName, ClassID, EnableSwitch) " +
-                                    "VALUES (@StudentFirstName, @StudentLastName, @ClassID, @EnableSwitch)";
+                        var query = "INSERT INTO SchoolManagement.StudentsAttendance (StudentFirstName, StudentLastName, ClassID, EnableSwitch, UserID) " +
+                                    "VALUES (@StudentFirstName, @StudentLastName, @ClassID, @EnableSwitch, @UserID)";
 
                         var parameters = new
                         {
                             StudentFirstName = student.StudentFirstName,
                             StudentLastName = student.StudentLastName,
                             ClassID = classID,
-                            EnableSwitch = student.EnableSwitch
+                            EnableSwitch = student.EnableSwitch,
+                            UserID = userID
                         };
 
                         await connection.ExecuteAsync(query, parameters);
@@ -1197,12 +1197,12 @@ namespace CORE.SERVICE
             catch (SqlException ex)
             {
                 Console.WriteLine($"SQL Exception: {ex.Message}");
-                throw; // Re-throw the exception to propagate it up
+                throw;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Exception: {ex.Message}");
-                throw; // Re-throw the exception to propagate it up
+                throw;
             }
         }
 
@@ -1267,9 +1267,9 @@ namespace CORE.SERVICE
 
                     var query = @"
                 INSERT INTO SchoolManagement.TeachersAttendance 
-                (TeacherFirstName, TeacherLastName, EnableSwitch, ClockIN, RecDateCreated)
+                (TeacherFirstName, TeacherLastName, EnableSwitch, ClockIN, UserID, RecDateCreated)
                 VALUES 
-                (@TeacherFirstName, @TeacherLastName, @EnableSwitch, @ClockIN, @RecDateCreated)
+                (@TeacherFirstName, @TeacherLastName, @EnableSwitch, @ClockIN, @UserID, @RecDateCreated)
             ";
 
                     using (var command = new SqlCommand(query, connection))
@@ -1278,7 +1278,7 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@TeacherLastName", attendanceRecord.TeacherLastName);
                         command.Parameters.AddWithValue("@EnableSwitch", attendanceRecord.EnableSwitch);
                         command.Parameters.AddWithValue("@ClockIN", attendanceRecord.ClockIN);
-                        //command.Parameters.AddWithValue("@ClockOUT", attendanceRecord.ClockOUT);
+                        command.Parameters.AddWithValue("@UserID", attendanceRecord.UserID);  // Include UserID parameter
                         command.Parameters.AddWithValue("@RecDateCreated", DateTime.Now);
 
                         int rowsAffected = await command.ExecuteNonQueryAsync();
@@ -1288,17 +1288,16 @@ namespace CORE.SERVICE
             }
             catch (SqlException ex)
             {
-                // Log SQL exceptions
                 Console.WriteLine($"SQL Exception: {ex.Message}");
                 return false;
             }
             catch (Exception ex)
             {
-                // Log other exceptions
                 Console.WriteLine($"Exception: {ex.Message}");
                 return false;
             }
         }
+
         //----------------For Teacher Attendance-Clock-In-End ----------//
 
 
@@ -1359,9 +1358,9 @@ namespace CORE.SERVICE
 
                     var query = @"
                     INSERT INTO SchoolManagement.TeachersAttendanceOut 
-                    (TeacherFirstName, TeacherLastName, EnableSwitch, ClockIN, ClockOUT)
+                    (TeacherFirstName, TeacherLastName, EnableSwitch, ClockIN, ClockOUT, UserID)
                     VALUES 
-                    (@TeacherFirstName, @TeacherLastName, @EnableSwitch, @ClockIN, @ClockOUT)
+                    (@TeacherFirstName, @TeacherLastName, @EnableSwitch, @ClockIN, @ClockOUT, @UserID)
                 ";
 
                     using (var command = new SqlCommand(query, connection))
@@ -1371,6 +1370,7 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@EnableSwitch", attendanceRecord.EnableSwitch);
                         command.Parameters.AddWithValue("@ClockIN", attendanceRecord.ClockIN);
                         command.Parameters.AddWithValue("@ClockOUT", attendanceRecord.ClockOUT);
+                        command.Parameters.AddWithValue("@UserID", attendanceRecord.UserID);  // Include UserID parameter
 
                         int rowsAffected = await command.ExecuteNonQueryAsync();
                         return rowsAffected > 0;
