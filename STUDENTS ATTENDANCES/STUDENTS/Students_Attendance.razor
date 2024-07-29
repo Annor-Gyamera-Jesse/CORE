@@ -2,6 +2,7 @@
 @using CORE.MODEL
 @using CORE.SERVICE
 @inject AuthService authService
+@inject IJSRuntime JSRuntime
 
 <RadzenFieldset>
     <ChildContent>
@@ -45,11 +46,19 @@
     List<Student> students;
     string message = "";
     string messageClass = "";
+    private int userId;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+            var user = await authService.GetUserByUsernameAsync(username);
+            if (user != null)
+            {
+                userId = user.UserID;
+            }
+
             classData = await authService.GetAllClassAsync();
         }
         catch (Exception ex)
@@ -62,7 +71,6 @@
     {
         try
         {
-            // Fetch students for the selected class
             students = await authService.GetStudentsByClassAsync(selectedClass);
         }
         catch (Exception ex)
@@ -71,20 +79,18 @@
         }
     }
 
+
     private async Task ConfirmAttendance()
     {
         try
         {
-            // Save the attendance to the database
-            await authService.SaveAttendanceAsync(students, selectedClass);
+            await authService.SaveAttendanceAsync(students, selectedClass, userId);
 
-            // Display success message
             message = "Attendance successfully confirmed!";
             messageClass = "success-message";
         }
         catch (Exception ex)
         {
-            // Display error message
             message = $"An error occurred while confirming attendance: {ex.Message}";
             messageClass = "error-message";
         }
