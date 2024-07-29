@@ -1,52 +1,143 @@
-﻿@page "/teacherstimetable"
+﻿@page "/manage-schedule"
+@inject AuthService scheduleService
 @using CORE.MODEL
 @using CORE.SERVICE
-@inject AuthService TimetableService
-@inject IJSRuntime JSRuntime
-@inject NotificationService NotificationService
+@using Radzen
+@using static CORE.MODEL.Teachers_Time_Table
 
-<RadzenGrid @ref="grid" Data="@timetables" TItem="AssignTeachersSchoolTimetable" AllowPaging="true" AllowSorting="true" PageSize="10">
+<h3>Manage Schedule</h3>
+
+@if (isEditing)
+{
+    <RadzenTemplateForm Data="@EditingSchedule" TItem="Schedule" Submit="@OnSubmit">
+        <ChildContent>
+            <RadzenFieldset>
+                <RadzenLabel Text="Course" />
+                <RadzenDropDown @bind-Value="EditingSchedule.SCID" 
+                                Data="@schoolCourses"
+                                TextProperty="SchoolCourseName"
+                                ValueProperty="SCID" 
+                                Style="width: 100%" />
+
+                <RadzenLabel Text="Class ID" />
+                <RadzenDropDown @bind-Value="EditingSchedule.ClassID" 
+                                Data="@classIDs" 
+                                Style="width: 100%" />
+
+                <RadzenLabel Text="Start Time" />
+                <RadzenTimePicker Value="@EditingSchedule.StartTime" 
+                                  ValueChange="@((TimeSpan? value) => EditingSchedule.StartTime = value)" 
+                                  Style="width: 100%" />
+
+                <RadzenLabel Text="End Time" />
+                <RadzenTimePicker Value="@EditingSchedule.EndTime" 
+                                  ValueChange="@((TimeSpan? value) => EditingSchedule.EndTime = value)" 
+                                  Style="width: 100%" />
+
+                <RadzenLabel Text="Subject Start Time" />
+                <RadzenDatePicker TValue="DateTime?"
+                                  Value="@EditingSchedule.SubjectStartTime"
+                                  ValueChange="@((DateTime? value) => EditingSchedule.SubjectStartTime = value.GetValueOrDefault())"
+                                  Style="width: 100%" />
+
+                <RadzenLabel Text="Subject End Time" />
+                <RadzenDatePicker TValue="DateTime?"
+                                  Value="@EditingSchedule.SubjectEndTime"
+                                  ValueChange="@((DateTime? value) => EditingSchedule.SubjectEndTime = value.GetValueOrDefault())"
+                                  Style="width: 100%" />
+
+                <RadzenLabel Text="Day Name" />
+                <RadzenDropDown @bind-Value="EditingSchedule.DayID" 
+                                Data="@days"
+                                TextProperty="DayName"
+                                ValueProperty="DayID"
+                                Style="width: 100%" />
+            </RadzenFieldset>
+            <div>
+                <RadzenButton Text="Save" ButtonType="ButtonType.Submit" Style="margin-top: 20px;" />
+                <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Secondary" Click="@CancelEdit" />
+            </div>
+        </ChildContent>
+    </RadzenTemplateForm>
+}
+
+<RadzenDataGrid TItem="Schedule" Data="@schedules" ColumnWidth="200px" RowSelect="@EditSchedule" RowDelete="@DeleteSchedule">
     <Columns>
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="ClassID" Title="Class ID" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="SchoolCourseName" Title="Subject" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="Period" Title="Period" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="Day" Title="Day" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="TeacherID" Title="Teacher ID" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="StartTime" Title="Start Time" FormatString="{0:MM/dd/yyyy HH:mm:ss}" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="EndTime" Title="End Time" FormatString="{0:MM/dd/yyyy HH:mm:ss}" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="UserID" Title="Submitted By UserID" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="UpdatedBy" Title="Updated By" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="Note" Title="Note" />
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Property="RecDateCreated" Title="Date Created" FormatString="{0:MM/dd/yyyy HH:mm:ss}" />
-
-        <RadzenGridColumn TItem="AssignTeachersSchoolTimetable" Width="100px">
-            <Template Context="data">
-                <RadzenButton Icon="delete" Size="ButtonSize.Small" Click="@((args) => OnDeleteRow(data))" />
+        <RadzenDataGridColumn TItem="Schedule" Property="SchoolCourse" Title="Course" />
+        <RadzenDataGridColumn TItem="Schedule" Property="ClassID" Title="Class ID" />
+        <RadzenDataGridColumn TItem="Schedule" Property="StartTime" Title="Start Time" />
+        <RadzenDataGridColumn TItem="Schedule" Property="EndTime" Title="End Time" />
+        <RadzenDataGridColumn TItem="Schedule" Property="DayName" Title="Day Name" />
+        <RadzenDataGridColumn TItem="Schedule" Context="schedule" Width="70px">
+            <Template Context="schedule">
+                <RadzenButton Icon="edit" Size="ButtonSize.Small" Click="@(() => EditSchedule(schedule))" />
+                <RadzenButton Icon="delete" Size="ButtonSize.Small" Click="@(() => DeleteSchedule(schedule.ScheduleID))" />
             </Template>
-        </RadzenGridColumn>
+        </RadzenDataGridColumn>
     </Columns>
-</RadzenGrid>
+</RadzenDataGrid>
+
+<RadzenButton Icon="add_circle" Text="Add Schedule" Click="@ShowAddScheduleForm" />
 
 @code {
-    private RadzenGrid<AssignTeachersSchoolTimetable> grid;
-    private IEnumerable<AssignTeachersSchoolTimetable> timetables;
+    private IEnumerable<Schedule> schedules;
+    private Schedule EditingSchedule = new Schedule();
+    private bool isEditing = false;
+
+    private IEnumerable<string> classIDs;
+    private IEnumerable<SchoolCourse> schoolCourses;
+    private IEnumerable<Day> days;
 
     protected override async Task OnInitializedAsync()
     {
-        timetables = await TimetableService.GetAllTimetablesAsync();
+        schedules = await scheduleService.GetAllSchedulesAsync();
+        classIDs = await scheduleService.GetClassIDsAsync();
+        schoolCourses = await scheduleService.GetSchoolCoursesAsync();
+        days = await scheduleService.GetDaysAsync();
     }
 
-    async Task OnDeleteRow(AssignTeachersSchoolTimetable timetable)
+    private void ShowAddScheduleForm()
     {
-        if (timetable == null)
-            return;
+        EditingSchedule = new Schedule(); // Reset for new entry
+        isEditing = true;
+    }
 
-        var confirm = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this record?");
-        if (confirm)
+    private async Task EditSchedule(Schedule schedule)
+    {
+        EditingSchedule = schedule; // Set the schedule to be edited
+        isEditing = true;
+    }
+
+    private async Task OnSubmit()
+    {
+        if (EditingSchedule.SubjectStartTime == DateTime.MinValue ||
+            EditingSchedule.SubjectEndTime == DateTime.MinValue)
         {
-            await TimetableService.DeleteTimetableAsync(timetable.ClassSchedulingID);
-            timetables = await TimetableService.GetAllTimetablesAsync();
-            await grid.Reload();
+            // Show an error message to the user about missing values
+            return; // Prevent submission
         }
+
+        if (EditingSchedule.ScheduleID == 0) // Assuming ScheduleID is 0 for new entries
+        {
+            await scheduleService.AddScheduleAsync(EditingSchedule);
+        }
+        else
+        {
+            await scheduleService.UpdateScheduleAsync(EditingSchedule);
+        }
+
+        isEditing = false;
+        schedules = await scheduleService.GetAllSchedulesAsync(); // Refresh the schedule list
+    }
+
+    private void CancelEdit()
+    {
+        isEditing = false;
+    }
+
+    private async Task DeleteSchedule(int scheduleId)
+    {
+        await scheduleService.DeleteScheduleAsync(scheduleId);
+        schedules = await scheduleService.GetAllSchedulesAsync();
     }
 }
