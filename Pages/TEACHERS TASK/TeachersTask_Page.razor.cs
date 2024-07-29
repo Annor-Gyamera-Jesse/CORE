@@ -1,5 +1,5 @@
-﻿using CORE.Pages.TEACHERS_ASSESMENT;
-using CORE.Pages.TIMETABLE;
+﻿
+using CORE.Pages.TEACHERS_TASK.TIMETABLE;
 using Microsoft.AspNetCore.Components;
 using Radzen;
 

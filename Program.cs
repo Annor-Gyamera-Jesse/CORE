@@ -44,6 +44,8 @@ builder.Services.AddScoped<AuthService>(provider => new AuthService("Server=ANDE
 builder.Services.AddScoped<MenuService>(provider => new MenuService("Server=ANDERSON-WALKER;Database=INTEL;Trusted_Connection=True;MultipleActiveResultSets=true;Encrypt=False;"));
 
 builder.Services.AddScoped<ContentLoaderTemplate>();
+builder.Services.AddTransient<UserService>();
+
 
 //for fastreport
 RegisteredObjects.AddConnection(typeof(MsSqlDataConnection));
