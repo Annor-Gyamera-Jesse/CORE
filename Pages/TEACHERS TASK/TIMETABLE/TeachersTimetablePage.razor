@@ -1,16 +1,22 @@
 ﻿@page "/manage-schedule"
 @inject AuthService scheduleService
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
 @using Radzen
 @using static CORE.MODEL.Teachers_Time_Table
+@inject NotificationMessageService Notify
 
 <h3>Manage Schedule</h3>
 
-@if (isEditing)
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
 {
-    <RadzenTemplateForm Data="@EditingSchedule" TItem="Schedule" Submit="@OnSubmit">
-        <ChildContent>
+    @if (isEditing)
+    {
+        <RadzenTemplateForm Data="@EditingSchedule" TItem="Schedule" Submit="@OnSubmit">
+            <ChildContent>
             <RadzenFieldset>
                 <RadzenLabel Text="Course" />
                 <RadzenDropDown @bind-Value="EditingSchedule.SCID" 
@@ -59,9 +65,9 @@
             </div>
         </ChildContent>
     </RadzenTemplateForm>
-}
+ }
 
-<RadzenDataGrid TItem="Schedule" Data="@schedules" ColumnWidth="200px" RowSelect="@EditSchedule" RowDelete="@DeleteSchedule">
+ <RadzenDataGrid TItem="Schedule" Data="@schedules" ColumnWidth="200px" RowSelect="@EditSchedule" RowDelete="@DeleteSchedule">
     <Columns>
         <RadzenDataGridColumn TItem="Schedule" Property="SchoolCourse" Title="Course" />
         <RadzenDataGridColumn TItem="Schedule" Property="ClassID" Title="Class ID" />
@@ -75,25 +81,37 @@
             </Template>
         </RadzenDataGridColumn>
     </Columns>
-</RadzenDataGrid>
+ </RadzenDataGrid>
 
-<RadzenButton Icon="add_circle" Text="Add Schedule" Click="@ShowAddScheduleForm" />
+ <RadzenButton Icon="add_circle" Text="Add Schedule" Click="@ShowAddScheduleForm" />
+}
 
 @code {
     private IEnumerable<Schedule> schedules;
     private Schedule EditingSchedule = new Schedule();
     private bool isEditing = false;
-
+    private bool isLoading = false;
     private IEnumerable<string> classIDs;
     private IEnumerable<SchoolCourse> schoolCourses;
     private IEnumerable<Day> days;
 
     protected override async Task OnInitializedAsync()
     {
-        schedules = await scheduleService.GetAllSchedulesAsync();
-        classIDs = await scheduleService.GetClassIDsAsync();
-        schoolCourses = await scheduleService.GetSchoolCoursesAsync();
-        days = await scheduleService.GetDaysAsync();
+        try{
+            isLoading = true;
+            schedules = await scheduleService.GetAllSchedulesAsync();
+            classIDs = await scheduleService.GetClassIDsAsync();
+            schoolCourses = await scheduleService.GetSchoolCoursesAsync();
+            days = await scheduleService.GetDaysAsync();
+        }
+        catch(Exception ex)
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void ShowAddScheduleForm()
@@ -110,24 +128,37 @@
 
     private async Task OnSubmit()
     {
-        if (EditingSchedule.SubjectStartTime == DateTime.MinValue ||
+        try
+        {
+            isLoading = true;
+            if (EditingSchedule.SubjectStartTime == DateTime.MinValue ||
             EditingSchedule.SubjectEndTime == DateTime.MinValue)
-        {
-            // Show an error message to the user about missing values
-            return; // Prevent submission
-        }
+            {
+                // Show an error message to the user about missing values
+                return; // Prevent submission
+            }
 
-        if (EditingSchedule.ScheduleID == 0) // Assuming ScheduleID is 0 for new entries
-        {
-            await scheduleService.AddScheduleAsync(EditingSchedule);
-        }
-        else
-        {
-            await scheduleService.UpdateScheduleAsync(EditingSchedule);
-        }
+            if (EditingSchedule.ScheduleID == 0) // Assuming ScheduleID is 0 for new entries
+            {
+                await scheduleService.AddScheduleAsync(EditingSchedule);
+            }
+            else
+            {
+                await scheduleService.UpdateScheduleAsync(EditingSchedule);
+            }
 
-        isEditing = false;
-        schedules = await scheduleService.GetAllSchedulesAsync(); // Refresh the schedule list
+            isEditing = false;
+            schedules = await scheduleService.GetAllSchedulesAsync(); // Refresh the schedule list
+            Notify.ShowNotification("Submitted", "Successfully", NotificationSeverity.Success);
+        }
+        catch(Exception ex)
+        {
+            Notify.ShowNotification("Failed","Submit",NotificationSeverity.Warning);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void CancelEdit()
@@ -137,7 +168,15 @@
 
     private async Task DeleteSchedule(int scheduleId)
     {
-        await scheduleService.DeleteScheduleAsync(scheduleId);
-        schedules = await scheduleService.GetAllSchedulesAsync();
+        try{
+            isLoading = true;
+            await scheduleService.DeleteScheduleAsync(scheduleId);
+            schedules = await scheduleService.GetAllSchedulesAsync();
+            Notify.ShowNotification("Deleted","Successfully",NotificationSeverity.Info);
+        }
+        catch
+        {
+            Notify.ShowNotification("Failed","To Delete",NotificationSeverity.Warning);
+        }
     }
 }

@@ -1,43 +1,107 @@
 ﻿@page "/teacher-subject-assignment"
 @inject AuthService authService
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
 @using static CORE.MODEL.Teachers_Time_Table
+@inject NotificationMessageService Notify
 
 <PageTitle>Teacher Subject Assignment</PageTitle>
 
-<RadzenTemplateForm Data="@assignment" TItem="TeacherSubjectAssignment" Submit="@HandleValidSubmit">
-    <div class="form-group">
-        <label>Teacher</label>
-        <RadzenDropDown @bind-Value="assignment.TeacherID" Data="@teachers" TextProperty="FullName" ValueProperty="TeacherID" AllowClear="true" />
-    </div>
+<style>
+    .form-container {
+        background-color: #f9f9f9;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 800px;
+        margin: 0 auto;
+    }
 
-    <div class="form-group">
-        <label>Course</label>
-        <RadzenDropDown @bind-Value="assignment.SCID" Data="courses" TextProperty="SchoolCourseName" ValueProperty="SCID" AllowClear="true" />
-    </div>
+    .form-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
 
-    <div class="form-group">
-        <label>Class</label>
-        <RadzenDropDown @bind-Value="assignment.ClassID" Data="@classes" TextProperty="ClassID" ValueProperty="ClassID" AllowClear="true" />
-    </div>
-    <div class="form-group">
-        <label>Day</label>
-        <RadzenDropDown @bind-Value="assignment.DayID" Data="@days" TextProperty="DayName" ValueProperty="DayID" AllowClear="true" />
-    </div>
-    <div class="form-group">
-        <label>Start Time</label>
-        <RadzenDatePicker @bind-Value="assignment.SubjectStartTime" />
-    </div>
-    <div class="form-group">
-        <label>End Time</label>
-        <RadzenDatePicker @bind-Value="assignment.SubjectEndTime" />
-    </div>
+    .form-group {
+        flex: 1;
+        margin-right: 20px;
+    }
 
-    <RadzenButton ButtonType="ButtonType.Submit" Text="Assign" Style="margin-top: 20px;" />
-</RadzenTemplateForm>
+        .form-group:last-child {
+            margin-right: 0;
+        }
 
-<RadzenNotification />
+    .form-label {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .submit-button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+
+        .submit-button:hover {
+            background-color: #45a049;
+        }
+</style>
+
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
+<div class="form-container">
+    <h2>Assign Teacher to Subject</h2>
+
+    <RadzenTemplateForm Data="@assignment" TItem="TeacherSubjectAssignment" Submit="@HandleValidSubmit">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Teacher</label>
+                <RadzenDropDown @bind-Value="assignment.TeacherID" Data="@teachers" TextProperty="FullName" ValueProperty="TeacherID" AllowClear="true" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Course</label>
+                <RadzenDropDown @bind-Value="assignment.SCID" Data="courses" TextProperty="SchoolCourseName" ValueProperty="SCID" AllowClear="true" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Class</label>
+                <RadzenDropDown @bind-Value="assignment.ClassID" Data="@classes" TextProperty="ClassID" ValueProperty="ClassID" AllowClear="true" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Day</label>
+                <RadzenDropDown @bind-Value="assignment.DayID" Data="@days" TextProperty="DayName" ValueProperty="DayID" AllowClear="true" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Start Time</label>
+                <RadzenDatePicker @bind-Value="assignment.SubjectStartTime" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">End Time</label>
+                <RadzenDatePicker @bind-Value="assignment.SubjectEndTime" />
+            </div>
+        </div>
+
+        <RadzenButton ButtonType="ButtonType.Submit" Text="Assign" Class="submit-button" />
+    </RadzenTemplateForm>
+
+    <RadzenNotification />
+</div>
+}
 
 @code {
     private TeacherSubjectAssignment assignment = new TeacherSubjectAssignment();
@@ -45,26 +109,53 @@
     private IEnumerable<SchoolCourse> courses;
     private IEnumerable<Class> classes;
     private IEnumerable<Day> days;
+    private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        teachers = await authService.GetTeachers();
-        courses = await authService.GetsSchoolCoursesAsync();
-        classes = await authService.GetTClassesAsync();
-        days = await authService.GetDaysAsync();
+        try{
+            isLoading = true;
+            teachers = await authService.GetTeachers();
+            courses = await authService.GetsSchoolCoursesAsync();
+            classes = await authService.GetTClassesAsync();
+            days = await authService.GetDaysAsync();
+
+        }
+        catch(Exception ex)
+        {
+            Notify.ShowNotification("", $"{ex.Message}",NotificationSeverity.Warning);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task HandleValidSubmit()
     {
-        var success = await authService.AssignTeacherToSubject(assignment);
-        if (success)
-        {
-            assignment = new TeacherSubjectAssignment(); // Reset the form
-            //Radzen.NotificationService.Notify(NotificationSeverity.Success, "Success", "Teacher assigned successfully.");
+        try{
+            isLoading = true;
+            var success = await authService.AssignTeacherToSubject(assignment);
+            if (success)
+            {
+
+                assignment = new TeacherSubjectAssignment(); // Reset                                                     
+                Notify.ShowNotification("Success", "Teacher assigned successfully.", NotificationSeverity.Success);
+            }
+            else
+            {            
+                isLoading = false;
+                Notify.ShowNotification("Error", "There was an error assigning the teacher.", NotificationSeverity.Info);
+            }
         }
-        else
+        catch(Exception ex)
         {
-            //Radzen.NotificationService.Notify(NotificationSeverity.Error, "Error", "There was an error assigning the teacher.");
+            Notify.ShowNotification("Error", $"{ex.Message}", NotificationSeverity.Warning);
         }
+        finally
+        {
+            isLoading = false;
+        }
+
     }
 }
