@@ -1,0 +1,30 @@
+﻿@page "/teachers"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService authService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Teachers</PageTitle>
+
+<h3>Teachers</h3>
+
+<RadzenDataGrid @ref="teachersGrid" Data="@teachers" TItem="TeachersRegistration" RowSelect="@ViewTeacherAssignments">
+    <Columns>
+        <RadzenDataGridColumn TItem="TeachersRegistration" Property="FullName" Title="Teacher Name" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    private RadzenDataGrid<TeachersRegistration> teachersGrid;
+    private IEnumerable<TeachersRegistration> teachers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        teachers = await authService.GetTeachers();
+    }
+
+    private void ViewTeacherAssignments(TeachersRegistration teacher)
+    {
+        NavigationManager.NavigateTo($"/teacher-assignments/{teacher.TeacherID}");
+    }
+}

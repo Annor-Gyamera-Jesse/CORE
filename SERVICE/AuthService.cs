@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using CORE.Pages.LESSON_NOTE;
 using CORE.SERVICE.MainLayout.Module;
 using static CORE.MODEL.Teachers_Time_Table;
+using static CORE.Pages.COURSES.View_Teacher_Subject_Assign_ByID;
 
 namespace CORE.SERVICE
 {
@@ -2092,5 +2093,54 @@ namespace CORE.SERVICE
             }
         }
 
+        //TO VIEW TEACHERS SUBJECT ASSIGN//
+        public async Task<TeachersRegistration> GetTeacherById(int teacherId)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    var query = "SELECT TeacherID, TeacherFirstName, TeacherLastName FROM SchoolManagement.Teacher WHERE TeacherID = @TeacherID";
+                    return await connection.QuerySingleOrDefaultAsync<TeachersRegistration>(query, new { TeacherID = teacherId });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetTeacherById: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        public async Task<List<AssignmentDetails>> GetTeacherAssignments(int teacherId)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    var query = @"
+                SELECT 
+                    d.DayName,
+                    a.ClassID,
+                    s.SchoolCourse AS SchoolCourseName,
+                    a.SubjectStartTime,
+                    a.SubjectEndTime
+                FROM SchoolManagement.TeacherSubjectAssignment a
+                JOIN SchoolManagement.StudentTimetable_Days d ON a.DayID = d.DayID
+                JOIN SchoolManagement.SchoolCourse s ON a.SCID = s.SCID
+                WHERE a.TeacherID = @TeacherID";
+
+                    var assignments = await connection.QueryAsync<AssignmentDetails>(query, new { TeacherID = teacherId });
+                    return assignments.ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetTeacherAssignments: {ex.Message}");
+                throw;
+            }
+        }
     }
 }
