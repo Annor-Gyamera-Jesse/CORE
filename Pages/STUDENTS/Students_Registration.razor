@@ -59,7 +59,7 @@
             <RadzenLabel Text="Student Gender" Component="textstudentgender" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentGender" />
+                <RadzenDropDown Data="genderOptions" class="form-control form-control-sm" @bind-Value="@student.StudentGender" />
         </div>
     </div>
 
@@ -126,7 +126,7 @@
             <RadzenLabel Text="Guardian Gender" Component="textguardianggender" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianGender" />
+                <RadzenDropDown Data="genderOptions" class="form-control form-control-sm" @bind-Value="@student.GuardianGender" />
         </div>
 
         <div class="col-md-3 text-md-end form-label">
@@ -233,7 +233,7 @@
     List<Student> ViewStudents;// put the students in a list 
     public bool isLoading = false;
     byte[] imageData;
-
+    List<string> genderOptions = new List<string> { "M", "F"};
     int newStudentId;
     string successMessage;
 
