@@ -36,14 +36,14 @@
             <RadzenLabel Text="Student FirstName" Component="textstudentname" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentFirstName" />
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentFirstName" AutoComplete="false"/>
         </div>
 
         <div class="col-md-3 text-md-end form-label">
             <RadzenLabel Text="Student LastName" Component="textstudentlastname" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentLastName" />
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentLastName" AutoComplete="false" />
         </div>
     </div>
 
@@ -68,14 +68,14 @@
             <RadzenLabel Text="Student Address" Component="textstudentaddress" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentAddress" />
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentAddress" AutoComplete="false" />
         </div>
 
         <div class="col-md-3 text-md-end form-label">
             <RadzenLabel Text="Student Phone Number" Component="textstudentphonenumber" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentPhoneNumber" />
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentPhoneNumber" AutoComplete="false" />
         </div>
 
         <div class="col-md-3 text-md-end form-label">
@@ -89,7 +89,7 @@
             <RadzenLabel Text="Student Email" Component="textstudentemail" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentEmail" />
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentEmail" AutoComplete="false" />
         </div>
 
         <div class="col-md-3 text-md-end form-label">
@@ -119,28 +119,28 @@
             <RadzenLabel Text="Guardian FullName" Component="textguardiangfullname" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianFullName" />
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianFullName" AutoComplete="false" />
         </div>
 
         <div class="col-md-3 text-md-end form-label">
             <RadzenLabel Text="Guardian Gender" Component="textguardianggender" />
         </div>
         <div class="col-md-3">
-                <RadzenDropDown Data="genderOptions" class="form-control form-control-sm" @bind-Value="@student.GuardianGender" />
+                <RadzenDropDown Data="genderOptions" class="form-control form-control-sm" @bind-Value="@student.GuardianGender" AutoComplete="false" />
         </div>
 
         <div class="col-md-3 text-md-end form-label">
             <RadzenLabel Text="Guardian House Address" Component="textguardiangfullname" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianHouseAddress" />
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianHouseAddress" AutoComplete="false" />
         </div>
 
         <div class="col-md-3 text-md-end form-label">
             <RadzenLabel Text="Guardian Work Address" Component="textguardiangworkaddress" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianWorkAddress" />
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianWorkAddress" AutoComplete="false" />
         </div>
         </div>
 
@@ -149,21 +149,21 @@
             <RadzenLabel Text="Guardian Email" Component="textguardiangemail" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianEmail" />
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianEmail" AutoComplete="false" />
         </div>
 
         <div class="col-md-3 text-md-end form-label">
             <RadzenLabel Text="Guardian Contact 1" Component="textguardiangfirstcontact" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianFirstContact" />
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianFirstContact" AutoComplete="false" />
         </div>
 
         <div class="col-md-3 text-md-end form-label">
             <RadzenLabel Text="Guardian Contact 2" Component="textguardiangsecondcontact" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianSecondContact" />
+            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianSecondContact" AutoComplete="false"/>
         </div>
     </div>
    
@@ -178,7 +178,7 @@
             <RadzenTextArea class="form-control form-control-sm"
                             @bind-Value="@student.StudentMedicalReport"
                             Rows="5"
-                            Style="resize: both;" />
+                            Style="resize: both;"/>
         </div>
     </div>
 </RadzenFieldset>
