@@ -314,9 +314,9 @@ namespace CORE.SERVICE
                     await connection.OpenAsync();
 
                     var query = "INSERT INTO SchoolManagement.Students (StudentFirstName, StudentLastName, StudentDateOfBirth, StudentGender, StudentAddress, StudentPhoneNumber, StudentEmail, ImageData, ClassID, " +
-                        "GuardianFullName, GuardianGender, GuardianHouseAddress, GuardianWorkAddress, GuardianEmail, GuardianFirstContact, GuardianSecondContact, EnableSwitch) " +
+                        "GuardianFullName, GuardianGender, GuardianHouseAddress, GuardianWorkAddress, GuardianEmail, GuardianFirstContact, GuardianSecondContact, EnableSwitch, StudentMedicalReport) " +
                                 "VALUES (@FirstName, @LastName, @DateOfBirth, @Gender, @Address, @PhoneNumber, @Email, @ImageData, @ClassID," +
-                                "@GuardianFullName, @GuardianGender, @GuardianHouseAddress, @GuardianWorkAddress, @GuardianEmail, @GuardianFirstContact, @GuardianSecondContact, @EnableSwitch); " +
+                                "@GuardianFullName, @GuardianGender, @GuardianHouseAddress, @GuardianWorkAddress, @GuardianEmail, @GuardianFirstContact, @GuardianSecondContact, @EnableSwitch, @StudentMedicalReport); " +
                                 "SELECT SCOPE_IDENTITY();";
 
                     using (var command = new SqlCommand(query, connection))
@@ -340,6 +340,7 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@GuardianFirstContact", student.GuardianFirstContact);
                         command.Parameters.AddWithValue("@GuardianSecondContact", student.GuardianSecondContact);
                         command.Parameters.AddWithValue("@EnableSwitch", student.EnableSwitch);
+                        command.Parameters.AddWithValue("@StudentMedicalReport", student.StudentMedicalReport);
 
                         // ExecuteScalarAsync returns the identity of the new record (StudentID)
                         var result = await command.ExecuteScalarAsync();
