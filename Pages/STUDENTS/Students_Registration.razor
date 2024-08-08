@@ -1,8 +1,11 @@
 ﻿@page "/studentsregistration"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using System.ComponentModel.DataAnnotations
+@using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
+@inject NotificationMessageService Notify
 
 <style>
     form .row {
@@ -22,6 +25,10 @@
         margin-bottom: 8px;
     }
 </style>
+
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
 
 <RadzenFieldset Text="Students Registration">
     <div class="row">
@@ -203,35 +210,19 @@
 
 
 </RadzenFieldset>
+}
 
 
-<!-- Bootstrap alert for success message -->
-@if (!string.IsNullOrEmpty(successMessage))
-{
-    <div class="alert alert-success">
-        <strong>Success!</strong> @successMessage
-    </div>
-}
-<!-- Bootstrap alert for error message -->
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger">
-        <strong>Error!</strong> @errorMessage
-    </div>
-}
 @code {
 
     Student student = new Student();
     RadzenGrid<Student> Grid;// this is for the grid to dsiplay the students 
     List<Student> ViewStudents;// put the students in a list 
-
+    public bool isLoading = false;
     byte[] imageData;
 
     int newStudentId;
 
-    string successMessage;
-
-    string errorMessage;
 
     private IBrowserFile selectedFile;
 
@@ -243,40 +234,45 @@
 
     async Task SubmitForm()
     {
-        if (IsValid(student))
-        {
-            if (selectedFile != null)
+        try{
+            isLoading = true;
+            if (IsValid(student))
             {
-                using (var stream = selectedFile.OpenReadStream())
+                if (selectedFile != null)
                 {
-                    using (var memoryStream = new MemoryStream())
+                    using (var stream = selectedFile.OpenReadStream())
                     {
-                        await stream.CopyToAsync(memoryStream);
-                        imageData = memoryStream.ToArray();
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            await stream.CopyToAsync(memoryStream);
+                            imageData = memoryStream.ToArray();
+                        }
                     }
+
+                    student.ImageData = imageData;
                 }
+                student.ClassID = classId;
+                // Call the service to add the student
+                newStudentId = await authService.AddStudentAsync(student);
 
-                student.ImageData = imageData;
+                if (newStudentId > 0)
+                {
+                    Notify.ShowNotification("Success", $"Student successfully registered. StudentID: {newStudentId}", NotificationSeverity.Success);
+                }
+                else
+                {
+                    // Handle failure, show error messages, etc.
+                    Notify.ShowNotification("Failed to register the student", "Please try again Hint Check If Gender Is M or F.", NotificationSeverity.Error);
+                }
             }
-            student.ClassID = classId;
-            // Call the service to add the student
-            newStudentId = await authService.AddStudentAsync(student);
-
-            if (newStudentId > 0)
-            {
-                Console.WriteLine($"Student successfully registered. StudentID: {newStudentId}");
-                successMessage = "Student successfully registered.";
-                // Reset error message
-                errorMessage = string.Empty;
-            }
-            else
-            {
-                Console.WriteLine("Failed to register the student.");
-                errorMessage = "Failed to register the student. Please try again Hint Check If Gender Is M or F.";
-                // Reset success message
-                successMessage = string.Empty;
-                // Handle failure, show error messages, etc.
-            }
+        }
+        catch(Exception ex)
+        {
+            Notify.ShowNotification("ERROR",$"{ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
@@ -303,8 +299,7 @@
         selectedFile = null;
         imageData = null;
         newStudentId = 0;
-        successMessage = string.Empty;
-        errorMessage = string.Empty;
+        Notify.ShowNotification("PAGE","RESET", NotificationSeverity.Info);
 
         // Create a new instance of InputFile to replace the existing one
         inputfileKey++;
@@ -314,13 +309,25 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Load the class list
-        classList = await authService.GetAllClassAsync();
+        try
+        {
+            isLoading = true;
+            // Load the class list
+            classList = await authService.GetAllClassAsync();
 
-        //load all the students for view 
-        ViewStudents = await authService.GetAllStudents();
+            //load all the students for view 
+            ViewStudents = await authService.GetAllStudents();
 
-        StateHasChanged();
+            StateHasChanged();
+        }
+        catch(Exception ex)
+        {
+            Notify.ShowNotification("OnInitializedAsync Failed", $"{ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
 }
