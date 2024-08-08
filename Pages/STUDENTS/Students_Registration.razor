@@ -211,7 +211,20 @@
 
 </RadzenFieldset>
 }
-
+<!-- Bootstrap alert for success message -->
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">
+        <strong>Success!</strong> @successMessage
+    </div>
+}
+<!-- Bootstrap alert for error message -->
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        <strong>Error!</strong> @errorMessage
+    </div>
+}
 
 @code {
 
@@ -222,7 +235,9 @@
     byte[] imageData;
 
     int newStudentId;
+    string successMessage;
 
+    string errorMessage;
 
     private IBrowserFile selectedFile;
 
@@ -299,7 +314,8 @@
         selectedFile = null;
         imageData = null;
         newStudentId = 0;
-        Notify.ShowNotification("PAGE","RESET", NotificationSeverity.Info);
+        successMessage = string.Empty;
+        errorMessage = string.Empty;
 
         // Create a new instance of InputFile to replace the existing one
         inputfileKey++;
