@@ -1,7 +1,10 @@
 ﻿@page "/kyc"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
 @inject AuthService AuthService
+@inject NotificationMessageService Notify
 
 <style>
     .radzen-fieldset {
@@ -40,67 +43,77 @@
     }
 </style>
 
-<RadzenFieldset Icon="profile" Text="KYC" class="radzen-fieldset" style="@fieldsetStyle">
-    <div class="row">
-        <div class="col-md-9">
-            <div class="row">
-                <div class="col-md-2 text-md-end">
-                    <RadzenLabel Text="Search Student" Component="txtsearchstudent" class="col-form-label float-right"/>                    
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
+    <RadzenFieldset Icon="profile" Text="KYC" class="radzen-fieldset" style="@fieldsetStyle">
+        <div class="row">
+            <div class="col-md-9">
+                <div class="row">
+                    <div class="col-md-2 text-md-end">
+                        <RadzenLabel Text="Search Student" Component="txtsearchstudent" class="col-form-label float-right"/>                    
+                    </div>
+                    <div class="col-md-3">
+                        <RadzenTextBox @bind-Value="searchName" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <RadzenButton Click="@SearchStudent" Text="Search" class="btn btn-primary" />
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <RadzenTextBox @bind-Value="searchName" class="form-control" />
-                </div>
-                <div class="col-md-4">
-                    <RadzenButton Click="@SearchStudent" Text="Search" class="btn btn-primary" />
-                </div>
-            </div>
-            
-            <!-- Student Details -->
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <RadzenLabel Text="First Name" />
-                    <RadzenTextBox @bind-Value="student.StudentFirstName" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Last Name" />
-                    <RadzenTextBox @bind-Value="student.StudentLastName" class="form-control" ReadOnly="true" />
+                <!-- Student Details -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <RadzenLabel Text="First Name" />
+                        <RadzenTextBox @bind-Value="student.StudentFirstName" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Date of Birth" />
-                    <RadzenDatePicker @bind-Value="student.StudentDateOfBirth" class="form-control" ReadOnly="true" />
+                        <RadzenLabel Text="Last Name" />
+                        <RadzenTextBox @bind-Value="student.StudentLastName" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Gender" />
-                    <RadzenDropDown @bind-Value="student.StudentGender" Data="genderOptions" class="form-control" ReadOnly="true" />
+                        <RadzenLabel Text="Date of Birth" />
+                        <RadzenDatePicker @bind-Value="student.StudentDateOfBirth" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Address" />
-                    <RadzenTextBox @bind-Value="student.StudentAddress" class="form-control" ReadOnly="true" />
+                        <RadzenLabel Text="Gender" />
+                        <RadzenDropDown @bind-Value="student.StudentGender" Data="genderOptions" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Phone Number" />
-                    <RadzenTextBox @bind-Value="student.StudentPhoneNumber" class="form-control" ReadOnly="true" />
+                        <RadzenLabel Text="Address" />
+                        <RadzenTextBox @bind-Value="student.StudentAddress" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Email" />
-                    <RadzenTextBox @bind-Value="student.StudentEmail" class="form-control" ReadOnly="true" />
+                        <RadzenLabel Text="Phone Number" />
+                        <RadzenTextBox @bind-Value="student.StudentPhoneNumber" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Class ID" />
-                    <RadzenTextBox @bind-Value="student.ClassID" class="form-control" ReadOnly="true" />
+                        <RadzenLabel Text="Email" />
+                        <RadzenTextBox @bind-Value="student.StudentEmail" class="form-control" ReadOnly="true" />
+
+                        <RadzenLabel Text="Class ID" />
+                        <RadzenTextBox @bind-Value="student.ClassID" class="form-control" ReadOnly="true" />
 
 
-                    <RadzenFieldset Text="STUDENT MEDICAL REPORT">
-                        <RadzenLabel Text="Medical Report" />
-                        <RadzenTextBox @bind-Value="student.StudentMedicalReport" class="form-control" ReadOnly="true" />
-                    </RadzenFieldset>
-                </div>
-                
-                <div class="col-md-6">
-                    <!-- Image Card -->
-                    <div class="image-card">
-                        @if (student?.ImageData != null)
+                        <RadzenFieldset Text="STUDENT MEDICAL REPORT">
+                            <RadzenLabel Text="Medical Report" />
+                            <RadzenTextBox @bind-Value="student.StudentMedicalReport" class="form-control" ReadOnly="true" />
+                        </RadzenFieldset>
+                    </div>
+
+                    <div class="col-md-6">
+                        <!-- Image Card -->
+                        <div class="image-card">
+                        @if(isLoading)
                         {
-                            <img src="@($"data:image/png;base64,{Convert.ToBase64String(student.ImageData)}")" alt="Student Image" />
+                            <p>Data Fetching...</p>
                         }
                         else
-                        {
-                            <p>No Image Available</p>
+                        {                                                
+                            @if (student?.ImageData != null)
+                            {
+                                <img src="@($"data:image/png;base64,{Convert.ToBase64String(student.ImageData)}")" alt="Student Image" />
+                            }
+                            else
+                            {
+                                <p>No Image Available</p>
+                            }
                         }
-                    </div>
+                        </div>
                     <RadzenFieldset Text="STUDENT EMERGENCY CONTACT">
                     <RadzenLabel Text="Guardian Full Name" />
                         <RadzenTextBox @bind-Value="student.GuardianFullName" class="form-control" ReadOnly="true" />
@@ -130,13 +143,14 @@
         </div>
     </div>
 </RadzenFieldset>
+}
 
 @code {
     string searchName = "";
     string borderColor = "#007bff"; // Initial color
     Student student = new Student(); // Initialize the student object
     List<string> genderOptions = new List<string> { "M", "F", "O" }; // not in use specificaly like that it doesnt even help like that 
-
+    public bool isLoading = false;
     string fieldsetStyle => $"border: 2px solid {borderColor};";
 
     protected override void OnInitialized()
@@ -160,14 +174,25 @@
 
     async Task SearchStudent()
     {
-        if (!string.IsNullOrWhiteSpace(searchName))
+        try
         {
-            student = await AuthService.GetStudentByNameAsync(searchName);
-            if (student == null)
+            isLoading = true;
+            if (!string.IsNullOrWhiteSpace(searchName))
             {
-                // Optionally handle the case when no student is found
-                // e.g., show a notification
+                student = await AuthService.GetStudentByNameAsync(searchName);
+                if (student == null)
+                {
+                    Notify.ShowNotification("", "FOUND", NotificationSeverity.Success);
+                }
             }
+        }
+        catch(Exception ex)
+        {
+            Notify.ShowNotification("USER",$"NOT FOUND{ex.Message}",NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }
