@@ -13,32 +13,33 @@
 @inject NotificationMessageService Notify
 @attribute [AllowAnonymous]
 
-<LoadingSpinner Visible="isLoading" />
 
+
+<LoadingSpinner Visible="isLoading"/>
 @if (!isLoading)
 {
-    <div class="container" @onkeydown="HandleKeyDown">
+    <div class="container">
         <div class="login-container">
-            <RadzenHeading Size="H3" Text="Login" class="mb-4" />
+            <RadzenText Text="Login" TextStyle="Radzen.Blazor.TextStyle.H3" class="mb-4" />
 
             @if (showInvalidLoginMessage)
             {
-                <RadzenAlert Text="Invalid credentials. Please try again." Severity="AlertSeverity.Error" />
+                <RadzenAlert Text="Invalid credentials. Please try again." Severity="Radzen.AlertSeverity.Error" />
             }
 
             <div class="form-group">
-                <RadzenLabel Text="Username:" For="username" />
-                <RadzenTextBox @bind-Value="Username" Id="username" Style="width: 100%;" />
+                <label for="username">Username:</label>
+                <input type="text" id="username" @bind="@Username" class="form-control" />
             </div>
 
             <div class="form-group">
-                <RadzenLabel Text="Password:" For="password" />
-                <RadzenPassword @bind-Value="Password" Id="password" Style="width: 100%;" />
+                <label for="password">Password:</label>
+                <input type="password" id="password" @bind="@Password" class="form-control" />
             </div>
-
             <br />
-
-            <RadzenButton Text="Login" Icon="login" ButtonStyle="ButtonStyle.Primary" Click="@login" />
+            <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2" Class="mb-4">
+                <RadzenButton Icon="login" Text="Login" ButtonStyle="Radzen.ButtonStyle.Primary" Click="@login" />
+            </RadzenText>
         </div>
     </div>
 }
@@ -47,7 +48,7 @@
     private string Username { get; set; }
     private string Password { get; set; }
     private bool showInvalidLoginMessage = false;
-    private bool isLoading = false;
+    private bool isLoading = false; // Add a field to manage loading state
 
     private async Task login()
     {
@@ -59,7 +60,7 @@
 
         try
         {
-            isLoading = true;
+            isLoading = true; // Show the spinner while processing
 
             var user = await authService.GetUserByUsernameAsync(Username);
 
@@ -85,15 +86,8 @@
         }
         finally
         {
-            isLoading = false;
+            isLoading = false; // Hide the spinner once done
         }
     }
 
-    private async Task HandleKeyDown(KeyboardEventArgs args)
-    {
-        if (args.Key == "Enter")
-        {
-            await login();
-        }
-    }
 }
