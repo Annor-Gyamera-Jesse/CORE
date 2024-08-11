@@ -70,7 +70,7 @@
         <RadzenDataGridColumn TItem="Schedule" Property="DayName" Title="Day Name" />
         <RadzenDataGridColumn TItem="Schedule" Context="schedule" Width="70px">
             <Template Context="schedule">
-                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Click="@(() => EditSchedule(schedule))" />
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => EditSchedule(schedule))" />
                 <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => DeleteSchedule(schedule.ScheduleID))" />
             </Template>
         </RadzenDataGridColumn>
