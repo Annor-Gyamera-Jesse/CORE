@@ -182,9 +182,10 @@
                 student = await AuthService.GetStudentByNameAsync(searchName);
                 if (student == null)
                 {
-                    Notify.ShowNotification("", "FOUND", NotificationSeverity.Success);
+                   
                 }
             }
+            Notify.ShowNotification("", "FOUND", NotificationSeverity.Success);
         }
         catch(Exception ex)
         {
