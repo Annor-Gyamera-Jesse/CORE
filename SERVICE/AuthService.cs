@@ -4,6 +4,8 @@ using CORE.MODEL;
 using System.Data.SqlClient;
 using CORE.Pages.LESSON_NOTE;
 using CORE.SERVICE.MainLayout.Module;
+using static CORE.MODEL.Teachers_Time_Table;
+using static CORE.Pages.COURSES.View_Teacher_Subject_Assign_ByID;
 
 namespace CORE.SERVICE
 {
@@ -1866,35 +1868,203 @@ namespace CORE.SERVICE
 
 
         /*For viewing teachers TimeTable*/
-        public async Task<IEnumerable<AssignTeachersSchoolTimetable>> GetAllTimetablesAsync()
+
+        public async Task<IEnumerable<Schedule>> GetAllSchedulesAsync()
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                var query = @"SELECT * FROM SchoolManagement.AssignTeachersSchoolTimetable";
-                return await connection.QueryAsync<AssignTeachersSchoolTimetable>(query);
+                string query = "SELECT * FROM SchoolManagement.StudentTimetable_Schedule";
+                return await connection.QueryAsync<Schedule>(query);
             }
         }
 
-        public async Task DeleteTimetableAsync(int classSchedulingID)
+        public async Task<Schedule> GetScheduleByIdAsync(int scheduleId)
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                var query = "DELETE FROM SchoolManagement.AssignTeachersSchoolTimetable WHERE ClassSchedulingID = @ClassSchedulingID";
-                await connection.ExecuteAsync(query, new { ClassSchedulingID = classSchedulingID });
+                string query = "SELECT * FROM SchoolManagement.StudentTimetable_Schedule WHERE ScheduleID = @ScheduleID";
+                return await connection.QueryFirstOrDefaultAsync<Schedule>(query, new { ScheduleID = scheduleId });
+            }
+        }
+
+        public async Task<IEnumerable<Day>> GetDaysAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = "SELECT DayID, DayName FROM SchoolManagement.StudentTimetable_Days";
+                return await connection.QueryAsync<Day>(query);
+            }
+        }
+
+        public async Task AddScheduleAsync(Schedule schedule)
+        {
+            // Validate user input for time
+            if (schedule.SubjectStartTime >= schedule.SubjectEndTime)
+            {
+                throw new Exception("Start time must be before end time.");
+            }
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                // Check if DayID exists
+                var dayExists = await connection.ExecuteScalarAsync<int>(
+                    "SELECT COUNT(*) FROM SchoolManagement.StudentTimetable_Days WHERE DayID = @DayID",
+                    new { schedule.DayID });
+
+                if (dayExists == 0)
+                {
+                    throw new Exception("The specified DayID does not exist.");
+                }
+
+                // Optionally, check for conflicts with existing schedules
+                var hasConflict = await CheckScheduleConflictAsync(schedule, connection);
+                if (hasConflict)
+                {
+                    throw new Exception("The specified time conflicts with an existing schedule.");
+                }
+
+                var query = @"
+     INSERT INTO SchoolManagement.StudentTimetable_Schedule 
+         (SCID, ClassID, SubjectStartTime, SubjectEndTime, DayID) 
+     VALUES 
+         (@SCID, @ClassID, @SubjectStartTime, @SubjectEndTime, @DayID)";
+
+                await connection.ExecuteAsync(query, new
+                {
+                    schedule.SCID,
+                    schedule.ClassID,
+                    schedule.SubjectStartTime,
+                    schedule.SubjectEndTime,
+                    schedule.DayID
+                });
+            }
+        }
+        // Example method to check for schedule conflicts
+        private async Task<bool> CheckScheduleConflictAsync(Schedule schedule, SqlConnection connection)
+        {
+            var query = @"
+ SELECT COUNT(*) 
+ FROM SchoolManagement.StudentTimetable_Schedule 
+ WHERE DayID = @DayID 
+ AND ((CAST(SubjectStartTime AS time) < CAST(@SubjectEndTime AS time)) 
+       AND (CAST(SubjectEndTime AS time) > CAST(@SubjectStartTime AS time)))";
+
+            var count = await connection.ExecuteScalarAsync<int>(query, new
+            {
+                schedule.DayID,
+                SubjectStartTime = schedule.SubjectStartTime.TimeOfDay,
+                SubjectEndTime = schedule.SubjectEndTime.TimeOfDay
+            });
+
+            return count > 0;
+        }
+
+
+
+        public async Task UpdateScheduleAsync(Schedule schedule)
+        {
+            var query = @"
+ UPDATE SchoolManagement.StudentTimetable_Schedule
+ SET SCID = @SCID, 
+     ClassID = @ClassID,
+     SubjectStartTime = @SubjectStartTime,
+     SubjectEndTime = @SubjectEndTime,
+     DayID = @DayID
+ WHERE ScheduleID = @ScheduleID;";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.ExecuteAsync(query, schedule);
             }
         }
 
 
-        /*For the edit teachers time tbl*/
-
-
-        public async Task<IEnumerable<Class>> GetTeacherClassesAsync()
+        public async Task<int> DeleteScheduleAsync(int scheduleId)
         {
-            using var connection = new SqlConnection(connectionString);
-            return await connection.QueryAsync<Class>("SELECT * FROM SchoolManagement.Class");
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = "DELETE FROM SchoolManagement.StudentTimetable_Schedule WHERE ScheduleID = @ScheduleID";
+                return await connection.ExecuteAsync(query, new { ScheduleID = scheduleId });
+            }
         }
 
-        public async Task<List<SchoolCourse>> GetCoursesAsync()
+        public async Task<IEnumerable<string>> GetClassIDsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var result = await connection.QueryAsync<string>("SELECT ClassID FROM SchoolManagement.Class");
+                return result.ToList();
+            }
+        }
+
+
+        //Assigning Teachers To their Subject
+        public async Task<bool> AssignTeacherToSubject(TeacherSubjectAssignment assignment)
+        {
+            const string sql = @"
+                INSERT INTO SchoolManagement.TeacherSubjectAssignment (
+                    TeacherID, SCID, ClassID, DayID, SubjectStartTime, 
+                    SubjectEndTime, RecDateCreated)
+                VALUES (
+                    @TeacherID, @SCID, @ClassID, @DayID, @SubjectStartTime, 
+                    @SubjectEndTime, GETDATE())";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var result = await connection.ExecuteAsync(sql, assignment);
+                return result > 0;
+            }
+        }
+
+        public async Task<List<TeachersRegistration>> GetTeachers()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    var query = "SELECT TeacherID, TeacherFirstName, TeacherLastName FROM SchoolManagement.Teacher";
+
+                    using (var command = new SqlCommand(query, connection))
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        var teachers = new List<TeachersRegistration>();
+
+                        while (await reader.ReadAsync())
+                        {
+                            var teacher = new TeachersRegistration
+                            {
+                                TeacherID = reader.GetInt32(0), // Ensure this matches the correct index
+                                TeacherFirstName = reader.GetString(1),
+                                TeacherLastName = reader.GetString(2)
+                            };
+
+                            teachers.Add(teacher);
+                        }
+
+                        return teachers;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetTeachers: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        public async Task<IEnumerable<Class>> GetTClassesAsync()
+        {
+            const string sql = "SELECT ClassID FROM SchoolManagement.Class";
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<Class>(sql);
+            }
+        }
+
+        public async Task<List<SchoolCourse>> GetsSchoolCoursesAsync()
         {
             try
             {
@@ -1902,45 +2072,83 @@ namespace CORE.SERVICE
                 {
                     await connection.OpenAsync();
 
-                    var query = "SELECT SCID, SchoolCourse AS SchoolCourseName FROM SchoolManagement.SchoolCourse";
-                    return (await connection.QueryAsync<SchoolCourse>(query)).ToList();
+                    var query = "SELECT SCID, SchoolCourse FROM SchoolManagement.SchoolCourse";
+
+                    using (var command = new SqlCommand(query, connection))
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        var schoolCourses = new List<SchoolCourse>();
+
+                        while (await reader.ReadAsync())
+                        {
+                            var schoolCourse = new SchoolCourse
+                            {
+                                SCID = reader.IsDBNull(0) ? null : reader.GetString(0),
+                                SchoolCourseName = reader.IsDBNull(1) ? null : reader.GetString(1)
+                            };
+
+                            schoolCourses.Add(schoolCourse);
+                        }
+
+                        return schoolCourses;
+                    }
                 }
-            }
-            catch (SqlException ex)
-            {
-                // Log SQL exceptions
-                Console.WriteLine($"SQL Exception: {ex.Message}");
             }
             catch (Exception ex)
             {
-                // Log other exceptions
-                Console.WriteLine($"Exception: {ex.Message}");
+                Console.WriteLine($"Error in GetSchoolCoursesAsync: {ex.Message}");
+                throw;
             }
-
-            return new List<SchoolCourse>();
         }
-        public async Task AddTimetableEntryAsync(AssignTeachersSchoolTimetable timetableEntry)
-        {
-            using var connection = new SqlConnection(connectionString);
-            var query = @"
-                INSERT INTO SchoolManagement.AssignTeachersSchoolTimetable 
-                (ClassID, SchoolCourseName, Period, Day, TeacherID, StartTime, EndTime, UserID, Note, RecDateCreated) 
-                VALUES 
-                (@ClassID, @SchoolCourseName, @Period, @Day, @TeacherID, @StartTime, @EndTime, @UserID, @Note, @RecDateCreated)";
 
-            await connection.ExecuteAsync(query, new
+        //TO VIEW TEACHERS SUBJECT ASSIGN//
+        public async Task<TeachersRegistration> GetTeacherById(int teacherId)
+        {
+            try
             {
-                timetableEntry.ClassID,
-                timetableEntry.SchoolCourseName,
-                timetableEntry.Period,
-                timetableEntry.Day,
-                timetableEntry.TeacherID,
-                timetableEntry.StartTime,
-                timetableEntry.EndTime,
-                timetableEntry.UserID,
-                timetableEntry.Note,
-                RecDateCreated = DateTime.Now
-            });
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    var query = "SELECT TeacherID, TeacherFirstName, TeacherLastName FROM SchoolManagement.Teacher WHERE TeacherID = @TeacherID";
+                    return await connection.QuerySingleOrDefaultAsync<TeachersRegistration>(query, new { TeacherID = teacherId });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetTeacherById: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        public async Task<List<AssignmentDetails>> GetTeacherAssignments(int teacherId)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    var query = @"
+                SELECT 
+                    d.DayName,
+                    a.ClassID,
+                    s.SchoolCourse AS SchoolCourseName,
+                    a.SubjectStartTime,
+                    a.SubjectEndTime
+                FROM SchoolManagement.TeacherSubjectAssignment a
+                JOIN SchoolManagement.StudentTimetable_Days d ON a.DayID = d.DayID
+                JOIN SchoolManagement.SchoolCourse s ON a.SCID = s.SCID
+                WHERE a.TeacherID = @TeacherID";
+
+                    var assignments = await connection.QueryAsync<AssignmentDetails>(query, new { TeacherID = teacherId });
+                    return assignments.ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetTeacherAssignments: {ex.Message}");
+                throw;
+            }
         }
     }
 }

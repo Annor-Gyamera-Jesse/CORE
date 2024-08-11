@@ -1,0 +1,45 @@
+﻿@page "/teacher-assignments/{teacherId:int}"
+@inject AuthService authService
+@inject NavigationManager NavigationManager
+@using CORE.MODEL
+@using CORE.SERVICE
+
+<PageTitle>Teacher Assignments</PageTitle>
+
+<h3>Assignments for @teacherName</h3>
+
+<RadzenDataGrid Data="@assignments" TItem="AssignmentDetails">
+    <Columns>
+        <RadzenDataGridColumn TItem="AssignmentDetails" Property="DayName" Title="Day" />
+        <RadzenDataGridColumn TItem="AssignmentDetails" Property="ClassID" Title="Class" />
+        <RadzenDataGridColumn TItem="AssignmentDetails" Property="SchoolCourseName" Title="Subject" />
+        <RadzenDataGridColumn TItem="AssignmentDetails" Property="SubjectStartTime" Title="Start Time" FormatString="{0:HH:mm}" />
+        <RadzenDataGridColumn TItem="AssignmentDetails" Property="SubjectEndTime" Title="End Time" FormatString="{0:HH:mm}" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Parameter]
+    public int teacherId { get; set; }
+
+    private string teacherName;
+    private IEnumerable<AssignmentDetails> assignments;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var teacher = await authService.GetTeacherById(teacherId);
+        teacherName = teacher?.FullName ?? "Unknown Teacher";
+        assignments = await authService.GetTeacherAssignments(teacherId);
+    }
+
+    public class AssignmentDetails
+    {
+        public string DayName { get; set; }
+        public string ClassID { get; set; }
+        public string SchoolCourseName { get; set; }
+        public DateTime SubjectStartTime { get; set; }
+        public DateTime SubjectEndTime { get; set; }
+    }
+}
+
+

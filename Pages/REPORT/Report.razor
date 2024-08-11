@@ -3,11 +3,16 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
 @inject NotificationMessageService Notify
 
-<RadzenGrid TItem="ReportViewPage" Data="@reportPages">
+
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
+    <RadzenGrid TItem="ReportViewPage" Data="@reportPages">
     <Columns>
         <RadzenGridColumn TItem="ReportViewPage" Property="Title" Title="Title" />
         <RadzenGridColumn TItem="ReportViewPage" Property="Description" Title="Description" />
@@ -18,11 +23,11 @@
         </RadzenGridColumn>
     </Columns>
 </RadzenGrid>
-
+}
 
 @code {
     List<ReportViewPage> reportPages;
-
+    private bool isLoading;
     protected override async Task OnInitializedAsync()
     {
         // Fetch data from the database using the service
@@ -34,6 +39,7 @@
     {
         try
         {
+            isLoading = true;
             // Load the FastReport template from FRX file
             var report = new FastReport.Report();
             report.Load("wwwroot/ReprtPageTemplate.frx");
@@ -63,6 +69,10 @@
             Console.WriteLine($"Error printing report: {ex.Message}");
             Notify.ShowNotification($"Error printing report: {ex.Message}", "", NotificationSeverity.Warning);
             // Handle error as needed
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }

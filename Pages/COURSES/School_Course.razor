@@ -1,74 +1,80 @@
 ﻿@page "/schoolcourse"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SECURITY.LOADER
 @using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
 @inject IJSRuntime JSRuntime
+@inject NotificationMessageService Notify
 
-<RadzenGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" Data="@schoolCourses">
-    <Columns>
-        <RadzenGridColumn TItem="SchoolCourse" Property="SCID" Title="ID" Filterable="false" />
-        <RadzenGridColumn TItem="SchoolCourse" Property="SchoolCourseName" Title="Course Name" Filterable="false" />
-        <RadzenGridColumn TItem="SchoolCourse" Title="Actions">
-            <Template Context="course">
-                <RadzenButton Text="Edit" ButtonStyle="ButtonStyle.Secondary" Click="@(args => EditCourse(course))" />
-                <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger"  Click="@(args => DeleteCourse(course))" />
-            </Template>
-        </RadzenGridColumn>
-    </Columns>
-</RadzenGrid>
-
-<!-- Form for adding/editing a course -->
-@if (showForm)
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
 {
-    <div>
-        <h4>@(isEditMode ? "Edit Course" : "Add Course")</h4>
-        <div>
-            <label for="courseId">Course ID:</label>
-            <RadzenTextBox @bind-Value="currentCourse.SCID" Disabled="@isEditMode" />
+    <RadzenGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" Data="@schoolCourses">
+        <Columns>
+            <RadzenGridColumn TItem="SchoolCourse" Property="SCID" Title="ID" Filterable="false" />
+            <RadzenGridColumn TItem="SchoolCourse" Property="SchoolCourseName" Title="Course Name" Filterable="false" />
+            <RadzenGridColumn TItem="SchoolCourse" Title="Actions">
+                <Template Context="course">
+                    <RadzenButton Text="Edit" ButtonStyle="ButtonStyle.Secondary" Click="@(args => EditCourse(course))" />
+                    <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger"  Click="@(args => DeleteCourse(course))" />
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
 
-            <label for="courseName">Course Name:</label>
-            <RadzenTextBox @bind-Value="currentCourse.SchoolCourseName" />
-        </div>
+    <!-- Form for adding/editing a course -->
+    @if (showForm)
+    {
         <div>
-            <RadzenButton Text="Save" Click="SaveChanges" />
-            <RadzenButton Text="Cancel" Click="CancelEdit" />
-        </div>
-    </div>
-}
-else
-{
-    <div>
-        <RadzenButton Text="Add" Click="AddCourse" />
-    </div>
-}
+            <h4>@(isEditMode ? "Edit Course" : "Add Course")</h4>
+            <div>
+                <label for="courseId">Course ID:</label>
+                <RadzenTextBox @bind-Value="currentCourse.SCID" Disabled="@isEditMode" />
 
+                <label for="courseName">Course Name:</label>
+                <RadzenTextBox @bind-Value="currentCourse.SchoolCourseName" />
+            </div>
+            <div>
+                <RadzenButton Text="Save" Click="SaveChanges" />
+                <RadzenButton Text="Cancel" Click="CancelEdit" />
+            </div>
+        </div>
+    }
+    else
+    {
+        <div>
+            <RadzenButton Text="Add" Click="AddCourse" />
+        </div>
+    }
+}
 @code {
     RadzenGrid<SchoolCourse> grid;
     List<SchoolCourse> schoolCourses;
     SchoolCourse currentCourse;
     bool showForm = false;
     bool isEditMode = false;
-
+    private bool isLoading = false;
     //LOADING COMPONENT
-    LoadTypeTrigger _loader;
-    protected LoadTypeTrigger Loader
-    {
 
-        get => _loader;
-        set
-        {
-            _loader = value;
-            StateHasChanged();
-        }
-
-    }
 
     protected override async Task OnInitializedAsync()
     {
-        LoadTypeTrigger _loader;
-        // Load school courses from the service
-        schoolCourses = await authService.GetSchoolCoursesAsync();
+        try
+        {
+            isLoading = true;
+            // Load school courses from the service
+            schoolCourses = await authService.GetSchoolCoursesAsync();
+        }
+        catch
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     void EditCourse(SchoolCourse course)
@@ -92,16 +98,22 @@ else
         {
             try
             {
+                isLoading = true;
                 // Delete the course from the database
                 await authService.DeleteSchoolCourseAsync(course.SCID);
 
                 // Refresh the grid
                 schoolCourses = await authService.GetSchoolCoursesAsync();
+                Notify.ShowNotification("Deleted", "Successfully", NotificationSeverity.Success);
             }
             catch (Exception ex)
             {
-                // Handle any exceptions that might occur during deletion
-                Console.WriteLine($"Error deleting course: {ex.Message}");
+                // Handle any exceptions that might occur during deletion                
+                Notify.ShowNotification("Error", $"deleting course: {ex.Message}", NotificationSeverity.Warning);
+            }
+            finally
+            {
+                isLoading = false;
             }
         }
     }
@@ -109,26 +121,40 @@ else
 
     async Task SaveChanges()
     {
-        if (isEditMode)
+        try
         {
-            Loader = LoadTypeTrigger.LOADING;
-            // Update the course in the database
-            await authService.UpdateSchoolCourseAsync(currentCourse);
+            isLoading = true;
+            if (isEditMode)
+            {
 
-            // Refresh the grid
-            schoolCourses = await authService.GetSchoolCoursesAsync();
+                // Update the course in the database
+                await authService.UpdateSchoolCourseAsync(currentCourse);
+
+                // Refresh the grid
+                schoolCourses = await authService.GetSchoolCoursesAsync();
+            }
+            else
+            {
+                // Add a new course to the database
+                await authService.AddSchoolCourseAsync(currentCourse);
+
+                // Refresh the grid
+                schoolCourses = await authService.GetSchoolCoursesAsync();
+
+            }
+
+            // Hide the form after saving
+            showForm = false;
+            Notify.ShowNotification("Submitted", "Successfully", NotificationSeverity.Success);
         }
-        else
+        catch(Exception ex)
         {
-            // Add a new course to the database
-            await authService.AddSchoolCourseAsync(currentCourse);
-
-            // Refresh the grid
-            schoolCourses = await authService.GetSchoolCoursesAsync();
+            Notify.ShowNotification("Error", $"{ex.Message}", NotificationSeverity.Warning);
         }
-
-        // Hide the form after saving
-        showForm = false;
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     void AddCourse()

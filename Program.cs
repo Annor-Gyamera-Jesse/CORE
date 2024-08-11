@@ -70,6 +70,7 @@ app.UseRouting();
 app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+app.UseFastReport(); // Register FastReport
 //app.MapFallbackToFile("index.html");
 
 app.Run();
