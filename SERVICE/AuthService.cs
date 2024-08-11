@@ -1923,10 +1923,10 @@ namespace CORE.SERVICE
                 }
 
                 var query = @"
-            INSERT INTO SchoolManagement.StudentTimetable_Schedule 
-                (SCID, ClassID, SubjectStartTime, SubjectEndTime, DayID) 
-            VALUES 
-                (@SCID, @ClassID, @SubjectStartTime, @SubjectEndTime, @DayID)";
+     INSERT INTO SchoolManagement.StudentTimetable_Schedule 
+         (SCID, ClassID, SubjectStartTime, SubjectEndTime, DayID) 
+     VALUES 
+         (@SCID, @ClassID, @SubjectStartTime, @SubjectEndTime, @DayID)";
 
                 await connection.ExecuteAsync(query, new
                 {
@@ -1942,34 +1942,41 @@ namespace CORE.SERVICE
         private async Task<bool> CheckScheduleConflictAsync(Schedule schedule, SqlConnection connection)
         {
             var query = @"
-        SELECT COUNT(*) 
-        FROM SchoolManagement.StudentTimetable_Schedule 
-        WHERE DayID = @DayID 
-        AND ((SubjectStartTime < @SubjectEndTime) AND (SubjectEndTime > @SubjectStartTime))";
+ SELECT COUNT(*) 
+ FROM SchoolManagement.StudentTimetable_Schedule 
+ WHERE DayID = @DayID 
+ AND ((CAST(SubjectStartTime AS time) < CAST(@SubjectEndTime AS time)) 
+       AND (CAST(SubjectEndTime AS time) > CAST(@SubjectStartTime AS time)))";
 
             var count = await connection.ExecuteScalarAsync<int>(query, new
             {
                 schedule.DayID,
-                schedule.SubjectStartTime,
-                schedule.SubjectEndTime
+                SubjectStartTime = schedule.SubjectStartTime.TimeOfDay,
+                SubjectEndTime = schedule.SubjectEndTime.TimeOfDay
             });
 
             return count > 0;
         }
 
 
-        public async Task<int> UpdateScheduleAsync(Schedule schedule)
+
+        public async Task UpdateScheduleAsync(Schedule schedule)
         {
+            var query = @"
+ UPDATE SchoolManagement.StudentTimetable_Schedule
+ SET SCID = @SCID, 
+     ClassID = @ClassID,
+     SubjectStartTime = @SubjectStartTime,
+     SubjectEndTime = @SubjectEndTime,
+     DayID = @DayID
+ WHERE ScheduleID = @ScheduleID;";
+
             using (var connection = new SqlConnection(connectionString))
             {
-                string query = @"
-            UPDATE SchoolManagement.StudentTimetable_Schedule
-            SET SCID = @SCID, ClassID = @ClassID, TimeslotID = @TimeslotID, DayID = @DayID, 
-                SubjectStartTime = @SubjectStartTime, SubjectEndTime = @SubjectEndTime
-            WHERE ScheduleID = @ScheduleID";
-                return await connection.ExecuteAsync(query, schedule);
+                await connection.ExecuteAsync(query, schedule);
             }
         }
+
 
         public async Task<int> DeleteScheduleAsync(int scheduleId)
         {
