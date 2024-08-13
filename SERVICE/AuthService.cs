@@ -6,6 +6,7 @@ using CORE.Pages.LESSON_NOTE;
 using CORE.SERVICE.MainLayout.Module;
 using static CORE.MODEL.Teachers_Time_Table;
 using static CORE.Pages.COURSES.View_Teacher_Subject_Assign_ByID;
+using System.Data;
 
 namespace CORE.SERVICE
 {
@@ -331,7 +332,7 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@PhoneNumber", student.StudentPhoneNumber);
                         command.Parameters.AddWithValue("@Email", student.StudentEmail);
                         // Add parameter for ImageData
-                        command.Parameters.AddWithValue("@ImageData", student.ImageData ?? (object)DBNull.Value);
+                        command.Parameters.Add("@ImageData", SqlDbType.VarBinary).Value = student.ImageData ?? (object)DBNull.Value;
                         // Add parameter for ClassID
                         command.Parameters.AddWithValue("@ClassID", student.ClassID);
                         command.Parameters.AddWithValue("@GuardianFullName", student.GuardianFullName);
