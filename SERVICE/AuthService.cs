@@ -1420,6 +1420,17 @@ namespace CORE.SERVICE
             return new List<string>();
         }
 
+        // Method to get students by class
+        public async Task<List<Student>> GetStudentsByClass(string classId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = "SELECT * FROM SchoolManagement.Students WHERE ClassID = @ClassID";
+                var students = await connection.QueryAsync<Student>(query, new { ClassID = classId });
+                return students.AsList();
+            }
+        }
+
         public async Task<List<string>> GetClassesAsync()
         {
             try

@@ -24,13 +24,13 @@
                         <div class="col-md-4">
                             <RadzenField Property="StudentName" Title="Student Name">
                                 <RadzenLabel Text="Student Name" />
-                                <RadzenTextBox @bind-Value="@examModel.StudentName"></RadzenTextBox>
+                                    <RadzenDropDown @bind-Value="@examModel.StudentID" Data="@studentList" TextProperty="FullName" ValueProperty="StudentID" />
                             </RadzenField>
                         </div>
                         <div class="col-md-4">
                             <RadzenField Property="ClassName" Title="Class Name">
                               <RadzenLabel Text="Class Name" />
-                              <RadzenDropDown @bind-Value="@examModel.ClassName" Data="@classList"></RadzenDropDown>
+                                    <RadzenDropDown @bind-Value="@examModel.ClassName" Data="@classList" Change="@OnClassChange"></RadzenDropDown>
                             </RadzenField>
                          </div>
                     </div>
@@ -232,12 +232,14 @@
     ElementReference examsForm;
     List<string> courseList = new List<string>();
     List<string> classList = new List<string>();
-
+    List<Student> studentList = new List<Student>();
     [Inject]
     protected IJSRuntime JSRuntime { get; set; }
 
     void AddExam()
     {
+        var selectedStudent = studentList.FirstOrDefault(s => s.StudentID == examModel.StudentID);
+        examModel.StudentName = selectedStudent?.FullName;
         examResults.Add(new Exam
             {
                 SchoolCourse = examModel.SchoolCourse,
@@ -300,7 +302,16 @@
         StateHasChanged();
     }
 
-
+    // Method to handle class selection change
+    async Task OnClassChange(object value)
+    {
+        var classId = value?.ToString();
+        if (!string.IsNullOrEmpty(classId))
+        {
+            studentList = await authService.GetStudentsByClass(classId);
+            StateHasChanged(); // Refresh the UI
+        }
+    }
 
 
     protected override async Task OnInitializedAsync()
