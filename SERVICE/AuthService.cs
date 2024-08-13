@@ -331,7 +331,7 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@PhoneNumber", student.StudentPhoneNumber);
                         command.Parameters.AddWithValue("@Email", student.StudentEmail);
                         // Add parameter for ImageData
-                        command.Parameters.AddWithValue("@ImageData", (object)student.ImageData ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@ImageData", student.ImageData ?? (object)DBNull.Value);
                         // Add parameter for ClassID
                         command.Parameters.AddWithValue("@ClassID", student.ClassID);
                         command.Parameters.AddWithValue("@GuardianFullName", student.GuardianFullName);

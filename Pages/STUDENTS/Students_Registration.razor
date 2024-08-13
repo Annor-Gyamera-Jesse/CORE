@@ -249,44 +249,38 @@
 
     async Task SubmitForm()
     {
-        const long maxFileSize = 5 * 1024 * 1024; // 5 MB
 
-        if (IsValid(student))
-        {
-            if (selectedFile != null)
+            if (IsValid(student))
             {
-                if (selectedFile.Size > maxFileSize)
+                if (selectedFile != null)
                 {
-                    Notify.ShowNotification("Error", "File size exceeds the maximum limit of 5 MB.", NotificationSeverity.Error);
-                    return;
-                }
-
-                using (var stream = selectedFile.OpenReadStream(maxFileSize))
-                {
-                    using (var memoryStream = new MemoryStream())
+                    using (var stream = selectedFile.OpenReadStream())
                     {
-                        await stream.CopyToAsync(memoryStream);
-                        imageData = memoryStream.ToArray();
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            await stream.CopyToAsync(memoryStream);
+                            imageData = memoryStream.ToArray();
+                        }
                     }
+
+                    student.ImageData = imageData;
                 }
+                student.ClassID = classId;
+                // Call the service to add the student
+                newStudentId = await authService.AddStudentAsync(student);
 
-                student.ImageData = imageData;
+                if (newStudentId > 0)
+                {
+                    Notify.ShowNotification("Success", $"Student successfully registered. StudentID: {newStudentId}", NotificationSeverity.Success);
+                }
+                else
+                {
+                    // Handle failure, show error messages, etc.
+                    Notify.ShowNotification("Failed to register the student", "Please try again Hint Check If Gender Is M or F.", NotificationSeverity.Error);
+                }
             }
-
-            student.ClassID = classId;
-            newStudentId = await authService.AddStudentAsync(student);
-
-            if (newStudentId > 0)
-            {
-                Notify.ShowNotification("Success", $"Student successfully registered. StudentID: {newStudentId}", NotificationSeverity.Success);
-            }
-            else
-            {
-                Notify.ShowNotification("Failed to register the student", "Please try again. Hint: Check if Gender is M or F.", NotificationSeverity.Error);
-            }
-        }
+        
     }
-
 
     bool IsValid(object obj)
     {
@@ -296,21 +290,11 @@
         return Validator.TryValidateObject(obj, validationContext, validationResults, true);
     }
 
+
     private void HandleFileChange(InputFileChangeEventArgs e)
     {
-        var file = e.File;
-
-        // Check if the file size is within the allowed limit (500 KB)
-        if (file.Size > 512000)
-        {
-            Notify.ShowNotification("File Size Exceeded", "The uploaded file exceeds the maximum allowed size of 500 KB.", NotificationSeverity.Error);
-            selectedFile = null; // Reset the selected file
-            return;
-        }
-
-        selectedFile = file;
+        selectedFile = e.File;
     }
-
 
     void ResetForm()
     {
