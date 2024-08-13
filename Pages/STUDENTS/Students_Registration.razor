@@ -249,8 +249,7 @@
 
     async Task SubmitForm()
     {
-        try{
-            isLoading = true;
+
             if (IsValid(student))
             {
                 if (selectedFile != null)
@@ -280,15 +279,7 @@
                     Notify.ShowNotification("Failed to register the student", "Please try again Hint Check If Gender Is M or F.", NotificationSeverity.Error);
                 }
             }
-        }
-        catch(Exception ex)
-        {
-            Notify.ShowNotification("ERROR",$"{ex.Message}", NotificationSeverity.Error);
-        }
-        finally
-        {
-            isLoading = false;
-        }
+        
     }
 
     bool IsValid(object obj)
