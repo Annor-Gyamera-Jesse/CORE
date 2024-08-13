@@ -342,7 +342,7 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@GuardianFirstContact", student.GuardianFirstContact);
                         command.Parameters.AddWithValue("@GuardianSecondContact", student.GuardianSecondContact);
                         command.Parameters.AddWithValue("@EnableSwitch", student.EnableSwitch);
-                        command.Parameters.AddWithValue("@StudentMedicalReport", student.StudentMedicalReport);
+                        command.Parameters.AddWithValue("@StudentMedicalReport", student.StudentMedicalReport ?? (object)DBNull.Value);
 
                         // ExecuteScalarAsync returns the identity of the new record (StudentID)
                         var result = await command.ExecuteScalarAsync();
