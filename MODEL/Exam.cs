@@ -4,7 +4,7 @@
     {
         public int ExamID { get; set; }
         //public string CourseID { get; set; }
-        //public int StudentID { get; set; }
+        public int StudentID { get; set; }
         public string StudentName { get; set; }
         public string ClassName { get; set; }
         public string AcademicYear { get; set; }
