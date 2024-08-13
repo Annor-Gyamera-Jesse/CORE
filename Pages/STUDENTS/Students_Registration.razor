@@ -240,7 +240,7 @@
     string errorMessage;
 
     private IBrowserFile selectedFile;
-
+    private const int MaxImageSize = 500 * 1024; // 500 KB in bytes
     private int inputfileKey = 0;
 
     string classId = "";
@@ -291,9 +291,20 @@
     }
 
 
+    // private void HandleFileChange(InputFileChangeEventArgs e)
+    // {
+    //     selectedFile = e.File;
+    // }
     private void HandleFileChange(InputFileChangeEventArgs e)
     {
         selectedFile = e.File;
+
+        // Check if the selected file size exceeds 500 KB
+        if (selectedFile.Size > MaxImageSize)
+        {
+            Notify.ShowNotification("File too large", "Please upload an image smaller than 500 KB.", NotificationSeverity.Error);
+            selectedFile = null; // Reset selected file
+        }
     }
 
     void ResetForm()
