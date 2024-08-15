@@ -15,6 +15,13 @@
     }
 }
 
+window.saveAsFile = function (fileName, byteBase64) {
+    var link = document.createElement('a');
+    link.href = "data:application/octet-stream;base64," + byteBase64;
+    link.download = fileName;
+    link.click();
+};
+
 function base64toBlob(base64, type) {
     var byteString = atob(base64);
     var ab = new ArrayBuffer(byteString.length);

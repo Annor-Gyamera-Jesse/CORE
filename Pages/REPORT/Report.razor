@@ -7,68 +7,104 @@
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
 @inject NotificationMessageService Notify
+@using FastReport.Export.Pdf;
 
 
-<LoadingSpinner Visible="isLoading"/>
+<LoadingSpinner Visible="isLoading" />
+
 @if (!isLoading)
 {
     <RadzenGrid TItem="ReportViewPage" Data="@reportPages">
-    <Columns>
-        <RadzenGridColumn TItem="ReportViewPage" Property="Title" Title="Title" />
-        <RadzenGridColumn TItem="ReportViewPage" Property="Description" Title="Description" />
-        <RadzenGridColumn TItem="ReportViewPage">
-            <Template Context="page">
-                <RadzenLink @onclick="() => PrintReport()">Print Exams Reports</RadzenLink>
-            </Template>
-        </RadzenGridColumn>
-    </Columns>
-</RadzenGrid>
+        <Columns>
+            <RadzenGridColumn TItem="ReportViewPage" Property="Title" Title="Title" />
+            <RadzenGridColumn TItem="ReportViewPage" Property="Description" Title="Description" />
+            <RadzenGridColumn TItem="ReportViewPage">
+                <Template Context="page">
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" ButtonType="ButtonType.Button" Icon="print" Click="@(() => PrintReport(page))">Print</RadzenButton>
+                  @*   <RadzenButton ButtonType="ButtonType.Button" Icon="file-pdf" Click="@(() => ExportReport(page, "pdf"))">PDF</RadzenButton> *@
+@*                     <RadzenButton ButtonType="ButtonType.Button" Icon="file-word" Click="@(() => ExportReport(page, "docx"))">Word</RadzenButton>
+                    <RadzenButton ButtonType="ButtonType.Button" Icon="file-excel" Click="@(() => ExportReport(page, "xlsx"))">Excel</RadzenButton> *@
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
 }
 
 @code {
-    List<ReportViewPage> reportPages;
+    private List<ReportViewPage> reportPages;
     private bool isLoading;
+
     protected override async Task OnInitializedAsync()
     {
-        // Fetch data from the database using the service
+        isLoading = true;
         reportPages = await authService.GetAllReportViewPagesAsync();
-        StateHasChanged();
+        isLoading = false;
     }
 
-    async Task PrintReport()
+    async Task PrintReport(ReportViewPage page)
     {
+        Console.WriteLine("PrintReport called");
         try
         {
             isLoading = true;
-            // Load the FastReport template from FRX file
+            Console.WriteLine("Loading report...");
             var report = new FastReport.Report();
             report.Load("wwwroot/ReprtPageTemplate.frx");
-
-            // Prepare report (optional)
+            Console.WriteLine("Report loaded");
             report.Prepare();
+            Console.WriteLine("Report prepared");
 
-            // Export report to PDF
             var exportService = new FastReport.Export.Pdf.PDFExport();
             var stream = new MemoryStream();
             exportService.Export(report, stream);
-
-            // Convert MemoryStream to byte array
+            Console.WriteLine("Report exported to stream");
             var data = stream.ToArray();
-
-            // Convert byte array to base64 string
+            Console.WriteLine("Stream converted to byte array");
             var base64pdf = Convert.ToBase64String(data);
+            Console.WriteLine($"Base64 string: {base64pdf}");
 
-            // Call JavaScript function to print PDF
             await JSRuntime.InvokeVoidAsync("printJS", base64pdf);
-
-            //Notification
+            Console.WriteLine("printJS function called");
             Notify.ShowNotification("Printing Issued.", "", NotificationSeverity.Warning);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error printing report: {ex.Message}");
             Notify.ShowNotification($"Error printing report: {ex.Message}", "", NotificationSeverity.Warning);
-            // Handle error as needed
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    async Task ExportReport(ReportViewPage page, string fileType)
+    {
+        try
+        {
+            isLoading = true;
+            var report = new FastReport.Report();
+            report.Load("wwwroot/ReprtPageTemplate.frx");
+            report.Prepare();
+
+            var exportService = fileType switch
+            {
+                "pdf" => new FastReport.Export.Pdf.PDFExport(),
+         
+                _ => throw new NotImplementedException()
+            };
+
+            var stream = new MemoryStream();
+            exportService.Export(report, stream);
+            var data = stream.ToArray();
+
+            await JSRuntime.InvokeVoidAsync("saveAsFile", $"report.{fileType}", data);
+            Notify.ShowNotification($"Report exported to {fileType} successfully.", "", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error exporting report: {ex.Message}");
+            Notify.ShowNotification($"Error exporting report: {ex.Message}", "", NotificationSeverity.Warning);
         }
         finally
         {
@@ -76,3 +112,4 @@
         }
     }
 }
+@* will change this logic cause i dont like it *@
