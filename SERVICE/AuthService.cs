@@ -210,6 +210,8 @@ namespace CORE.SERVICE
 
         //----Assign Roles--------//
 
+
+        // Fetches the list of users with their roles
         public async Task<List<UserRoleViewModel>> GetUsersAsync()
         {
             List<UserRoleViewModel> users = new List<UserRoleViewModel>();
@@ -235,54 +237,104 @@ namespace CORE.SERVICE
             return users;
         }
 
-        public async Task<List<Role>> GetRolesAsync()
+          // Method to get all users
+        public async Task<IEnumerable<User>> GetMUsersAsync()
         {
-            List<Role> roles = new List<Role>();
-
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (var connection = new SqlConnection(connectionString))
             {
-                await connection.OpenAsync();
-
-                using (SqlCommand command = new SqlCommand("SELECT RoleID, RoleName FROM SchoolManagement.Roles", connection))
-                using (SqlDataReader reader = await command.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
-                    {
-                        roles.Add(new Role
-                        {
-                            RoleID = reader.GetInt32(0),
-                            RoleName = reader.GetString(1)
-                        });
-                    }
-                }
-            }
-
-            return roles;
-        }
-
-        public async Task SaveUserRolesAsync(int userID, string roleName, bool enable)
-        {
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-
-                using (SqlCommand command = new SqlCommand("INSERT INTO SchoolManagement.UserRoles (UserID, UserName, RoleName, Enable) VALUES (@UserID, @UserName, @RoleName, @Enable)", connection))
-                {
-                    command.Parameters.AddWithValue("@UserID", userID);
-                    command.Parameters.AddWithValue("@UserName", "");
-                    command.Parameters.AddWithValue("@RoleName", roleName);
-                    command.Parameters.AddWithValue("@Enable", enable);
-
-                    await command.ExecuteNonQueryAsync();
-                }
+                return await connection.QueryAsync<User>("SELECT UserID, UserName FROM SchoolManagement.Users");
             }
         }
 
-        //------END-----------//
+        // Method to get all roles
+        public async Task<IEnumerable<Role>> GetRolesAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<Role>("SELECT RoleName FROM SchoolManagement.Roles");
+            }
+        }
+
+        // Method to get all menu items
+        public async Task<IEnumerable<MobileMenuItem>> GetMenuItemsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<MobileMenuItem>("SELECT CategoryName, MenuItem AS ItemName FROM SchoolManagement.MobileAppMenuDisplay");
+            }
+        }
+
+        // Method to get distinct category names
+        public async Task<IEnumerable<string>> GetCategoryNamesAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<string>(
+                    "SELECT DISTINCT CategoryName FROM SchoolManagement.MobileAppMenuDisplay");
+            }
+        }
+
+        // Method to update a role
+        public async Task UpdateRoleAsync(MobileAppRole role)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.ExecuteAsync(
+                    "UPDATE SchoolManagement.MobileAppRoles SET RoleName = @RoleName, MenuItem = @MenuItem, CategoryName = @CategoryName, Enable = @Enable WHERE UserRoleID = @UserRoleID",
+                    role);
+            }
+        }
+
+        // Method to delete a role
+        public async Task DeleteRoleAsync(int userRoleId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.ExecuteAsync(
+                    "DELETE FROM SchoolManagement.MobileAppRoles WHERE UserRoleID = @UserRoleID",
+                    new { UserRoleID = userRoleId });
+            }
+        }
 
 
-        //logout service
-        public async Task LogEvent(int userId, string eventName)
+        // Method to get roles assigned to a user
+        public async Task<IEnumerable<MobileAppRole>> GetUserRolesAsync(int userId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<MobileAppRole>(
+                    "SELECT * FROM SchoolManagement.MobileAppRoles WHERE UserID = @UserID",
+                    new { UserID = userId });
+            }
+        }
+
+        // Method to assign a role to a user
+        public async Task AssignRoleAsync(int userId, string roleName, bool enable, string menuItem, string categoryName)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.ExecuteAsync(
+                    "INSERT INTO SchoolManagement.MobileAppRoles (UserID, RoleName, Enable, MenuItem, CategoryName) VALUES (@UserID, @RoleName, @Enable, @MenuItem, @CategoryName)",
+                    new { UserID = userId, RoleName = roleName, Enable = enable, MenuItem = menuItem, CategoryName = categoryName });
+            }
+        }
+
+        // Method to update role enable status
+        public async Task UpdateRoleEnableStatusAsync(int userRoleId, bool enable)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.ExecuteAsync(
+                    "UPDATE SchoolManagement.MobileAppRoles SET Enable = @Enable WHERE UserRoleID = @UserRoleID",
+                    new { Enable = enable, UserRoleID = userRoleId });
+            }
+        }    
+
+    //------END-----------//
+
+
+    //logout service
+    public async Task LogEvent(int userId, string eventName)
         {
             const string query = "INSERT INTO SchoolManagement.UserLog (UserId, EventName, Timestamp) VALUES (@UserId, @EventName, GETDATE())";
 
