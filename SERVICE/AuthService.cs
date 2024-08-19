@@ -208,7 +208,7 @@ namespace CORE.SERVICE
 
         //------------------------END--------------------------------------//
 
-        //----Assign Roles--------//
+        //----Assign mobile Roles--------//
 
 
         // Fetches the list of users with their roles
