@@ -274,27 +274,27 @@ namespace CORE.SERVICE
             }
         }
 
-        // Method to update a role
-        public async Task UpdateRoleAsync(MobileAppRole role)
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.ExecuteAsync(
-                    "UPDATE SchoolManagement.MobileAppRoles SET RoleName = @RoleName, MenuItem = @MenuItem, CategoryName = @CategoryName, Enable = @Enable WHERE UserRoleID = @UserRoleID",
-                    role);
-            }
-        }
+        // Method to update a role  will use for editing featuer implementation
+        //public async Task UpdateRoleAsync(MobileAppRole role)
+        //{
+        //    using (var connection = new SqlConnection(connectionString))
+        //    {
+        //        await connection.ExecuteAsync(
+        //            "UPDATE SchoolManagement.MobileAppRoles SET RoleName = @RoleName, MenuItem = @MenuItem, CategoryName = @CategoryName, Enable = @Enable WHERE UserRoleID = @UserRoleID",
+        //            role);
+        //    }
+        //}
 
-        // Method to delete a role
-        public async Task DeleteRoleAsync(int userRoleId)
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.ExecuteAsync(
-                    "DELETE FROM SchoolManagement.MobileAppRoles WHERE UserRoleID = @UserRoleID",
-                    new { UserRoleID = userRoleId });
-            }
-        }
+        // Method to delete a role will use for editing 
+        //public async Task DeleteRoleAsync(int userRoleId)
+        //{
+        //    using (var connection = new SqlConnection(connectionString))
+        //    {
+        //        await connection.ExecuteAsync(
+        //            "DELETE FROM SchoolManagement.MobileAppRoles WHERE UserRoleID = @UserRoleID",
+        //            new { UserRoleID = userRoleId });
+        //    }
+        //}
 
 
         // Method to get roles assigned to a user
