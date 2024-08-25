@@ -36,6 +36,12 @@
                     </div>
 
                     <div class="form-group">
+                        <RadzenLabel Text="User Full Name"/>
+                        <RadzenTextBox id="fullname" class="form-control" @bind-Value="user.FullName"/>
+                        <ValidationMessage For="@(()=> user.FullName)"/>
+                    </div>
+
+                    <div class="form-group">
                         <label for="password">Password:</label>
                         <RadzenTextBox id="password" class="form-control" @bind-Value="user.Password" />
                         <ValidationMessage For="@(() => user.Password)" />
@@ -49,6 +55,7 @@
                 <RadzenGrid Data="@users" TItem="User" PageSize="10">
                     <Columns>
                         <RadzenGridColumn TItem="User" Property="UserName" Title="Username"></RadzenGridColumn>
+                        <RadzenGridColumn TItem="User" Property="FullName" Title="Full Name"/>
                         <RadzenGridColumn TItem="User" Title="Actions">
                             <Template Context="user">
                                 <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="() => DeleteUser(user.UserID)" />
