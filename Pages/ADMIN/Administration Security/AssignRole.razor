@@ -4,34 +4,81 @@
 @using CORE.SERVICE.MainLayout.Module
 @inject UserService UserService
 
-<h3>User Role Management</h3>
+<style>
+    .page-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #333;
+    }
 
-<div class="row">
-    <div class="col-md-4">
-        <RadzenFieldset Legend="Users">
+    .user-role-management {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .user-selection-panel, .role-management-panel {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .user-fieldset, .role-fieldset {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .section-title {
+        margin-top: 20px;
+        font-size: 18px;
+        color: #666;
+    }
+
+    .menu-grid {
+        margin-top: 10px;
+    }
+
+        .menu-grid .rz-cell {
+            padding: 10px;
+        }
+
+        .menu-grid .rz-header-cell {
+            background-color: #f9f9f9;
+            font-weight: bold;
+            padding: 12px 10px;
+        }
+
+        .menu-grid .rz-row {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+</style>
+
+<RadzenFieldset Text="User Role Management" Icon="role">
+<div class="user-role-management">
+    <div class="user-selection-panel">
+        <RadzenFieldset Legend="Users" class="user-fieldset">
             <RadzenDropDown @bind-Value="@selectedUser" Data="@users" TextProperty="UserName" ValueProperty="UserID"
                             Change="@(args => OnUserSelected(args))" Placeholder="Select a user" Style="width: 100%;" />
         </RadzenFieldset>
     </div>
 
-    <div class="col-md-8">
-        <RadzenFieldset Legend="Management" Disabled="@(!selectedUser.HasValue)">
+    <div class="role-management-panel">
+        <RadzenFieldset Legend="Role Management" Disabled="@(!selectedUser.HasValue)" class="role-fieldset">
             @if (selectedUser.HasValue)
             {
                 <RadzenDropDown @bind-Value="@selectedRole" Data="@roles" TextProperty="RoleName" ValueProperty="RoleID"
                                 Change="@(args => OnRoleSelected(args))" Placeholder="Select a role" Style="margin-bottom: 20px; width: 100%;" />
-
                 @if (selectedRole.HasValue)
                 {
-                    <h4>Menu Access</h4>
-                    <RadzenGrid TItem="MenuItem" Data="@allMenus">
+                    <h4 class="section-title">Menu Access</h4>
+                    <RadzenGrid TItem="MenuItem" Data="@allMenus" class="menu-grid">
                         <Columns>
                             <RadzenGridColumn TItem="MenuItem" Property="Text" Title="Menu" />
                             <RadzenGridColumn TItem="MenuItem" Title="Can Access">
                                 <Template Context="menu">
                                     <RadzenSwitch TValue="bool" Value="@(menuAccessDict[menu.MenuID])"
                                                   Change="@(args => UpdateAccess(menu.MenuID, args))" />
-
                                 </Template>
                             </RadzenGridColumn>
                         </Columns>
@@ -41,6 +88,7 @@
         </RadzenFieldset>
     </div>
 </div>
+</RadzenFieldset>
 
 @code {
     private IEnumerable<User> users;
