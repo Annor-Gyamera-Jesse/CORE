@@ -136,13 +136,14 @@ namespace CORE.SERVICE
             {
                 connection.Open();
 
-                string query = "INSERT INTO SchoolManagement.Users (UserName, Password, FullName) VALUES (@UserName, @Password, @FullName)";
+                string query = "INSERT INTO SchoolManagement.Users (UserName, Password, FullName, RoleID) VALUES (@UserName, @Password, @FullName, @RoleID)";
 
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@UserName", user.UserName);
                     command.Parameters.AddWithValue("@Password", user.Password);
                     command.Parameters.AddWithValue("@FullName", user.FullName);
+                    command.Parameters.AddWithValue("@RoleID", user.RoleID);
 
                     command.ExecuteNonQuery();
                 }

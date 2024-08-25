@@ -1,11 +1,12 @@
 ﻿@page "/manage-users"
 @using CORE.MODEL
 @using CORE.SERVICE
+@using CORE.SERVICE.MainLayout
 @using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
 @inject NotificationMessageService Notify
 @inject DialogService DialogService
-
+@inject UserService UserService
 <style>
     .right-panel {
         position: absolute;
@@ -36,15 +37,26 @@
                     </div>
 
                     <div class="form-group">
-                        <RadzenLabel Text="User Full Name"/>
-                        <RadzenTextBox id="fullname" class="form-control" @bind-Value="user.FullName"/>
-                        <ValidationMessage For="@(()=> user.FullName)"/>
+                        <RadzenLabel Text="User Full Name" />
+                        <RadzenTextBox id="fullname" class="form-control" @bind-Value="user.FullName" />
+                        <ValidationMessage For="@(()=> user.FullName)" />
                     </div>
 
                     <div class="form-group">
                         <label for="password">Password:</label>
                         <RadzenTextBox id="password" class="form-control" @bind-Value="user.Password" />
                         <ValidationMessage For="@(() => user.Password)" />
+                    </div>
+
+                    <div class="form-group">
+                        <RadzenLabel Text="Role" />
+                        <RadzenDropDown Data="@roles"
+                                        TextProperty="RoleName"
+                                        ValueProperty="RoleID"
+                                        @bind-Value="user.RoleID"
+                                        Placeholder="Select a role"
+                                        Style="width: 100%;" />
+                        <ValidationMessage For="@(() => user.RoleID)" />
                     </div>
                     <br />
                     <RadzenButton Text="Submit" type="submit" class="btn btn-primary" />
@@ -55,7 +67,7 @@
                 <RadzenGrid Data="@users" TItem="User" PageSize="10">
                     <Columns>
                         <RadzenGridColumn TItem="User" Property="UserName" Title="Username"></RadzenGridColumn>
-                        <RadzenGridColumn TItem="User" Property="FullName" Title="Full Name"/>
+                        <RadzenGridColumn TItem="User" Property="FullName" Title="Full Name" />
                         <RadzenGridColumn TItem="User" Title="Actions">
                             <Template Context="user">
                                 <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="() => DeleteUser(user.UserID)" />
@@ -77,15 +89,17 @@
 @code {
     private User user = new User();
     private List<User> users;
+    private List<Role> roles;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadData();
+        await LoadDataAsync();
     }
 
-    private void LoadData()
+    private async Task LoadDataAsync()
     {
         users = authService.GetUsers();
+        roles = (await UserService.GetRolesAsync()).ToList();
     }
 
     private void AddUser()
@@ -93,7 +107,7 @@
         try
         {
             authService.AddUser(user);
-            LoadData();
+            LoadDataAsync();
             Notify.ShowNotification("Success", "User added successfully.", NotificationSeverity.Success);
         }
         catch (Exception ex)
@@ -107,7 +121,7 @@
         try
         {
             authService.DeleteUser(userId);
-            LoadData();
+            LoadDataAsync();
             Notify.ShowNotification("Success", "User deleted successfully.", NotificationSeverity.Success);
         }
         catch (Exception ex)
