@@ -7,49 +7,87 @@
 @inject NotificationMessageService Notify
 @inject DialogService DialogService
 @inject UserService UserService
+
 <style>
-    .right-panel {
-        position: absolute;
-        top: 40px;
-        right: 20px;
-        width: 200px;
-        height: 400px; /* Adjust the height as needed */
+    .container-fluid {
         padding: 20px;
+    }
+
+    .custom-fieldset {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        background: #ffffff;
+        margin-bottom: 20px;
+    }
+
+        .custom-fieldset h3 {
+            color: #007bff;
+            font-weight: 600;
+        }
+
+    .form-group label {
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-group input, .form-group select {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        padding: 10px;
+        width: 100%;
+    }
+
+    .right-panel {
+        position: sticky;
+        top: 20px;
+        background-color: #f8f9fa;
+        padding: 15px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         border-radius: 8px;
-        background-color: #f8f9fa;
-        overflow-y: auto; /* Add scroll if content overflows */
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+        .right-panel h4 {
+            color: #343a40;
+            font-weight: 600;
+        }
+
+    .grid-actions button {
+        margin-right: 5px;
     }
 </style>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-9">
-            <RadzenFieldset Text="CREATE USER">
+            <div class="custom-fieldset">
+                <h3>Create User</h3>
                 <EditForm Model="@user" OnValidSubmit="@AddUser">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
                     <div class="form-group">
-                        <label for="username">Username:</label>
-                        <RadzenTextBox id="username" class="form-control" @bind-Value="user.UserName" />
+                        <label for="username">Username</label>
+                        <RadzenTextBox id="username" @bind-Value="user.UserName" Style="width: 100%;" />
                         <ValidationMessage For="@(() => user.UserName)" />
                     </div>
 
                     <div class="form-group">
-                        <RadzenLabel Text="User Full Name" />
-                        <RadzenTextBox id="fullname" class="form-control" @bind-Value="user.FullName" />
-                        <ValidationMessage For="@(()=> user.FullName)" />
+                        <label for="fullname">User Full Name</label>
+                        <RadzenTextBox id="fullname" @bind-Value="user.FullName" Style="width: 100%;" />
+                        <ValidationMessage For="@(() => user.FullName)" />
                     </div>
 
                     <div class="form-group">
-                        <label for="password">Password:</label>
-                        <RadzenTextBox id="password" class="form-control" @bind-Value="user.Password" />
+                        <label for="password">Password</label>
+                        <RadzenPassword id="password" @bind-Value="user.Password" Style="width: 100%;" />
                         <ValidationMessage For="@(() => user.Password)" />
                     </div>
 
                     <div class="form-group">
-                        <RadzenLabel Text="Role" />
+                        <label for="role">Role</label>
                         <RadzenDropDown Data="@roles"
                                         TextProperty="RoleName"
                                         ValueProperty="RoleID"
@@ -58,33 +96,40 @@
                                         Style="width: 100%;" />
                         <ValidationMessage For="@(() => user.RoleID)" />
                     </div>
-                    <br />
-                    <RadzenButton Text="Submit" type="submit" class="btn btn-primary" />
+
+                    <div class="form-group">
+                        <RadzenButton Text="Create User" type="submit" ButtonStyle="ButtonStyle.Primary" Style="width: 100%;" />
+                    </div>
                 </EditForm>
-            </RadzenFieldset>
-            <br />
-            <RadzenFieldset Text="VIEW USER">
-                <RadzenGrid Data="@users" TItem="User" PageSize="10">
+            </div>
+
+            <div class="custom-fieldset">
+                <h3>View Users</h3>
+                <RadzenGrid Data="@users" TItem="User" PageSize="10" ShowPagingSummary="true" Style="margin-top: 20px;">
                     <Columns>
-                        <RadzenGridColumn TItem="User" Property="UserName" Title="Username"></RadzenGridColumn>
+                        <RadzenGridColumn TItem="User" Property="UserName" Title="Username" />
                         <RadzenGridColumn TItem="User" Property="FullName" Title="Full Name" />
-                        <RadzenGridColumn TItem="User" Title="Actions">
+                        <RadzenGridColumn TItem="User" Title="Actions" Width="150px">
                             <Template Context="user">
-                                <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="() => DeleteUser(user.UserID)" />
+                                <div class="grid-actions">
+                                  @*   <RadzenButton Text="Edit" Icon="edit" ButtonStyle="ButtonStyle.Info" Click="() => EditUser(user.UserID)" /> *@
+                                    <RadzenButton Text="Delete" Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="() => DeleteUser(user.UserID)" />
+                                </div>
                             </Template>
                         </RadzenGridColumn>
                     </Columns>
                 </RadzenGrid>
-            </RadzenFieldset>
+            </div>
         </div>
+
         <div class="col-md-3">
             <div class="right-panel">
+                <h4>User Logs</h4>
                 <CORE.Pages.AdminDialogs.UserLogsDialog />
             </div>
         </div>
     </div>
 </div>
-
 
 @code {
     private User user = new User();
@@ -128,5 +173,10 @@
         {
             Notify.ShowNotification("Error", $"Failed to delete user. {ex.Message}", NotificationSeverity.Error);
         }
+    }
+
+    private void EditUser(int userId)
+    {
+        // Implement edit functionality here
     }
 }
