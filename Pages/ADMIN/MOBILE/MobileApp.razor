@@ -1,11 +1,17 @@
 ﻿@page "/mobile/role/control"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService AuthService
 @using CORE.SERVICE.MainLayout.Module
+@using CORE.SERVICE.NOTIFICATION
 @using Radzen
+@inject NotificationMessageService Notify
 
 
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
 <RadzenFieldset Text="Manage Phone Roles" Icon="phone">
     <div class="p-3">
     <RadzenLabel Text="Select User:" Component="h4" />
@@ -55,7 +61,7 @@
     </div>
 </div>
 </RadzenFieldset>
-
+}
 
 @code {
     private IEnumerable<User> users;
@@ -68,29 +74,71 @@
     private string selectedRoleName;
     private bool isRoleEnabled;
     private string selectedMenuItem;
+    public bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        users = await AuthService.GetMUsersAsync();
-        roles = await AuthService.GetRolesAsync();
-        menuItems = await AuthService.GetMenuItemsAsync();
-        categoryNames = await AuthService.GetCategoryNamesAsync() ?? new List<string>();
+        try
+        {
+
+            isLoading = true;
+            users = await AuthService.GetMUsersAsync();
+            roles = await AuthService.GetRolesAsync();
+            menuItems = await AuthService.GetMenuItemsAsync();
+            categoryNames = await AuthService.GetCategoryNamesAsync() ?? new List<string>();
+        }
+        catch(Exception ex)
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadUserRoles()
     {
-        if (selectedUserId > 0)
+        try
         {
-            userRoles = await AuthService.GetUserRolesAsync(selectedUserId);
+
+            isLoading = true;
+            if (selectedUserId > 0)
+            {
+                userRoles = await AuthService.GetUserRolesAsync(selectedUserId);
+            }
+        }
+        catch(Exception ex)
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
     private async Task AssignRole()
     {
-        if (selectedUserId > 0 && !string.IsNullOrEmpty(selectedRoleName))
+        try
         {
-            await AuthService.AssignRoleAsync(selectedUserId, selectedRoleName, isRoleEnabled, selectedMenuItem, selectedCategoryName);
-            await LoadUserRoles();
+
+            isLoading = true;
+
+            if (selectedUserId > 0 && !string.IsNullOrEmpty(selectedRoleName))
+            {
+                await AuthService.AssignRoleAsync(selectedUserId, selectedRoleName, isRoleEnabled, selectedMenuItem, selectedCategoryName);
+                await LoadUserRoles();
+                Notify.ShowNotification("ROLE", "ASSIGN", NotificationSeverity.Success);
+            }
+        }
+        catch(Exception ex)
+        {
+            Notify.ShowNotification("", $"{ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
@@ -115,10 +163,21 @@
     private async Task UpdateRoleEnableStatus(int userRoleId, bool enable)
 
     {
+        try
+        {
 
-        await AuthService.UpdateRoleEnableStatusAsync(userRoleId, enable);
+            isLoading = true;
+            await AuthService.UpdateRoleEnableStatusAsync(userRoleId, enable);
 
-        await LoadUserRoles();
+            await LoadUserRoles();
+        }
+        catch(Exception ex)
+        {
 
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }

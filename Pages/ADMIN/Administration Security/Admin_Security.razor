@@ -1,5 +1,6 @@
 ﻿@page "/manage-users"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.MainLayout
 @using CORE.SERVICE.NOTIFICATION
@@ -59,98 +60,128 @@
     }
 </style>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-9">
-            <div class="custom-fieldset">
-                <h3>Create User</h3>
-                <EditForm Model="@user" OnValidSubmit="@AddUser">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-9">
+                <div class="custom-fieldset">
+                    <h3>Create User</h3>
+                    <EditForm Model="@user" OnValidSubmit="@AddUser">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
 
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <RadzenTextBox id="username" @bind-Value="user.UserName" Style="width: 100%;" />
-                        <ValidationMessage For="@(() => user.UserName)" />
-                    </div>
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <RadzenTextBox id="username" @bind-Value="user.UserName" Style="width: 100%;" />
+                            <ValidationMessage For="@(() => user.UserName)" />
+                        </div>
 
-                    <div class="form-group">
-                        <label for="fullname">User Full Name</label>
-                        <RadzenTextBox id="fullname" @bind-Value="user.FullName" Style="width: 100%;" />
-                        <ValidationMessage For="@(() => user.FullName)" />
-                    </div>
+                        <div class="form-group">
+                            <label for="fullname">User Full Name</label>
+                            <RadzenTextBox id="fullname" @bind-Value="user.FullName" Style="width: 100%;" />
+                            <ValidationMessage For="@(() => user.FullName)" />
+                        </div>
 
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <RadzenPassword id="password" @bind-Value="user.Password" Style="width: 100%;" />
-                        <ValidationMessage For="@(() => user.Password)" />
-                    </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <RadzenPassword id="password" @bind-Value="user.Password" Style="width: 100%;" />
+                            <ValidationMessage For="@(() => user.Password)" />
+                        </div>
 
-                    <div class="form-group">
-                        <label for="role">Role</label>
-                        <RadzenDropDown Data="@roles"
-                                        TextProperty="RoleName"
-                                        ValueProperty="RoleID"
-                                        @bind-Value="user.RoleID"
-                                        Placeholder="Select a role"
-                                        Style="width: 100%;" />
-                        <ValidationMessage For="@(() => user.RoleID)" />
-                    </div>
+                        <div class="form-group">
+                            <label for="role">Role</label>
+                            <RadzenDropDown Data="@roles"
+                            TextProperty="RoleName"
+                            ValueProperty="RoleID"
+                            @bind-Value="user.RoleID"
+                            Placeholder="Select a role"
+                            Style="width: 100%;" />
+                            <ValidationMessage For="@(() => user.RoleID)" />
+                        </div>
 
-                    <div class="form-group">
-                        <RadzenButton Text="Create User" type="submit" ButtonStyle="ButtonStyle.Primary" Style="width: 100%;" />
-                    </div>
-                </EditForm>
+                        <div class="form-group">
+                            <RadzenButton Text="Create User" type="submit" ButtonStyle="ButtonStyle.Primary" Style="width: 100%;" />
+                        </div>
+                    </EditForm>
+                </div>
+
+                <div class="custom-fieldset">
+                    <h3>View Users</h3>
+                    <RadzenGrid Data="@users" TItem="User" PageSize="10" ShowPagingSummary="true" Style="margin-top: 20px;">
+                        <Columns>
+                            <RadzenGridColumn TItem="User" Property="UserName" Title="Username" />
+                            <RadzenGridColumn TItem="User" Property="FullName" Title="Full Name" />
+                            <RadzenGridColumn TItem="User" Title="Actions" Width="150px">
+                                <Template Context="user">
+                                    <div class="grid-actions">
+                                        @*   <RadzenButton Text="Edit" Icon="edit" ButtonStyle="ButtonStyle.Info" Click="() => EditUser(user.UserID)" /> *@
+                                        <RadzenButton Text="Delete" Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="() => DeleteUser(user.UserID)" />
+                                    </div>
+                                </Template>
+                            </RadzenGridColumn>
+                        </Columns>
+                    </RadzenGrid>
+                </div>
             </div>
 
-            <div class="custom-fieldset">
-                <h3>View Users</h3>
-                <RadzenGrid Data="@users" TItem="User" PageSize="10" ShowPagingSummary="true" Style="margin-top: 20px;">
-                    <Columns>
-                        <RadzenGridColumn TItem="User" Property="UserName" Title="Username" />
-                        <RadzenGridColumn TItem="User" Property="FullName" Title="Full Name" />
-                        <RadzenGridColumn TItem="User" Title="Actions" Width="150px">
-                            <Template Context="user">
-                                <div class="grid-actions">
-                                  @*   <RadzenButton Text="Edit" Icon="edit" ButtonStyle="ButtonStyle.Info" Click="() => EditUser(user.UserID)" /> *@
-                                    <RadzenButton Text="Delete" Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="() => DeleteUser(user.UserID)" />
-                                </div>
-                            </Template>
-                        </RadzenGridColumn>
-                    </Columns>
-                </RadzenGrid>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="right-panel">
-                <h4>User Logs</h4>
-                <CORE.Pages.AdminDialogs.UserLogsDialog />
+            <div class="col-md-3">
+                <div class="right-panel">
+                    <h4>User Logs</h4>
+                    <CORE.Pages.AdminDialogs.UserLogsDialog />
+                </div>
             </div>
         </div>
     </div>
-</div>
+}
 
 @code {
     private User user = new User();
     private List<User> users;
     private List<Role> roles;
+    public bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadDataAsync();
+        try
+        {
+            isLoading = true;
+            await LoadDataAsync();
+        }
+        catch(Exception ex)
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadDataAsync()
     {
-        users = authService.GetUsers();
-        roles = (await UserService.GetRolesAsync()).ToList();
+        try
+        {
+            isLoading = true;
+            users = authService.GetUsers();
+            roles = (await UserService.GetRolesAsync()).ToList();
+        }
+        catch(Exception ex)
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void AddUser()
     {
         try
         {
+            isLoading = true;
             authService.AddUser(user);
             LoadDataAsync();
             Notify.ShowNotification("Success", "User added successfully.", NotificationSeverity.Success);
@@ -158,6 +189,10 @@
         catch (Exception ex)
         {
             Notify.ShowNotification("Error", $"Failed to add user. {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
@@ -172,6 +207,10 @@
         catch (Exception ex)
         {
             Notify.ShowNotification("Error", $"Failed to delete user. {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 

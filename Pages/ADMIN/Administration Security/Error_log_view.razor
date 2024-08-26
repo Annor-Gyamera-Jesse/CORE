@@ -1,31 +1,46 @@
 ﻿@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService authservice
 
-
-<RadzenGrid @ref="ViewGrid" Data="Grid" AllowPaging="true" AllowColumnResize="true" AllowSorting="true" AllowFiltering="true">
-    <Columns>
-        <RadzenGridColumn TItem="User_Log" Property="ErrorLogId" Title="ErrorLogId" Width="40px" />
-        <RadzenGridColumn TItem="User_Log" Property="LogDate" Title="Log Date" Width="90px" />
-        <RadzenGridColumn TItem="User_Log" Property="ErrorMessage" Title="Error Message" Width="100px" />
-        <RadzenGridColumn TItem="User_Log" Property="StackTrace" Title="Stack Trace" Width="100px" />
-        <RadzenGridColumn TItem="User_Log" Property="ControllerName" Title="ControllerName(PAGE)" Width="100px" />
-        <RadzenGridColumn TItem="User_Log" Property="ActionName" Title="ActionName" Width="100px" />
-        <RadzenGridColumn TItem="User_Log" Property="UserID" Title="UserID" Width="50px" />
-    </Columns>
-</RadzenGrid>
-
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
+    <RadzenGrid @ref="ViewGrid" Data="Grid" AllowPaging="true" AllowColumnResize="true" AllowSorting="true" AllowFiltering="true">
+        <Columns>
+            <RadzenGridColumn TItem="User_Log" Property="ErrorLogId" Title="ErrorLogId" Width="40px" />
+            <RadzenGridColumn TItem="User_Log" Property="LogDate" Title="Log Date" Width="90px" />
+            <RadzenGridColumn TItem="User_Log" Property="ErrorMessage" Title="Error Message" Width="100px" />
+            <RadzenGridColumn TItem="User_Log" Property="StackTrace" Title="Stack Trace" Width="100px" />
+            <RadzenGridColumn TItem="User_Log" Property="ControllerName" Title="ControllerName(PAGE)" Width="100px" />
+            <RadzenGridColumn TItem="User_Log" Property="ActionName" Title="ActionName" Width="100px" />
+            <RadzenGridColumn TItem="User_Log" Property="UserID" Title="UserID" Width="50px" />
+        </Columns>
+    </RadzenGrid>
+}
 
 
 @code{
     RadzenGrid<User_Log> ViewGrid;
     public IEnumerable<User_Log> Grid;
-
+    public bool isLoading = false;
 
 
     protected override async Task OnInitializedAsync()
     {
-        Grid = await authservice.GetErrorsFromMobileAppAsync();
+        try
+        {
+            isLoading = true;
+            Grid = await authservice.GetErrorsFromMobileAppAsync();
+        }
+        catch(Exception ex)
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
 }
