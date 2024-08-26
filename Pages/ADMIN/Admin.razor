@@ -1,4 +1,5 @@
 ﻿@page "/admin"
+@using CORE.Pages.ADMIN.Administration_Security
 @using CORE.SECURITY
 @using CORE.SECURITY.LOADER
 @inject ContentLoaderTemplate LoaderTemplate
@@ -35,9 +36,9 @@
                 <RadzenTabsItem Text="ASSIGN TEACHERS">
                     <CORE.Pages.ADMIN.Assign_Teachers/>
                 </RadzenTabsItem>
-             @*    <RadzenTabsItem Text="VIEW LOGS">
-                    <CORE.Pages.ADMIN.View_UserLogs />
-                </RadzenTabsItem> *@
+                <RadzenTabsItem Text="VIEW MOBILE LOGS" Icon="phone">
+                    <Error_log_view/>
+                </RadzenTabsItem>
             </Tabs>
         </RadzenTabs>
 
