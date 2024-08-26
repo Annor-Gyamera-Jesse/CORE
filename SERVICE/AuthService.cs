@@ -86,6 +86,16 @@ namespace CORE.SERVICE
             }
         }
 
+        //Userlogs on when user logs in and out of the main system//
+        public async Task LogUserEventAsync(int userId, string eventName)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = "INSERT INTO SchoolManagement.UserLog (UserId, EventName, Timestamp) VALUES (@UserId, @EventName, GETDATE())";
+                await connection.ExecuteAsync(query, new { UserId = userId, EventName = eventName });
+            }
+        }
+
 
         //--- For company LoginLayout display--///
         public async Task<string> GetSoftwareVersionAsync()

@@ -71,6 +71,10 @@
                 await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userName", user.UserName);
                 await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userRole", userRoleAndMenuAccess.Role);
                 await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userMenuItems", JsonSerializer.Serialize(userRoleAndMenuAccess.MenuItems));
+
+                // Log the login event
+                await authService.LogUserEventAsync(user.UserID, "Login");
+
                 NavigationManager.NavigateTo("/landingpage");
 
                 Notify.ShowNotification("PERFECT", "Happy Working.", NotificationSeverity.Success);

@@ -50,21 +50,32 @@ namespace CORE.Shared
             try
             {
                 isLoading = true;
-                // Clear the user name from session storage
+
+                // Retrieve the UserID from session storage
+                var userIdString = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userID");
+                if (int.TryParse(userIdString, out int userId))
+                {
+                    // Log the logout event
+                    await authService.LogUserEventAsync(userId, "Logout");
+                }
+
+                // Clear the user data from session storage
                 await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "userName");
                 await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "userID");
+
                 // Redirect to the login page after logout
                 NavigationManager.NavigateTo("/login");
-                Notify.ShowNotification("", "LogOut", NotificationSeverity.Success);
+                Notify.ShowNotification("", "Logged out successfully", NotificationSeverity.Success);
             }
             catch (Exception ex)
             {
-                Notify.ShowNotification("", $"{ex.Message}", NotificationSeverity.Info);
+                Notify.ShowNotification("", $"Error during logout: {ex.Message}", NotificationSeverity.Error);
             }
             finally
             {
                 isLoading = false;
             }
         }
+
     }
 }
