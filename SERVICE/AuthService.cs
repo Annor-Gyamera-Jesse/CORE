@@ -2216,5 +2216,14 @@ namespace CORE.SERVICE
                 throw;
             }
         }
+
+        //View Errors From The Mobile App//
+        public async Task<IEnumerable<User_Log>> GetErrorsFromMobileAppAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<User_Log>("SELECT * FROM SchoolManagementSecurity.ErrorLog");
+            }
+        }
     }
 }
