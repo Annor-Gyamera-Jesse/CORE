@@ -37,8 +37,9 @@
             public TimeSpan? StartTime { get; set; }
             public TimeSpan? EndTime { get; set; }
             public int DayID { get; set; }
-            public DateTime SubjectStartTime { get; set; } = DateTime.Now; // Default value
-            public DateTime SubjectEndTime { get; set; } = DateTime.Now; // Default value
+            public DateTime SubjectStartTime { get; set; } 
+            public DateTime SubjectEndTime { get; set; }
             public CustomDayOfWeek DayName { get; set; } // Changed to enum
         }
-    }  }
+    }
+}

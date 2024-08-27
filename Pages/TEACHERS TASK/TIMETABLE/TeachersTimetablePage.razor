@@ -10,7 +10,7 @@
 
 <h3>Manage Schedule</h3>
 
-<LoadingSpinner Visible="isLoading"/>
+<LoadingSpinner Visible="isLoading" />
 @if (!isLoading)
 {
     @if (isEditing)
@@ -20,44 +20,46 @@
                 <RadzenFieldset>
                     <RadzenLabel Text="Course" />
                     <RadzenDropDown @bind-Value="EditingSchedule.SCID" 
-                    Data="@schoolCourses"
-                    TextProperty="SchoolCourseName"
-                    ValueProperty="SCID" 
-                    Style="width: 100%" />
+                                    Data="@schoolCourses"
+                                    TextProperty="SchoolCourseName"
+                                    ValueProperty="SCID" 
+                                    Style="width: 100%" />
 
                     <RadzenLabel Text="Class ID" />
                     <RadzenDropDown @bind-Value="EditingSchedule.ClassID" 
-                    Data="@classIDs" 
-                    Style="width: 100%" />
+                                    Data="@classIDs" 
+                                    Style="width: 100%" />
 
                     <RadzenLabel Text="Start Time" />
                     <RadzenTimePicker Value="@EditingSchedule.StartTime" 
-                    ValueChange="@((TimeSpan? value) => EditingSchedule.StartTime = value)" 
-                    Style="width: 100%" />
+                                      ValueChange="@((TimeSpan? value) => EditingSchedule.StartTime = value)" 
+                                      Style="width: 100%" />
 
                     <RadzenLabel Text="End Time" />
                     <RadzenTimePicker Value="@EditingSchedule.EndTime" 
-                    ValueChange="@((TimeSpan? value) => EditingSchedule.EndTime = value)" 
-                    Style="width: 100%" />
+                                      ValueChange="@((TimeSpan? value) => EditingSchedule.EndTime = value)" 
+                                      Style="width: 100%" />
 
                     <RadzenLabel Text="Subject Start Time" />
                     <RadzenDatePicker TValue="DateTime?"
-                    Value="@EditingSchedule.SubjectStartTime"
-                    ValueChange="@((DateTime? value) => EditingSchedule.SubjectStartTime = value.GetValueOrDefault())"
-                    Style="width: 100%" />
+                                      Value="@EditingSchedule.SubjectStartTime"
+                                      ValueChange="@((DateTime? value) =>
+                    EditingSchedule.SubjectStartTime = value.HasValue ? value.Value.Date + (EditingSchedule.StartTime ?? TimeSpan.Zero) : DateTime.MinValue)"
+                                      Style="width: 100%" />
 
                     <RadzenLabel Text="Subject End Time" />
                     <RadzenDatePicker TValue="DateTime?"
-                    Value="@EditingSchedule.SubjectEndTime"
-                    ValueChange="@((DateTime? value) => EditingSchedule.SubjectEndTime = value.GetValueOrDefault())"
-                    Style="width: 100%" />
+                                      Value="@EditingSchedule.SubjectEndTime"
+                                      ValueChange="@((DateTime? value) =>
+                    EditingSchedule.SubjectEndTime = value.HasValue ? value.Value.Date + (EditingSchedule.EndTime ?? TimeSpan.Zero) : DateTime.MinValue)"
+                                      Style="width: 100%" />
 
                     <RadzenLabel Text="Day Name" />
                     <RadzenDropDown @bind-Value="EditingSchedule.DayID" 
-                    Data="@days"
-                    TextProperty="DayName"
-                    ValueProperty="DayID"
-                    Style="width: 100%" />
+                                    Data="@days"
+                                    TextProperty="DayName"
+                                    ValueProperty="DayID"
+                                    Style="width: 100%" />
                 </RadzenFieldset>
                 <div>
                     <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Success" ButtonType="ButtonType.Submit" Style="margin-top: 20px;" />
@@ -68,27 +70,28 @@
     }
 }
 
-<LoadingSpinner Visible="isLoading"/>
+<LoadingSpinner Visible="isLoading" />
 @if (!isLoading)
 {
     <RadzenDataGrid TItem="Schedule" Data="@schedules" ColumnWidth="200px" RowSelect="@EditSchedule" RowDelete="@DeleteSchedule">
-    <Columns>
-        <RadzenDataGridColumn TItem="Schedule" Property="SCID" Title="SUBJECT" />
-        <RadzenDataGridColumn TItem="Schedule" Property="ClassID" Title="Class" />
-        <RadzenDataGridColumn TItem="Schedule" Property="SubjectStartTime" Title="Start Time" />
-        <RadzenDataGridColumn TItem="Schedule" Property="SubjectEndTime" Title="End Time" />
-        <RadzenDataGridColumn TItem="Schedule" Property="DayName" Title="Day Name" />
-        <RadzenDataGridColumn TItem="Schedule" Context="schedule" Width="70px">
-            <Template Context="schedule">
-                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => EditSchedule(schedule))" />
-                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => DeleteSchedule(schedule.ScheduleID))" />
-            </Template>
-        </RadzenDataGridColumn>
-    </Columns>
-</RadzenDataGrid>
+        <Columns>
+            <RadzenDataGridColumn TItem="Schedule" Property="SCID" Title="Subject" />
+            <RadzenDataGridColumn TItem="Schedule" Property="ClassID" Title="Class" />
+            <RadzenDataGridColumn TItem="Schedule" Property="SubjectStartTime" Title="Start Time" />
+            <RadzenDataGridColumn TItem="Schedule" Property="SubjectEndTime" Title="End Time" />
+            <RadzenDataGridColumn TItem="Schedule" Property="DayName" Title="Day Name" />
+            <RadzenDataGridColumn TItem="Schedule" Context="schedule" Width="70px">
+                <Template Context="schedule">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => EditSchedule(schedule))" />
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => DeleteSchedule(schedule.ScheduleID))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
 
-<RadzenButton Icon="add_circle" Text="Add Schedule" Click="@ShowAddScheduleForm" />
+    <RadzenButton Icon="add_circle" Text="Add Schedule" Click="@ShowAddScheduleForm" />
 }
+
 @code {
     private IEnumerable<Schedule> schedules;
     private Schedule EditingSchedule = new Schedule();
@@ -114,9 +117,9 @@
             EditingSchedule = new Schedule(); // Reset for new entry
             isEditing = true;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-
+            Notify.ShowNotification("", $"{ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
@@ -132,12 +135,14 @@
 
     private async Task OnSubmit()
     {
-        try {
+        try
+        {
             isLoading = true;
             if (EditingSchedule.SubjectStartTime == DateTime.MinValue ||
                 EditingSchedule.SubjectEndTime == DateTime.MinValue)
             {
                 // Show an error message to the user about missing values
+                Notify.ShowNotification("", "Please select valid start and end times.", NotificationSeverity.Warning);
                 return; // Prevent submission
             }
 
@@ -152,17 +157,18 @@
 
             isEditing = false;
             schedules = await scheduleService.GetAllSchedulesAsync(); // Refresh the schedule list
-            Notify.ShowNotification("","SUBMITTED",NotificationSeverity.Success);
+            Notify.ShowNotification("", "Submitted successfully!", NotificationSeverity.Success);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            Notify.ShowNotification("", $"{ex.Message}",NotificationSeverity.Error);
+            Notify.ShowNotification("", $"{ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
             isLoading = false;
         }
     }
+
     private void CancelEdit()
     {
         isEditing = false;
@@ -175,11 +181,11 @@
             isLoading = true;
             await scheduleService.DeleteScheduleAsync(scheduleId);
             schedules = await scheduleService.GetAllSchedulesAsync();
-            Notify.ShowNotification("", "DELETED",NotificationSeverity.Success);
+            Notify.ShowNotification("", "Deleted successfully!", NotificationSeverity.Success);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            Notify.ShowNotification("",$"{ex.Message}",NotificationSeverity.Info);
+            Notify.ShowNotification("", $"{ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
@@ -187,3 +193,4 @@
         }
     }
 }
+
