@@ -179,7 +179,8 @@ namespace CORE.SERVICE
                         {
                             UserID = reader.GetInt32(0),
                             UserName = reader.GetString(1),
-                            Password = reader.GetString(2)
+                            Password = reader.GetString(2),
+                            FullName = reader.GetString(3)
                         };
 
                         users.Add(user);
