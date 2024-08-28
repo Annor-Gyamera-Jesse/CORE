@@ -165,7 +165,7 @@
     </div>
 }
 <div class="right-panel">
-    <TeacherTimeTableToolPanel OnManageTeachersTimeTable="TeachersTimeTable" OnTeacherTimeTable="TeacherTimeTable" />
+    <TeacherTimeTableToolPanel OnNoticeBoard="NoticeBoard" OnManageTeachersTimeTable="TeachersTimeTable" OnTeacherTimeTable="TeacherTimeTable" />
 </div>
 
 @code {
@@ -198,6 +198,11 @@
     async void TeachersTimeTable()
     {
         await OpenManageTeachersTimeTable();
+    }
+
+    async void NoticeBoard()
+    {
+        await OpenOnNoticeBoard();
     }
 
     async void TeacherTimeTable()

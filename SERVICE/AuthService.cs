@@ -2235,5 +2235,7 @@ namespace CORE.SERVICE
                 return await connection.QueryAsync<User_Log>("SELECT * FROM SchoolManagementSecurity.ErrorLog");
             }
         }
+
+   
     }
 }
