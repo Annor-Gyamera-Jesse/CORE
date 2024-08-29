@@ -7,55 +7,50 @@
 @inject DialogService DialogService
 @inject NotificationMessageService Notify
 
-<LoadingSpinner Visible="isLoading"/>
+<LoadingSpinner Visible="isLoading" />
 @if (!isLoading)
 {
-@if (lessonNotes != null && lessonNotes.Any())
-{
-    <RadzenGrid Data="@lessonNotes" TItem="LessonNote" AllowPaging="true" PageSize="10" AllowSorting=true AllowColumnResize=true EditMode="DataGridEditMode.Single" Style="height: 400px;">
-        <Columns>
-            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="UserName" Title="User" />
-            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SchoolCourse" Title="School Course" />
-            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="Topic" Title="Topic" />
-            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="OBJECTIVES" Title="Objectives" />
-            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="TLMTLA" Title="TLMTLA" />
-            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="INTRODUCTION" Title="Introduction" />
-            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="COREPOINTS" Title="Core Points" />
-            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="EVALUATIONREMARKS" Title="Evaluation Remarks" />
-            <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Title="Status">
-                <Template Context="note">
-                    @if (note.Status == Lesson_Note_Dialog_Status.New)
-                    {
-                        <span style="color: green; font-weight: bold;">New</span>
-                    }
-                    else if (note.Status == Lesson_Note_Dialog_Status.Reject)
-                    {
-                        <span style="color: red; font-weight: bold;">Rejected</span>
-                    }
-                    else if (note.Status == Lesson_Note_Dialog_Status.Accepted)
-                    {
-                        <span style="color: blue; font-weight: bold;">Accepted</span>
-                    }
-                </Template>
-            </RadzenGridColumn>
-        </Columns>
-    </RadzenGrid>
-    <div class="row mt-2">
-        <div class="col-md-4 d-flex justify-content-end">
-            <RadzenButton Click="CloseForm" ButtonStyle="ButtonStyle.Danger" Text="Close" Icon="close" Style="margin-bottom: 10px; width: 150px ;float:right; padding-right:15px" />
-        </div>
-    </div>
-}
-else
-{
-    <p>No lesson notes have been submitted yet.</p>
-}
+    @if (lessonNotes != null && lessonNotes.Any())
+    {
+        <RadzenGrid Data="@lessonNotes" TItem="LessonNote" AllowPaging="true" PageSize="10" AllowSorting="true" AllowColumnResize="true" EditMode="DataGridEditMode.Single" Style="height: 400px;">
+            <Columns>
+                <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="UserName" Title="User" />
+                <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SchoolCourse" Title="School Course" />
+                <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="Topic" Title="Topic" />
+                <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="OBJECTIVES" Title="Objectives" />
+                <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="TLMTLA" Title="TLMTLA" />
+                <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="INTRODUCTION" Title="Introduction" />
+                <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="COREPOINTS" Title="Core Points" />
+                <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="EVALUATIONREMARKS" Title="Evaluation Remarks" />
 
+                <RadzenGridColumn TItem="LessonNote" Title="Status">
+                    <Template Context="note">
+                        <RadzenDropDown @bind-Value="note.Status"
+                                        Data="Enum.GetValues(typeof(Lesson_Note_Dialog_Status)).Cast<Lesson_Note_Dialog_Status>()"
+                                        Style="width: 100%;" />
+                    </Template>
+                </RadzenGridColumn>
+
+            </Columns>
+        </RadzenGrid>
+
+        <div class="row mt-2">
+            <div class="col-md-4 d-flex justify-content-end">
+                <RadzenButton Click="CloseForm" ButtonStyle="ButtonStyle.Danger" Text="Close" Icon="close" Style="margin-bottom: 10px; width: 150px; padding-right: 15px;" />
+                <RadzenButton Click="OnDone" ButtonStyle="ButtonStyle.Info" Text="Done" Icon="check" Style="margin-bottom: 10px; width: 150px; margin-left: 10px;" />
+            </div>
+        </div>
+    }
+    else
+    {
+        <p>No lesson notes have been submitted yet.</p>
+    }
 }
 
 @code {
     private IEnumerable<LessonNote> lessonNotes;
     private bool isLoading = false;
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -63,7 +58,7 @@ else
             isLoading = true;
             lessonNotes = await lessonNoteService.GetSubmittedLessonNotesAsync();
         }
-        catch(Exception mistake)
+        catch (Exception mistake)
         {
             Notify.ShowNotification("Error", $"OnInitializedAsync. {mistake.Message}", NotificationSeverity.Error);
         }
@@ -71,8 +66,31 @@ else
         {
             isLoading = false;
         }
+    }
 
-}
+    async Task OnDone()
+    {
+        try
+        {
+            isLoading = true;
+
+            // Iterate through the lesson notes and update their status in the database
+            foreach (var note in lessonNotes)
+            {
+                await lessonNoteService.UpdateLessonNoteStatusAsync(note);
+            }
+
+            Notify.ShowNotification("Info", "Statuses updated successfully!", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"Failed to update statuses. {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 
     void CloseForm()
     {

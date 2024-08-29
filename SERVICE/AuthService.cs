@@ -1910,6 +1910,18 @@ namespace CORE.SERVICE
                 return lessonNotes;
             }
         }
+        public async Task UpdateLessonNoteStatusAsync(LessonNote note)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = @"
+            UPDATE SchoolManagement.lessonnotes
+            SET Status = @Status
+            WHERE LessonnotesID = @LessonnotesID";
+
+                await connection.ExecuteAsync(query, new { note.Status, note.LessonnotesID });
+            }
+        }
 
         //----For Teacher Assesment--//
 
@@ -2236,5 +2248,9 @@ namespace CORE.SERVICE
                 return await connection.QueryAsync<User_Log>("SELECT * FROM SchoolManagementSecurity.ErrorLog");
             }
         }
+
+        //SERVICE TO MARK LESSE=ON NOTES//
+
+
     }
 }
