@@ -14,7 +14,11 @@ namespace CORE.Pages.LESSON_NOTE
         public string INTRODUCTION { get; set; }
         public string COREPOINTS { get; set; }
         public string EVALUATIONREMARKS { get; set; }
-        public DateTime RecDateCreated { get; set; } = DateTime.Now; // Initialize with current date/time
+        public DateTime RecDateCreated { get; set; }
         public Lesson_Note_Dialog_Status Status { get; set; }
+        public int? UpdatedBy { get; set; }
+        public DateTime UpdatedOn { get; set; }
+        public string UpdatedByName { get; set; }
     }
+
 }

@@ -1910,18 +1910,47 @@ namespace CORE.SERVICE
                 return lessonNotes;
             }
         }
-        public async Task UpdateLessonNoteStatusAsync(LessonNote note)
+        public async Task UpdateLessonNoteStatusAsync(LessonNote note, int userId)
         {
             using (var connection = new SqlConnection(connectionString))
             {
                 string query = @"
-            UPDATE SchoolManagement.lessonnotes
-            SET Status = @Status
-            WHERE LessonnotesID = @LessonnotesID";
+        UPDATE SchoolManagement.lessonnotes
+        SET Status = @Status,
+            UpdatedBy = @UpdatedBy,
+            UpdatedOn = @UpdatedOn
+        WHERE LessonnotesID = @LessonnotesID";
 
-                await connection.ExecuteAsync(query, new { note.Status, note.LessonnotesID });
+                await connection.ExecuteAsync(query, new
+                {
+                    note.Status,
+                    UpdatedBy = userId,
+                    UpdatedOn = DateTime.Now,
+                    note.LessonnotesID
+                });
             }
         }
+
+        public async Task<IEnumerable<LessonNote>> GetViewStatusby()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    string query = @"
+                SELECT l.UpdatedBy, u.FullName AS UpdatedByName, l.UpdatedOn
+                FROM SchoolManagement.lessonnotes l
+                JOIN SchoolManagement.Users u ON l.UpdatedBy = u.UserID";
+
+                    return await connection.QueryAsync<LessonNote>(query);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching status updates from database.", ex);
+            }
+        }
+
 
         //----For Teacher Assesment--//
 
