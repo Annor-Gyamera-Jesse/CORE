@@ -14,7 +14,7 @@ namespace CORE.Pages.LESSONS_NOTES
             var dialogOptions = new DialogOptions() { Draggable = true,ShowClose = false,CloseDialogOnEsc = true,Width = "1000px",Resizable = false,Height = "512px"};
             var dialogTitle = $"Submitted Lesson Notes";
             // Register dialog closed event with RadzenDialogService
-            await DialogService.OpenAsync<View_Submitted_Lesson_Note_Page>(dialogTitle, null, dialogOptions);
+            await DialogService.OpenAsync<View_Lesson_Note_Tab>(dialogTitle, null, dialogOptions);
         }
 
         public async Task OpenAssesmentsDialog()

@@ -1,0 +1,27 @@
+﻿@using CORE.Pages.LESSON_NOTE
+@using CORE.SERVICE
+@inject AuthService authservice
+
+<RadzenGrid Data="@View" TItem="LessonNote" Style="border-radius: 10px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+    <Columns>
+        <RadzenGridColumn TItem="LessonNote" Property="UpdatedByName" Title="Updated By">
+            <Template>
+                <span style="font-weight: bold; color: #007bff;">@context.UpdatedByName</span>
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="LessonNote" Property="UpdatedOn" Title="Updated On">
+            <Template>
+                <span style="color: #6c757d;">@context.UpdatedOn.ToString("MMM dd, yyyy")</span>
+            </Template>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+
+@code {
+    public IEnumerable<LessonNote> View;
+
+    protected override async Task OnInitializedAsync()
+    {
+        View = await authservice.GetViewStatusby();
+    }
+}

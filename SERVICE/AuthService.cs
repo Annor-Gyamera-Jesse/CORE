@@ -179,7 +179,8 @@ namespace CORE.SERVICE
                         {
                             UserID = reader.GetInt32(0),
                             UserName = reader.GetString(1),
-                            Password = reader.GetString(2)
+                            Password = reader.GetString(2),
+                            FullName = reader.GetString(3)
                         };
 
                         users.Add(user);
@@ -1909,6 +1910,47 @@ namespace CORE.SERVICE
                 return lessonNotes;
             }
         }
+        public async Task UpdateLessonNoteStatusAsync(LessonNote note, int userId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = @"
+        UPDATE SchoolManagement.lessonnotes
+        SET Status = @Status,
+            UpdatedBy = @UpdatedBy,
+            UpdatedOn = @UpdatedOn
+        WHERE LessonnotesID = @LessonnotesID";
+
+                await connection.ExecuteAsync(query, new
+                {
+                    note.Status,
+                    UpdatedBy = userId,
+                    UpdatedOn = DateTime.Now,
+                    note.LessonnotesID
+                });
+            }
+        }
+
+        public async Task<IEnumerable<LessonNote>> GetViewStatusby()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    string query = @"
+                SELECT l.UpdatedBy, u.FullName AS UpdatedByName, l.UpdatedOn
+                FROM SchoolManagement.lessonnotes l
+                JOIN SchoolManagement.Users u ON l.UpdatedBy = u.UserID";
+
+                    return await connection.QueryAsync<LessonNote>(query);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching status updates from database.", ex);
+            }
+        }
+
 
         //----For Teacher Assesment--//
 
@@ -2236,6 +2278,7 @@ namespace CORE.SERVICE
             }
         }
 
+
         //-------------------------------------------------------------------------------------------------//
         // Method to add a new notice//
         public async Task AddNoticeAsync(string title, string content, string author, DateTime? expiryDate = null)
@@ -2278,5 +2321,6 @@ namespace CORE.SERVICE
             }
         }
         //-------------------------------------------------------------------------//
+        //SERVICE TO MARK LESSE=ON NOTES//
     }
 }
