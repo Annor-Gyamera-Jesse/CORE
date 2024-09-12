@@ -2236,6 +2236,47 @@ namespace CORE.SERVICE
             }
         }
 
-   
+        //-------------------------------------------------------------------------------------------------//
+        // Method to add a new notice
+        public async Task AddNoticeAsync(string title, string content, string author, DateTime? expiryDate = null)
+        {
+            const string sql = @"
+                INSERT INTO SchoolManagement.NoticeBoard (Title, Content, Author, DatePosted, ExpiryDate, IsActive)
+                VALUES (@Title, @Content, @Author, GETDATE(), @ExpiryDate, 1)";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.ExecuteAsync(sql, new { Title = title, Content = content, Author = author, ExpiryDate = expiryDate });
+            }
+        }
+
+        // Method to deactivate a notice by its ID
+        public async Task DeactivateNoticeAsync(int noticeId)
+        {
+            const string sql = @"
+                UPDATE SchoolManagement.NoticeBoard
+                SET IsActive = 0
+                WHERE NoticeID = @NoticeID";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.ExecuteAsync(sql, new { NoticeID = noticeId });
+            }
+        }
+
+        // Method to get all active notices
+        public async Task<IEnumerable<Notice>> GetActiveNoticesAsync()
+        {
+            const string sql = @"
+                SELECT NoticeID, Title, Content, Author, DatePosted, ExpiryDate
+                FROM SchoolManagement.NoticeBoard
+                WHERE IsActive = 1";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<Notice>(sql);
+            }
+        }
+        //-------------------------------------------------------------------------//
     }
 }

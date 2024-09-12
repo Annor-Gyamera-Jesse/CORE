@@ -1,1 +1,66 @@
-﻿
+﻿@page "/noticeboard"
+@inject AuthService NoticeBoardService
+@using CORE.MODEL
+@using CORE.SERVICE
+@using Radzen
+@using System.Collections.Generic
+@using System.Threading.Tasks
+
+<RadzenTemplateForm Data="@newNotice" class="form-group" >
+    <RadzenTextBox Name="Title" @bind-Value="newNotice.Title" Style="width: 100%" Placeholder="Title" />
+    <RadzenTextArea Name="Content" @bind-Value="newNotice.Content" Style="width: 100%" Rows="5" Placeholder="Content" />
+    <RadzenTextBox Name="Author" @bind-Value="newNotice.Author" Style="width: 100%" Placeholder="Author" />
+    <RadzenDatePicker Name="ExpiryDate" @bind-Value="newNotice.ExpiryDate" Style="width: 50%" Placeholder="Expiry Date" />
+</RadzenTemplateForm>
+
+<RadzenButton ButtonType="ButtonType.Button" Text="Add Notice" Click="AddNotice" Style="margin-top: 10px" />
+
+<h4>Active Notices</h4>
+
+<RadzenGrid Data="@notices" AllowFiltering="true" AllowPaging="true" PageSize="10" FilterMode="FilterMode.Simple" Style="margin-top: 10px">
+    <Columns>
+        <RadzenGridColumn TItem="Notice" Property="Title" Title="Title" />
+        <RadzenGridColumn TItem="Notice" Property="Content" Title="Content" />
+        <RadzenGridColumn TItem="Notice" Property="Author" Title="Author" />
+        <RadzenGridColumn TItem="Notice" Property="DatePosted" Title="Date Posted" FormatString="{0:MM/dd/yyyy HH:mm}" />
+        <RadzenGridColumn TItem="Notice" Property="ExpiryDate" Title="Expiry Date" FormatString="{0:MM/dd/yyyy}" />
+        <RadzenGridColumn TItem="Notice">
+            <Template>
+                <RadzenButton Text="Deactivate" Click="@(async () => await DeactivateNotice((Notice)context))" />
+            </Template>
+        </RadzenGridColumn>
+
+    </Columns>
+</RadzenGrid>
+
+@code {
+    private Notice newNotice = new Notice();
+    private IEnumerable<Notice> notices;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNotices();
+    }
+
+    private async Task AddNotice()
+    {
+        await NoticeBoardService.AddNoticeAsync(newNotice.Title, newNotice.Content, newNotice.Author, newNotice.ExpiryDate);
+        newNotice = new Notice(); // Reset form
+        await LoadNotices(); // Reload notices
+    }
+
+    private async Task DeactivateNotice(Notice notice)
+    {
+        if (notice != null)
+        {
+            await NoticeBoardService.DeactivateNoticeAsync(notice.NoticeID);
+            await LoadNotices(); // Reload notices
+        }
+    }
+
+
+    private async Task LoadNotices()
+    {
+        notices = await NoticeBoardService.GetActiveNoticesAsync();
+    }
+}
