@@ -2237,7 +2237,7 @@ namespace CORE.SERVICE
         }
 
         //-------------------------------------------------------------------------------------------------//
-        // Method to add a new notice
+        // Method to add a new notice//
         public async Task AddNoticeAsync(string title, string content, string author, DateTime? expiryDate = null)
         {
             const string sql = @"
