@@ -1,4 +1,5 @@
 ﻿
+using CORE.Pages.NOTICE_BOARD;
 using CORE.Pages.TEACHERS_TASK.TIMETABLE;
 using Microsoft.AspNetCore.Components;
 using Radzen;
@@ -15,6 +16,14 @@ namespace CORE.Pages.TEACHERS_TASK
             var dialogTitle = $"Manage Teachers Time Table";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<EditTeachersTimeTableDialog>(dialogTitle, null, dialogOptions);
+        }
+
+        public async Task OpenOnNoticeBoard()
+        {
+            var dialogOptions = new DialogOptions() { Draggable = true, ShowClose = true, CloseDialogOnEsc = true, Width = "900px", Resizable = false, Height = "500px" };
+            var dialogTitle = $"NOTICE BOARD";
+            // Register dialog closed event with RadzenDialogService
+            await DialogService.OpenAsync<NoticeBoard>(dialogTitle, null, dialogOptions);
         }
 
         public async Task OpenTeacherTimeTable()
