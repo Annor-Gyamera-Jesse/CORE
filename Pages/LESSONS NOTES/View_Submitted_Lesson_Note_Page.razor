@@ -1,4 +1,5 @@
-﻿@using CORE.Pages.LESSON_NOTE
+﻿@page "/viewsubmittedlessonnote"
+@using CORE.Pages.LESSON_NOTE
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService lessonNoteService
@@ -15,16 +16,24 @@
     <div class="container">
         @if (lessonNotes != null && lessonNotes.Any())
         {
-            <RadzenGrid Data="@lessonNotes" TItem="LessonNote" AllowPaging="true" PageSize="10" AllowSorting="true" AllowColumnResize="true" EditMode="DataGridEditMode.Single" Style="height: 400px; width: 100%; border-radius: 8px; overflow: hidden;">
+            <RadzenGrid Data="@lessonNotes" TItem="LessonNote" AllowPaging="true" PageSize="10" AllowSorting="true" AllowColumnResize="true" EditMode="DataGridEditMode.Single" Style="height: 400px; width: 1500px; border-radius: 8px; overflow-x: auto;">
                 <Columns>
                     <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="UserName" Title="User" />
                     <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SchoolCourse" Title="School Course" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="Topic" Title="Topic" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="OBJECTIVES" Title="Objectives" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="TLMTLA" Title="TLMTLA" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="INTRODUCTION" Title="Introduction" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="COREPOINTS" Title="Core Points" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="EVALUATIONREMARKS" Title="Evaluation Remarks" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="Strand" Title="Strand" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SubStrand" Title="SubStrand" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="ContentStandard" Title="Content Standard" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="Indicator" Title="Indicator" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="TeachingLearningResources" Title="Teaching Learning Resources" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="TeachingLearningResourcePreparationNotes" Title="Teaching Learning Resource Preparation Notes" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SourcesLearningResources" Title="Sources Learning Resources" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="LearningGroup" Title="Learning Group" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="LearnerExpectation" Title="Learner Expectation" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="ImportantGradeExpectation" Title="Important Grade Expectation" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="LearningOutcomes" Title="Learning Outcomes" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="FormofAssessment" Title="Form of Assessment" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="LearnerEntryBehavior" Title="Learner Entry Behavior" />
+                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SequenceofLesson" Title="Sequence of Lesson" />
                     <RadzenGridColumn TItem="LessonNote" Title="Status">
                         <Template Context="note">
                             <RadzenDropDown @bind-Value="note.Status"

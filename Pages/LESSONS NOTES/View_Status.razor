@@ -4,9 +4,9 @@
 
 <RadzenGrid Data="@View" TItem="LessonNote" Style="border-radius: 10px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
     <Columns>
-        <RadzenGridColumn TItem="LessonNote" Property="UpdatedByName" Title="Updated By">
+        <RadzenGridColumn TItem="LessonNote" Property="UpdatedBy" Title="Updated By">
             <Template>
-                <span style="font-weight: bold; color: #007bff;">@context.UpdatedByName</span>
+                <span style="font-weight: bold; color: #007bff;">@context.UpdatedBy</span>
             </Template>
         </RadzenGridColumn>
         <RadzenGridColumn TItem="LessonNote" Property="UpdatedOn" Title="Updated On">
