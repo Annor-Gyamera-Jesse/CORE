@@ -1,4 +1,4 @@
-﻿@page "/lessonnote"
+﻿@* @page "/lessonnote"
 @using CORE.Pages.LESSON_NOTE
 @using CORE.MODEL
 @using CORE.Pages.LOADING_COMPONENT
@@ -187,5 +187,327 @@
     {
         lessonNote = new LessonNote();
         Notify.ShowNotification("", "Page reset successfully.", NotificationSeverity.Success);
+    }
+} *@
+
+
+
+@page "/lessonnote"
+@using CORE.Pages.LESSON_NOTE
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using CORE.Tool_Components
+@inject IJSRuntime JSRuntime
+@inject NotificationMessageService Notify
+@inject AuthService authService
+@inherits Lesson_Notes_Codebehind
+
+<style>
+    /* Container for overall layout */
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .right-panel {
+        position: absolute;
+        top: 40px;
+        right: 20px;
+        width: 200px;
+        height: 400px;
+        border-radius: 8px;
+    }
+    /* Fieldset container to align fields horizontally */
+    .fieldset-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .fieldset-left,
+    .fieldset-right {
+        flex: 1;
+        margin: 0 10px;
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .fieldset-left {
+        border: 1px solid #ddd;
+    }
+
+    .fieldset-right {
+        border: 1px solid #ddd;
+    }
+
+    .dynamic-fields-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .row .col-md-9 {
+            flex: 1;
+        }
+
+        .row .col-md-3 {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+    .form-control {
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .add-button,
+    .delete-button {
+        height: 38px;
+        margin-left: 10px;
+    }
+
+    .submit-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
+
+        .submit-buttons .col-md-6 {
+            flex: 1;
+        }
+</style>
+
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <RadzenLabel Text="Course Name:" Associated="lessonNote.SchoolCourse" />
+            <RadzenDropDown @bind-Value="lessonNote.SchoolCourse" Data="@courseList" TextProperty="SchoolCourseName" ValueProperty="SchoolCourseName" Style="width: 100%;" />
+        </div>
+    </div>
+    <div class="container">
+        <RadzenFieldset Text="Lesson Note" Style="border: none; padding: 20px;">
+
+            <!-- Main container with left and right panels -->
+            <div class="fieldset-container">
+
+                <!-- Left side fieldset -->
+                <div class="fieldset-left">
+                    <RadzenFieldset Text="Select Fields" Style="width: 100%; padding: 20px;">
+                        <RadzenListBox Data="@lessonNoteFields" @bind-Value="selectedField" Change="OnFieldSelect" Style="height: 400px;" />
+                    </RadzenFieldset>
+                </div>
+
+                <!-- Right side fieldset for dynamic inputs -->
+                <div class="fieldset-right">
+                    <RadzenFieldset Text="Enter Values" Style="width: 100%; padding: 20px;">
+                        <div class="dynamic-fields-container">
+                            @foreach (var field in selectedFields)
+                            {
+                                <div class="row">
+                                    <div class="col-md-9">
+                                        <RadzenTextBox @bind-Value="field.Value" Style="width: 100%;" Placeholder="@field.Name" Class="form-control" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <RadzenButton Text="+" Icon="add_circle" Class="add-button" ButtonStyle="ButtonStyle.Secondary" Click="@(() => AddNewTextField(field.Name))" />
+                                        <RadzenButton Text="-" Icon="delete" Class="delete-button" ButtonStyle="ButtonStyle.Danger" Click="@(() => RemoveTextField(field.Name))" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </RadzenFieldset>
+                </div>
+            </div>
+
+            <!-- Submit and Reset Buttons -->
+            <div class="right-panel">
+              @*   <div class="col-md-6">
+                    <RadzenButton Text="Submit" Icon="check" ButtonStyle="ButtonStyle.Primary" Click="SubmitLessonNote" Style="width: 100%;" />
+                </div>
+                <div class="col-md-6">
+                    <RadzenButton Text="Reset" Icon="refresh" ButtonStyle="ButtonStyle.Secondary" Click="ResetFields" Style="width: 100%;" />
+                </div> *@
+            </div>
+        </RadzenFieldset>
+    </div>
+    <div class="right-panel">
+        <div class="row mt-2">
+            <div class="col-md">
+               @*  <ToolPanelComponent @* OnOpenSubmittedLessonNotesDialog="SubmittedLessonNotesDialog" *@ @* OnOpenAssesmentDialog="AssesmentDialog" /> *@
+                <ToolPanelComponent OnOpenAssesmentDialog="AssesmentDialog" />
+            </div>
+            <div class="col-md-6">
+                <RadzenButton Text="Submit" Icon="check" ButtonStyle="ButtonStyle.Primary" Click="SubmitLessonNote" Style="width: 100%;" />
+            </div>
+            <div class="col-md-6">
+                <RadzenButton Text="Reset" Icon="refresh" ButtonStyle="ButtonStyle.Secondary" Click="ResetFields" Style="width: 100%;" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    LessonNote lessonNote = new LessonNote();
+    List<string> lessonNoteFields = new List<string>
+    {
+        "Strand", "SubStrand", "ContentStandard", "Indicator",
+        "TeachingLearningResources", "TeachingLearningResourcePreparationNotes",
+        "SourcesLearningResources", "LearningGroup", "LearnerExpectation",
+        "ImportantGradeExpectation", "LearningOutcomes", "FormofAssessment",
+        "LearnerEntryBehavior", "SequenceofLesson"
+    };
+
+    List<DynamicField> selectedFields = new List<DynamicField>();
+    string selectedField;
+    private bool isLoading = false;
+    int userId;
+    List<SchoolCourse> courseList = new List<SchoolCourse>();
+
+    public class DynamicField
+    {
+        public string Name { get; set; }
+        public string Value { get; set; }
+    }
+
+    async void SubmittedLessonNotesDialog()
+    {
+        await OpenSubmittedLessonNotesDialog();
+    }
+
+    async void AssesmentDialog()
+    {
+        await OpenAssesmentsDialog();
+    }
+
+    // Handles the selection of fields from the left
+    void OnFieldSelect(object value)
+    {
+        if (!string.IsNullOrEmpty(selectedField))
+        {
+            // Check if the field is already in the list before adding
+            if (!selectedFields.Any(f => f.Name == selectedField))
+            {
+                selectedFields.Add(new DynamicField { Name = selectedField, Value = "" });
+            }
+        }
+    }
+
+    // Adds a new text field for the selected item
+    void AddNewTextField(string fieldName)
+    {
+        // Find existing field and add new entry if not already present
+        var existingField = selectedFields.FirstOrDefault(f => f.Name == fieldName);
+        if (existingField != null)
+        {
+            selectedFields.Add(new DynamicField { Name = fieldName, Value = "" });
+        }
+    }
+
+    // Removes a text field based on the field name
+    void RemoveTextField(string fieldName)
+    {
+        var fieldToRemove = selectedFields.FirstOrDefault(f => f.Name == fieldName);
+        if (fieldToRemove != null)
+        {
+            selectedFields.Remove(fieldToRemove);
+        }
+    }
+
+    // Submit logic
+    async Task SubmitLessonNote()
+    {
+        try
+        {
+            isLoading = true;
+
+            // Map selectedFields back to lessonNote
+            lessonNote.Strand = selectedFields.FirstOrDefault(f => f.Name == "Strand")?.Value;
+            lessonNote.SubStrand = selectedFields.FirstOrDefault(f => f.Name == "SubStrand")?.Value;
+            lessonNote.ContentStandard = selectedFields.FirstOrDefault(f => f.Name == "ContentStandard")?.Value;
+            lessonNote.Indicator = selectedFields.FirstOrDefault(f => f.Name == "Indicator")?.Value;
+            lessonNote.TeachingLearningResources = selectedFields.FirstOrDefault(f => f.Name == "TeachingLearningResources")?.Value;
+            lessonNote.TeachingLearningResourcePreparationNotes = selectedFields.FirstOrDefault(f => f.Name == "TeachingLearningResourcePreparationNotes")?.Value;
+            lessonNote.SourcesLearningResources = selectedFields.FirstOrDefault(f => f.Name == "SourcesLearningResources")?.Value;
+            lessonNote.LearningGroup = selectedFields.FirstOrDefault(f => f.Name == "LearningGroup")?.Value;
+            lessonNote.LearnerExpectation = selectedFields.FirstOrDefault(f => f.Name == "LearnerExpectation")?.Value;
+            lessonNote.ImportantGradeExpectation = selectedFields.FirstOrDefault(f => f.Name == "ImportantGradeExpectation")?.Value;
+            lessonNote.LearningOutcomes = selectedFields.FirstOrDefault(f => f.Name == "LearningOutcomes")?.Value;
+            lessonNote.FormofAssessment = selectedFields.FirstOrDefault(f => f.Name == "FormofAssessment")?.Value;
+            lessonNote.LearnerEntryBehavior = selectedFields.FirstOrDefault(f => f.Name == "LearnerEntryBehavior")?.Value;
+            lessonNote.SequenceofLesson = selectedFields.FirstOrDefault(f => f.Name == "SequenceofLesson")?.Value;
+
+
+            // Assign UserId to lessonNote object
+            lessonNote.UserId = userId;
+
+            // Perform the database operation
+            var result = await authService.AddLessonNoteAsync(lessonNote);
+
+            if (result > 0)
+            {
+                lessonNote = new LessonNote();  // Reset the object after successful submission
+                Notify.ShowNotification("", "Lesson note submitted successfully!", NotificationSeverity.Success);
+            }
+            else
+            {
+                Notify.ShowNotification("Error", "Failed to submit lesson note", NotificationSeverity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"An error occurred while submitting the lesson note: {ex.Message}", NotificationSeverity.Info);
+        }
+        finally
+        {
+            isLoading = false;  // Set loading to false after operation
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            // Fetch the logged-in user's ID
+            var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", new object[] { "userName" });
+            var user = await authService.GetUserByUsernameAsync(username);
+            if (user != null)
+            {
+                userId = user.UserID;
+            }
+
+            courseList = await authService.GetLessonNotSchoolCoursesAsync();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"OnInitializedAsync. {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    // Resets the form
+    void ResetFields()
+    {
+        selectedFields.Clear();
+        Notify.ShowNotification("Info", "Fields reset successfully.", NotificationSeverity.Info);
     }
 }

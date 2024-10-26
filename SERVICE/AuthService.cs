@@ -1685,20 +1685,39 @@ namespace CORE.SERVICE
                 {
                     await connection.OpenAsync();
 
-                    var query = @"INSERT INTO SchoolManagement.lessonnotes 
-                        (UserId, SchoolCourse, Topic, OBJECTIVES, TLMTLA, INTRODUCTION, COREPOINTS, EVALUATIONREMARKS) 
-                        VALUES (@UserId, @SchoolCourse, @Topic, @OBJECTIVES, @TLMTLA, @INTRODUCTION, @COREPOINTS, @EVALUATIONREMARKS)";
+                    var query = @"INSERT INTO SchoolManagement.TEACHERSLESSONNOTES 
+                (UserId, SchoolCourse, Strand, SubStrand, ContentStandard, Indicator, 
+                 TeachingLearningResources, TeachingLearningResourcePreparationNotes, 
+                 SourcesLearningResources, LearningGroup, LearnerExpectation, 
+                 ImportantGradeExpectation, LearningOutcomes, FormofAssessment, 
+                 LearnerEntryBehavior, SequenceofLesson, Status, UpdatedBy, UpdatedOn) 
+                VALUES (@UserId, @SchoolCourse, @Strand, @SubStrand, @ContentStandard, 
+                        @Indicator, @TeachingLearningResources, @TeachingLearningResourcePreparationNotes, 
+                        @SourcesLearningResources, @LearningGroup, @LearnerExpectation, 
+                        @ImportantGradeExpectation, @LearningOutcomes, @FormofAssessment, 
+                        @LearnerEntryBehavior, @SequenceofLesson, @Status, @UpdatedBy, @UpdatedOn)";
 
                     return await connection.ExecuteAsync(query, new
                     {
                         lessonNote.UserId,
                         lessonNote.SchoolCourse,
-                        lessonNote.Topic,
-                        lessonNote.OBJECTIVES,
-                        lessonNote.TLMTLA,
-                        lessonNote.INTRODUCTION,
-                        lessonNote.COREPOINTS,
-                        lessonNote.EVALUATIONREMARKS
+                        lessonNote.Strand,
+                        lessonNote.SubStrand,
+                        lessonNote.ContentStandard,
+                        lessonNote.Indicator,
+                        lessonNote.TeachingLearningResources,
+                        lessonNote.TeachingLearningResourcePreparationNotes,
+                        lessonNote.SourcesLearningResources,
+                        lessonNote.LearningGroup,
+                        lessonNote.LearnerExpectation,
+                        lessonNote.ImportantGradeExpectation,
+                        lessonNote.LearningOutcomes,
+                        lessonNote.FormofAssessment,
+                        lessonNote.LearnerEntryBehavior,
+                        lessonNote.SequenceofLesson,
+                        Status = 1, // Assuming you want to set a default status
+                        UpdatedBy = lessonNote.UserId, // Assuming UpdatedBy is the same as UserId
+                        UpdatedOn = DateTime.UtcNow
                     });
                 }
             }
@@ -1902,8 +1921,8 @@ namespace CORE.SERVICE
             using (var connection = new SqlConnection(connectionString))
             {
                 string query = @"
-                SELECT ln.LessonnotesID, ln.UserId, u.UserName, ln.SchoolCourse, ln.Topic, ln.OBJECTIVES, ln.TLMTLA, ln.INTRODUCTION, ln.COREPOINTS, ln.EVALUATIONREMARKS, ln.Status
-                FROM SchoolManagement.lessonnotes ln
+                SELECT ln.LessonnotesID, ln.UserId, u.UserName, ln.SchoolCourse, ln.Strand, ln.SubStrand, ln.ContentStandard, ln.Indicator, ln.TeachingLearningResources, ln.TeachingLearningResourcePreparationNotes, ln.SourcesLearningResources, ln.LearningGroup,ln.LearnerExpectation, ln.ImportantGradeExpectation, ln.LearningOutcomes, ln.FormofAssessment, ln.LearnerEntryBehavior, ln.SequenceofLesson
+                FROM SchoolManagement.TEACHERSLESSONNOTES ln
                 JOIN SchoolManagement.Users u ON ln.UserId = u.UserID";
 
                 var lessonNotes = await connection.QueryAsync<LessonNote>(query);
@@ -1915,7 +1934,7 @@ namespace CORE.SERVICE
             using (var connection = new SqlConnection(connectionString))
             {
                 string query = @"
-        UPDATE SchoolManagement.lessonnotes
+        UPDATE SchoolManagement.TEACHERSLESSONNOTES
         SET Status = @Status,
             UpdatedBy = @UpdatedBy,
             UpdatedOn = @UpdatedOn
@@ -1939,7 +1958,7 @@ namespace CORE.SERVICE
                 {
                     string query = @"
                 SELECT l.UpdatedBy, u.FullName AS UpdatedByName, l.UpdatedOn
-                FROM SchoolManagement.lessonnotes l
+                FROM SchoolManagement.TEACHERSLESSONNOTES l
                 JOIN SchoolManagement.Users u ON l.UpdatedBy = u.UserID";
 
                     return await connection.QueryAsync<LessonNote>(query);
