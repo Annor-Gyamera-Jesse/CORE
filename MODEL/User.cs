@@ -10,6 +10,6 @@ namespace CORE.MODEL
         [Required(ErrorMessage = "Password is required.")]
         public string FullName {  get; set; }
         public string Password { get; set; }
-        public int? RoleID { get; set; }
+        public int RoleID { get; set; }
     }
 }

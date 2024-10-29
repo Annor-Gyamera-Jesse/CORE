@@ -92,12 +92,13 @@
 
                         <div class="form-group">
                             <label for="role">Role</label>
-                            <RadzenDropDown Data="@roles"
-                            TextProperty="RoleName"
-                            ValueProperty="RoleID"
-                            @bind-Value="user.RoleID"
-                            Placeholder="Select a role"
-                            Style="width: 100%;" />
+                            <RadzenDropDown id="role"
+                                            Data="@roles"
+                                            TextProperty="RoleName"
+                                            ValueProperty="RoleID"
+                                            @bind-Value="user.RoleID"
+                                            Placeholder="Select a Role"
+                                            Style="width: 100%;" />
                             <ValidationMessage For="@(() => user.RoleID)" />
                         </div>
 
@@ -138,25 +139,16 @@
 
 @code {
     private User user = new User();
-    private List<User> users;
-    private List<Role> roles;
+    private List<User> users = new List<User>();
+    private List<Role> roles = new List<Role>();
     public bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
             isLoading = true;
             await LoadDataAsync();
-        }
-        catch(Exception ex)
-        {
 
-        }
-        finally
-        {
             isLoading = false;
-        }
     }
 
     private async Task LoadDataAsync()
@@ -164,18 +156,19 @@
         try
         {
             isLoading = true;
-            users = authService.GetUsers();
+            users = (await UserService.GetUsersAsync()).ToList();
             roles = (await UserService.GetRolesAsync()).ToList();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-
+            Notify.ShowNotification("Error", $"Failed to load data: {ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
             isLoading = false;
         }
     }
+
 
     private void AddUser()
     {
