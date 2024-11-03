@@ -28,7 +28,7 @@
 <LoadingSpinner Visible="isLoading" />
 
 @code {
-    private bool isLoading = true;
+    private bool isLoading = false;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthState { get; set; } = null;
