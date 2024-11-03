@@ -1,4 +1,6 @@
-﻿@inject NavigationManager NavigationManager
+﻿@* @inject NavigationManager NavigationManager
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SECURITY.LOADER
 
 @code {
     [CascadingParameter]
@@ -15,6 +17,46 @@
                 NavigationManager.NavigateTo("/login", true);
             else
                 NavigationManager.NavigateTo("/login?returnUrl=" + returnUrl, true);
+        }
+    }
+} *@
+
+@inject NavigationManager NavigationManager
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SECURITY.LOADER
+
+<LoadingSpinner Visible="isLoading" />
+
+@code {
+    private bool isLoading = true;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; } = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true; // Show loading spinner at the beginning of initialization
+        try
+        {
+            await Task.Delay(500); // Optional delay for demonstration purposes
+            var authState = await AuthState!;
+
+            // Check if user is authenticated
+            if (authState?.User?.Identity == null || !authState.User.Identity.IsAuthenticated)
+            {
+                var returnUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+
+                // Redirect to login page if not authenticated
+                if (string.IsNullOrEmpty(returnUrl))
+                    NavigationManager.NavigateTo("/login", true);
+                else
+                    NavigationManager.NavigateTo($"/login?returnUrl={returnUrl}", true);
+            }
+        }
+        finally
+        {
+            isLoading = false; // Hide loading spinner after the operation completes
+            await InvokeAsync(StateHasChanged); // Ensure UI updates after changing isLoading
         }
     }
 }
