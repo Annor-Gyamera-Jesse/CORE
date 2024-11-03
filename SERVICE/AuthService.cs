@@ -2365,6 +2365,72 @@ namespace CORE.SERVICE
                 return await connection.QueryAsync<Notice>(sql);
             }
         }
+
+        /*specificaly for Message to teacher page to use this*/
+        public async Task<IEnumerable<Role>> GetNotesRolesAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<Role>("SELECT RoleID, RoleName FROM SchoolManagement.Roles");
+            }
+        }
+
+
+        // Method to get users by selected RoleID
+        public async Task<IEnumerable<User>> GetUsersByRoleAsync(int roleId)
+        {
+            const string sql = @"
+            SELECT u.UserID, u.UserName, r.RoleName
+            FROM SchoolManagement.Users u
+            INNER JOIN SchoolManagement.MobileAppRoles mr ON u.UserID = mr.UserID
+            INNER JOIN SchoolManagement.Roles r ON mr.RoleName = r.RoleName
+            WHERE r.RoleID = @RoleID AND mr.Enable = 1";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<User>(sql, new { RoleID = roleId });
+            }
+        }
+
+        // Method to send a message to all users in the selected role
+        public async Task<bool> SendMessageAsync(string title, string content, int roleId, IEnumerable<int> userIds)
+        {
+            const string sql = @"
+    INSERT INTO SchoolManagement.MessagesToRoleUsers (UserID, RoleID, Title, Content, DateSent)
+    VALUES (@UserID, @RoleID, @Title, @Content, GETDATE())";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                try
+                {
+                    foreach (var userId in userIds)
+                    {
+                        await connection.ExecuteAsync(sql, new { UserID = userId, RoleID = roleId, Title = title, Content = content });
+                    }
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error sending message: {ex.Message}");
+                    return false;
+                }
+            }
+        }
+
+
+        // Method to retrieve messages for a specific user
+        public async Task<IEnumerable<MESSAGE>> GetMessagesForUserAsync(int userId)
+        {
+            const string sql = @"
+            SELECT MessageID, UserID, Title, Content, DateSent
+            FROM SchoolManagement.MessagesToRoleUsers
+            WHERE UserID = @UserID";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryAsync<MESSAGE>(sql, new { UserID = userId });
+            }
+        }
         //-------------------------------------------------------------------------//
         //SERVICE TO MARK LESSE=ON NOTES//
     }

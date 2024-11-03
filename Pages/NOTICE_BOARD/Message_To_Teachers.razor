@@ -1,0 +1,121 @@
+﻿@page "/messagetoteachers"
+@inject AuthService MessageService
+@inject AuthService authService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+@using CORE.MODEL
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+
+<RadzenHeader>Send Message to Users by Role</RadzenHeader>
+
+<RadzenFieldset Text="" Icon="fly">
+<RadzenTemplateForm Data="@newMessage" class="form-group">
+    <RadzenDropDown Name="Role"
+                    @bind-Value="selectedRole"
+                    Data="@roles"
+                    TextProperty="RoleName"
+                    ValueProperty="RoleID"
+                    Style="width: 100%"
+                    Placeholder="Select Role"
+                    Change="OnRoleChanged" />
+
+    <RadzenTextBox Name="Title" @bind-Value="newMessage.Title" Style="width: 100%" Placeholder="Message Title" />
+    <RadzenTextArea Name="Content" @bind-Value="newMessage.Content" Style="width: 100%" Rows="5" Placeholder="Message Content" />
+</RadzenTemplateForm>
+
+<RadzenButton ButtonType="ButtonType.Button" Text="Send Message" Click="SendMessage" Style="margin-top: 10px" />
+
+<h4>Recipients</h4>
+<RadzenDataGrid Data="@recipients" TItem="User" AllowPaging="true" PageSize="5">
+    <Columns>
+        <RadzenDataGridColumn TItem="User" Property="UserName" Title="Recipient Name" />
+        <RadzenDataGridColumn TItem="User" Property="RoleName" Title="Role" />
+    </Columns>
+</RadzenDataGrid>
+</RadzenFieldset>
+@code {
+    private MESSAGE newMessage = new MESSAGE();
+    private int? selectedRole;  // Nullable int to handle default selection
+    private IEnumerable<User> recipients = new List<User>();
+    private IEnumerable<Role> roles = new List<Role>();
+    private int currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load roles during initialization
+        roles = await MessageService.GetNotesRolesAsync();
+        Console.WriteLine($"Loaded Roles: {roles.Count()}");
+
+        // Retrieve UserID from sessionStorage
+        var userIdString = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userID");
+
+        if (!string.IsNullOrEmpty(userIdString) && int.TryParse(userIdString, out var userId))
+        {
+            currentUserId = userId;
+            Console.WriteLine($"Current User ID: {currentUserId}");
+        }
+        else
+        {
+            Console.WriteLine("UserID not found in sessionStorage");
+        }
+    }
+
+    private async Task OnRoleChanged(object value)
+    {
+        // Safely cast to nullable int and log the change
+        selectedRole = (int?)value;
+        Console.WriteLine($"Selected Role ID: {selectedRole}");
+
+        // Clear previous recipients
+        recipients = Enumerable.Empty<User>();
+
+        // Load recipients based on the selected role
+        await LoadRecipients();
+
+        // Trigger UI refresh
+        StateHasChanged();
+    }
+
+
+    private async Task LoadRecipients()
+    {
+        if (selectedRole.HasValue)
+        {
+            // Load users based on the selected role
+            recipients = await MessageService.GetUsersByRoleAsync(selectedRole.Value);
+            Console.WriteLine($"Loaded Recipients: {recipients.Count()}");
+        }
+        else
+        {
+            // Log if no role is selected
+            Console.WriteLine("No role selected.");
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (recipients.Any())
+        {
+            var recipientIds = recipients.Select(r => r.UserID);
+            var isSent = await MessageService.SendMessageAsync(newMessage.Title, newMessage.Content, selectedRole.Value, recipientIds);
+
+            if (isSent)
+            {
+                newMessage = new MESSAGE();
+                recipients = Enumerable.Empty<User>();
+                selectedRole = null;
+                Notify.ShowNotification("Success", "Message sent successfully.", NotificationSeverity.Success);
+            }
+            else
+            {
+                Notify.ShowNotification("Error", "Failed to send message.", NotificationSeverity.Warning);                
+            }
+        }
+        else
+        {
+            Notify.ShowNotification("Warning", "No recipients to send message.", NotificationSeverity.Error);         
+        }
+    }
+}

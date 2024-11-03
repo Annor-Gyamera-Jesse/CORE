@@ -11,5 +11,6 @@ namespace CORE.MODEL
         public string FullName {  get; set; }
         public string Password { get; set; }
         public int RoleID { get; set; }
+        public bool IsSelected { get; set; }
     }
 }
