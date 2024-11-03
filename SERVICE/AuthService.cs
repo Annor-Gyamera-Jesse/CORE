@@ -1686,12 +1686,12 @@ namespace CORE.SERVICE
                     await connection.OpenAsync();
 
                     var query = @"INSERT INTO SchoolManagement.TEACHERSLESSONNOTES 
-                (UserId, SchoolCourse, Strand, SubStrand, ContentStandard, Indicator, 
+                (ClassID, UserId, SchoolCourse, Strand, SubStrand, ContentStandard, Indicator, 
                  TeachingLearningResources, TeachingLearningResourcePreparationNotes, 
                  SourcesLearningResources, LearningGroup, LearnerExpectation, 
                  ImportantGradeExpectation, LearningOutcomes, FormofAssessment, 
                  LearnerEntryBehavior, SequenceofLesson, Status, UpdatedBy, UpdatedOn) 
-                VALUES (@UserId, @SchoolCourse, @Strand, @SubStrand, @ContentStandard, 
+                VALUES (@ClassID, @UserId, @SchoolCourse, @Strand, @SubStrand, @ContentStandard, 
                         @Indicator, @TeachingLearningResources, @TeachingLearningResourcePreparationNotes, 
                         @SourcesLearningResources, @LearningGroup, @LearnerExpectation, 
                         @ImportantGradeExpectation, @LearningOutcomes, @FormofAssessment, 
@@ -1699,6 +1699,7 @@ namespace CORE.SERVICE
 
                     return await connection.ExecuteAsync(query, new
                     {
+                        lessonNote.ClassID,
                         lessonNote.UserId,
                         lessonNote.SchoolCourse,
                         lessonNote.Strand,
@@ -1969,6 +1970,31 @@ namespace CORE.SERVICE
                 throw new Exception("Error fetching status updates from database.", ex);
             }
         }
+
+        public async Task<List<Class>> GetClassforlessonnotepageAsync()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = "SELECT ClassID, ClassName FROM SchoolManagement.Class"; // Ensure you have ClassName in your DB
+                    return (await connection.QueryAsync<Class>(query)).ToList(); // Update to return a list of Class objects
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Exception: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+            }
+
+            return new List<Class>();
+        }
+
 
 
         //----For Teacher Assesment--//
