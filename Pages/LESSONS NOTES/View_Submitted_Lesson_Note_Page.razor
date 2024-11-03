@@ -13,6 +13,7 @@
 
 @if (!isLoading)
 {
+    <RadzenFieldset Text="MARK LESSON NOTES" Icon="book">
     <div class="container">
         @if (lessonNotes != null && lessonNotes.Any())
         {
@@ -34,7 +35,7 @@
                     <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="FormofAssessment" Title="Form of Assessment" />
                     <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="LearnerEntryBehavior" Title="Learner Entry Behavior" />
                     <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SequenceofLesson" Title="Sequence of Lesson" />
-                    <RadzenGridColumn TItem="LessonNote" Title="Status">
+                    <RadzenGridColumn TItem="LessonNote" Title="Change Status">
                         <Template Context="note">
                             <RadzenDropDown @bind-Value="note.Status"
                                             Data="Enum.GetValues(typeof(Lesson_Note_Dialog_Status)).Cast<Lesson_Note_Dialog_Status>()"
@@ -56,6 +57,7 @@
             </div>
         }
     </div>
+    </RadzenFieldset>
 }
 
 @code {
