@@ -1796,6 +1796,7 @@ namespace CORE.SERVICE
             return new List<SchoolCourse>();
         }
 
+        //filter the db to pull out the date range
         public async Task<List<LessonNote>> GetLessonNotesByDateRangeAsync(DateTime fromDate, DateTime toDate)
         {
             using (var connection = new SqlConnection(connectionString))
