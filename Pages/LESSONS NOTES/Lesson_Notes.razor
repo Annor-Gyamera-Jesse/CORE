@@ -295,11 +295,22 @@
 <LoadingSpinner Visible="isLoading"/>
 @if (!isLoading)
 {
+    <RadzenFieldset Text="TEACHER LESSON NOTE">
     <div class="row mb-3">
         <div class="col-md-4">
+            <RadzenFieldset Text="SELECT SUBJECT">
             <RadzenLabel Text="Course Name:" Associated="lessonNote.SchoolCourse" />
             <RadzenDropDown @bind-Value="lessonNote.SchoolCourse" Data="@courseList" TextProperty="SchoolCourseName" ValueProperty="SchoolCourseName" Style="width: 100%;" />
+            </RadzenFieldset>
         </div>
+
+        <div class="col-md-5">
+            <RadzenFieldset Text="SELECT CLASS" >
+                <RadzenDropDown Data="@classList" TextProperty="ClassID" ValueProperty="ClassID" TValue="string" @bind-Value="@classId" Style="width:100%;" />
+             </RadzenFieldset>
+        </div>
+
+
     </div>
     <div class="container">
         <RadzenFieldset Text="Lesson Note" Style="border: none; padding: 20px;">
@@ -337,12 +348,12 @@
 
             <!-- Submit and Reset Buttons -->
             <div class="right-panel">
-              @*   <div class="col-md-6">
-                    <RadzenButton Text="Submit" Icon="check" ButtonStyle="ButtonStyle.Primary" Click="SubmitLessonNote" Style="width: 100%;" />
+                <div class="col-md-6">
+                    <RadzenButton Text="Submit" Icon="check" ButtonStyle="ButtonStyle.Primary" Click="SubmitLessonNote" Style="width: 50%;" />
                 </div>
                 <div class="col-md-6">
-                    <RadzenButton Text="Reset" Icon="refresh" ButtonStyle="ButtonStyle.Secondary" Click="ResetFields" Style="width: 100%;" />
-                </div> *@
+                    <RadzenButton Text="Reset" Icon="refresh" ButtonStyle="ButtonStyle.Secondary" Click="ResetFields" Style="width: 50%;" />
+                </div>
             </div>
         </RadzenFieldset>
     </div>
@@ -352,18 +363,21 @@
                @*  <ToolPanelComponent @* OnOpenSubmittedLessonNotesDialog="SubmittedLessonNotesDialog" *@ @* OnOpenAssesmentDialog="AssesmentDialog" /> *@
                 <ToolPanelComponent OnOpenAssesmentDialog="AssesmentDialog" />
             </div>
-            <div class="col-md-6">
+        @*     <div class="col-md-6">
                 <RadzenButton Text="Submit" Icon="check" ButtonStyle="ButtonStyle.Primary" Click="SubmitLessonNote" Style="width: 100%;" />
             </div>
             <div class="col-md-6">
                 <RadzenButton Text="Reset" Icon="refresh" ButtonStyle="ButtonStyle.Secondary" Click="ResetFields" Style="width: 100%;" />
-            </div>
+            </div> *@
         </div>
     </div>
+    </RadzenFieldset>
 }
 
 @code {
     LessonNote lessonNote = new LessonNote();
+    List<Class> classList = new List<Class>();
+    string classId = "";
     List<string> lessonNoteFields = new List<string>
     {
         "Strand", "SubStrand", "ContentStandard", "Indicator",
@@ -452,32 +466,86 @@
             lessonNote.LearnerEntryBehavior = selectedFields.FirstOrDefault(f => f.Name == "LearnerEntryBehavior")?.Value;
             lessonNote.SequenceofLesson = selectedFields.FirstOrDefault(f => f.Name == "SequenceofLesson")?.Value;
 
-
-            // Assign UserId to lessonNote object
+            // Assign UserId and ClassID to lessonNote object
             lessonNote.UserId = userId;
+            lessonNote.ClassID = classId;
 
             // Perform the database operation
             var result = await authService.AddLessonNoteAsync(lessonNote);
 
             if (result > 0)
             {
-                lessonNote = new LessonNote();  // Reset the object after successful submission
-                Notify.ShowNotification("", "Lesson note submitted successfully!", NotificationSeverity.Success);
+                Notify.ShowNotification("Success", "Lesson note submitted successfully", NotificationSeverity.Success);
+
+                // Reset the form fields
+                lessonNote = new LessonNote();  // Clear the lessonNote object
+                selectedFields.Clear();
             }
             else
             {
-                Notify.ShowNotification("Error", "Failed to submit lesson note", NotificationSeverity.Info);
+                Notify.ShowNotification("Error", "Failed to submit lesson note", NotificationSeverity.Error);
             }
         }
         catch (Exception ex)
         {
-            Notify.ShowNotification("Error", $"An error occurred while submitting the lesson note: {ex.Message}", NotificationSeverity.Info);
+            Notify.ShowNotification("Error", $"An error occurred while submitting the lesson note: {ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
-            isLoading = false;  // Set loading to false after operation
+            isLoading = false;
         }
     }
+
+    // async Task SubmitLessonNote()
+    // {
+    //     try
+    //     {
+    //         isLoading = true;
+
+    //         // Map selectedFields back to lessonNote
+    //         lessonNote.Strand = selectedFields.FirstOrDefault(f => f.Name == "Strand")?.Value;
+    //         lessonNote.SubStrand = selectedFields.FirstOrDefault(f => f.Name == "SubStrand")?.Value;
+    //         lessonNote.ContentStandard = selectedFields.FirstOrDefault(f => f.Name == "ContentStandard")?.Value;
+    //         lessonNote.Indicator = selectedFields.FirstOrDefault(f => f.Name == "Indicator")?.Value;
+    //         lessonNote.TeachingLearningResources = selectedFields.FirstOrDefault(f => f.Name == "TeachingLearningResources")?.Value;
+    //         lessonNote.TeachingLearningResourcePreparationNotes = selectedFields.FirstOrDefault(f => f.Name == "TeachingLearningResourcePreparationNotes")?.Value;
+    //         lessonNote.SourcesLearningResources = selectedFields.FirstOrDefault(f => f.Name == "SourcesLearningResources")?.Value;
+    //         lessonNote.LearningGroup = selectedFields.FirstOrDefault(f => f.Name == "LearningGroup")?.Value;
+    //         lessonNote.LearnerExpectation = selectedFields.FirstOrDefault(f => f.Name == "LearnerExpectation")?.Value;
+    //         lessonNote.ImportantGradeExpectation = selectedFields.FirstOrDefault(f => f.Name == "ImportantGradeExpectation")?.Value;
+    //         lessonNote.LearningOutcomes = selectedFields.FirstOrDefault(f => f.Name == "LearningOutcomes")?.Value;
+    //         lessonNote.FormofAssessment = selectedFields.FirstOrDefault(f => f.Name == "FormofAssessment")?.Value;
+    //         lessonNote.LearnerEntryBehavior = selectedFields.FirstOrDefault(f => f.Name == "LearnerEntryBehavior")?.Value;
+    //         lessonNote.SequenceofLesson = selectedFields.FirstOrDefault(f => f.Name == "SequenceofLesson")?.Value;
+
+    //         // Assign UserId to lessonNote object and ClassID
+    //         lessonNote.UserId = userId;
+    //         lessonNote.ClassID = classId;
+
+    //         // Perform the database operation
+    //         var result = await authService.AddLessonNoteAsync(lessonNote);
+
+    //         // if (result > 0)
+    //         // {                
+    //         //     Notify.ShowNotification("", "Lesson note submitted successfully!", NotificationSeverity.Success);
+    //         //     lessonNote = new LessonNote();  // Reset the object after successful submission
+    //         // }
+    //         // else
+    //         // {
+    //         //     Notify.ShowNotification("Error", "Failed to submit lesson note", NotificationSeverity.Info);
+    //         // }
+    //         Notify.ShowNotification("", "Lesson note submitted successfully!", NotificationSeverity.Success);
+    //         lessonNote = new LessonNote();  // Reset the object after successful submission
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Notify.ShowNotification("Error", $"An error occurred while submitting the lesson note: {ex.Message}", NotificationSeverity.Info);
+    //     }
+    //     finally
+    //     {
+    //         isLoading = false;  // Set loading to false after operation
+    //     }
+    // }
 
     protected override async Task OnInitializedAsync()
     {
@@ -494,6 +562,9 @@
             }
 
             courseList = await authService.GetLessonNotSchoolCoursesAsync();
+            // Fetch list of classes
+            var classes = await authService.GetClassesAsync();
+            classList = classes.Select(c => new Class { ClassID = c }).ToList();
         }
         catch (Exception ex)
         {

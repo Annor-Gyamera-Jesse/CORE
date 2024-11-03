@@ -25,6 +25,7 @@ namespace CORE.Pages.LESSON_NOTE
         public Lesson_Note_Dialog_Status Status { get; set; }
         public int UpdatedBy { get; set; }
         public DateTime UpdatedOn { get; set; } = DateTime.Now; // Initialize with current date/time
+        public string ClassID { get; set; }
     }
 
 }
