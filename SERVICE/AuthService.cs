@@ -1796,6 +1796,16 @@ namespace CORE.SERVICE
             return new List<SchoolCourse>();
         }
 
+        public async Task<List<LessonNote>> GetLessonNotesByDateRangeAsync(DateTime fromDate, DateTime toDate)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string sql = "SELECT * FROM SchoolManagement.TEACHERSLESSONNOTES WHERE RecDateCreated BETWEEN @FromDate AND @ToDate";
+                return (await connection.QueryAsync<LessonNote>(sql, new { FromDate = fromDate, ToDate = toDate })).ToList();
+            }
+        }
+
+
         //------------------Teachers-Task------------------------------//
 
         public async Task<IEnumerable<TeachersTask>> GetAllTasksAsync()

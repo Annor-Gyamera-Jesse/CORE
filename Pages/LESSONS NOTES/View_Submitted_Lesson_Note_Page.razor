@@ -13,6 +13,13 @@
 
 @if (!isLoading)
 {
+        <div class="container my-5">
+        <div class="mb-3">
+            <RadzenDatePicker @bind-Value="fromDate" Placeholder="From Date" Style="width: 200px;" />
+            <RadzenDatePicker @bind-Value="toDate" Placeholder="To Date" Style="width: 200px; margin-left: 10px;" />
+            <RadzenButton Text="Filter" Click="@FilterLessonNotes" ButtonStyle="ButtonStyle.Primary" Style="margin-left: 10px;" />
+        </div>
+        </div>
     <div class="container my-5">
         @if (lessonNotes != null && lessonNotes.Any())
         {
@@ -128,8 +135,9 @@
 @code {
     private IEnumerable<LessonNote> lessonNotes;
     private bool isLoading = false;
-     private LessonNote selectedLessonNote; // Holds the currently selected lesson note for viewing
-
+    private LessonNote selectedLessonNote; // Holds the currently selected lesson note for viewing
+    private DateTime? fromDate;
+    private DateTime? toDate;
 
     protected override async Task OnInitializedAsync()
     {
@@ -201,6 +209,26 @@
     void ClearSelectedLessonNote()
     {
         selectedLessonNote = null;
+    }
+
+    private async Task FilterLessonNotes()
+    {
+        if (fromDate.HasValue && toDate.HasValue)
+        {
+            isLoading = true;
+            try
+            {
+                lessonNotes = await lessonNoteService.GetLessonNotesByDateRangeAsync(fromDate.Value, toDate.Value);
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+        else
+        {            
+            Notify.ShowNotification("", "Please select both 'from' and 'to' dates.", NotificationSeverity.Info);
+        }
     }
 
     void CloseForm()
