@@ -1,0 +1,118 @@
+﻿@page "/upload-photo"
+@using Microsoft.AspNetCore.Components.Forms
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Upload Photo</PageTitle>
+
+<RadzenTemplateForm Data="@photoRecord" Submit="OnSubmit" TItem="PhotoRecord">
+    <!-- Form Container with Card Style -->
+    <div class="form-container card">
+        <h3 class="form-title">Upload Student Tests In Photo</h3>
+
+        <!-- Class Selection -->
+        <div class="form-group">
+            <label for="classSelect" class="form-label">Select Class</label>
+            <RadzenDropDown @bind-Value="selectedClass" Placeholder="Select Class"
+                            Data="@(classes ?? new List<Class>())" TextProperty="ClassID"
+                            ValueProperty="ClassID" Change="OnClassChange" class="form-control" />
+        </div>
+
+      @*   <!-- Student Selection -->
+        <div class="form-group">
+            <label for="studentSelect" class="form-label">Select Student</label>
+            <RadzenDropDown @bind-Value="selectedStudentName" Placeholder="Select Student"
+                            Data="@(students ?? new List<Student>())" TextProperty="StudentFirstName"
+                            ValueProperty="StudentFirstName" Change="OnStudentChange" class="form-control" />
+        </div> *@
+
+        <!-- Student ID Display -->
+        <div class="form-group">
+            <label for="studentId" class="form-label">Student ID</label>
+            <RadzenTextBox Value="selectedStudentID" ReadOnly="true" class="form-control" />
+        </div>
+
+        <!-- Photo Title -->
+        <div class="form-group">
+            <label for="photoTitle" class="form-label">Photo Title</label>
+            <RadzenTextBox @bind-Value="photoRecord.PhotoTitle" Name="PhotoTitle" class="form-control" />
+        </div>
+
+        <!-- Photo Description -->
+        <div class="form-group">
+            <label for="photoDescription" class="form-label">Photo Description</label>
+            <RadzenTextArea @bind-Value="photoRecord.PhotoDescription" Name="PhotoDescription" class="form-control" />
+        </div>
+
+        <!-- Photo Upload Section -->
+        <div class="form-group">
+            <label for="photoUpload" class="form-label">Upload Photo</label>
+            <InputFile OnChange="OnFileUpload" class="form-control-file" />
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-group">
+            <RadzenButton Text="Submit" ButtonType="ButtonType.Submit" Style="width: 100%;" class="btn btn-primary" />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+    private string selectedClass;
+    private string selectedStudentName;
+    private int selectedStudentID;
+    private List<Class> classes;
+    private List<Student> students;
+    private PhotoRecord photoRecord = new PhotoRecord();
+    private IBrowserFile selectedFile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        classes = (await AuthService.GetTClassesAsync()).ToList();
+    }
+
+    private async Task OnClassChange(object value)
+    {
+        selectedClass = value?.ToString();
+        students = (await AuthService.GetStudentsByClassAsync(selectedClass)).ToList();
+    }
+
+    private void OnStudentChange(object value)
+    {
+        selectedStudentName = value?.ToString();
+        var student = students.FirstOrDefault(s => s.StudentFirstName == selectedStudentName);
+        if (student != null)
+        {
+            selectedStudentID = student.StudentID;
+        }
+    }
+
+    private async Task OnFileUpload(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        if (selectedFile != null)
+        {
+            try
+            {
+                using var memoryStream = new MemoryStream();
+                await selectedFile.OpenReadStream().CopyToAsync(memoryStream);
+                photoRecord.PhotoData = memoryStream.ToArray(); // Store the photo data as a byte array
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"File upload failed: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task OnSubmit()
+    {
+        photoRecord.Class = selectedClass;
+        photoRecord.StudentName = selectedStudentName;
+        photoRecord.StudentID = selectedStudentID;
+
+        await AuthService.SavePhotoRecordAsync(photoRecord);
+    }
+}
