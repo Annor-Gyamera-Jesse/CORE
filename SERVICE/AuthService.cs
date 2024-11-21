@@ -2444,5 +2444,21 @@ namespace CORE.SERVICE
         }
         //-------------------------------------------------------------------------//
         //SERVICE TO MARK LESSE=ON NOTES//
+
+        /*PHOTORECORDS*/
+        public async Task SavePhotoRecordAsync(PhotoRecord photoRecord)
+        {
+            const string sql = @"
+        INSERT INTO SchoolManagement.PhotoRecords 
+        (Class, StudentName, StudentID, PhotoTitle, PhotoDescription, PhotoData) 
+        VALUES 
+        (@Class, @StudentName, @StudentID, @PhotoTitle, @PhotoDescription, @PhotoData)";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.ExecuteAsync(sql, photoRecord);
+            }
+        }
+
     }
 }
