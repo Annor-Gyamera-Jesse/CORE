@@ -55,6 +55,7 @@
                            TextProperty="FullName"
                            ValueProperty="StudentID"
                            @bind-Value="SelectedStudentID"
+                           Change="OnStudentSelected"
                            Style="width: 100%; height: 600px;"
                            Placeholder="Select a Student" />
         </RadzenFieldset>
@@ -72,6 +73,17 @@
                 <RadzenTextBox @bind-Value="FeeID" Style="width: 100%;" Disabled="true" />
             </div>
         </div>
+
+        <div class="row input-group">
+            <div class="col-md-6">
+                <RadzenLabel Text="Outstanding Balance" />
+                <RadzenTextBox Value="@OutstandingBalance.ToString("F2")"
+                               Style="width: 100%; background-color: #ffe2e6;"
+                               Disabled="true"
+                               Placeholder="Outstanding Balance" />
+            </div>
+        </div>
+
 
         <!-- Fee Type Dropdown -->
         <div class="row input-group">
@@ -143,7 +155,7 @@
     private List<Student> FilteredStudents = new List<Student>();
     private List<FeeType> FeeTypes = new List<FeeType>();
     private List<string> PaymentMethods = new List<string> { "Cash", "Card", "Online" };
-
+    private decimal OutstandingBalance = 0;
     private string SearchTerm = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -186,6 +198,19 @@
                 .ToList();
         }
     }
+
+    private async Task OnStudentSelected(object value)
+    {
+        SelectedStudentID = Convert.ToInt32(value);
+
+        // Fetch outstanding balance for the selected student
+        var studentFee = await StudentService.GetStudentFeeAsync(SelectedStudentID, SelectedFeeTypeID);
+        OutstandingBalance = studentFee?.AmountLeft ?? 0;
+
+        // Update TotalAmountLeft
+        TotalAmountLeft = OutstandingBalance;
+    }
+
 
     private async Task LoadClassFeeDetails(object value)
     {

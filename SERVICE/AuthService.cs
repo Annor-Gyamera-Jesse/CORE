@@ -2486,6 +2486,7 @@ namespace CORE.SERVICE
             }
         }
 
+        /*logic to save fees*/
         public async Task<bool> SaveStudentFeeAsync(StudentFee studentFee)
         {
             try
@@ -2509,7 +2510,28 @@ namespace CORE.SERVICE
             }
 
         }
-        
+
+        /*logic to display student outstanding balance*/
+        public async Task<StudentFee> GetStudentFeeAsync(int studentId, int feeTypeId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                const string query = @"
+            SELECT TOP 1 AmountLeft
+            FROM SchoolManagement.StudentFees
+            WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID
+            ORDER BY PaymentDate DESC";
+
+                return await connection.QueryFirstOrDefaultAsync<StudentFee>(query, new { StudentID = studentId, FeeTypeID = feeTypeId });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching student fee: {ex.Message}");
+                throw;
+            }
+        }
+
         // Method to fetch all classes
         public async Task<List<Class>> GetsAllClassesAsync()
         {
