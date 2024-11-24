@@ -1,0 +1,19 @@
+﻿@* ToolComponent Page *@
+
+<style>
+
+    .toolset-btn {
+        margin-bottom: 5px;
+        width: 100%;
+        font-size: 14px
+    }
+</style>
+
+<div class="row mt-2">
+    <RadzenButton Text="Fees" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Secondary" Click=@OnFeesDialog />   
+</div>
+
+@code {
+    [Parameter] public Action OnFeesDialog { get; set; }
+   
+}

@@ -1486,7 +1486,7 @@ namespace CORE.SERVICE
             return new List<string>();
         }
 
-        // Method to get students by class
+        // Method to get students by class and its been used by Fees page
         public async Task<List<Student>> GetStudentsByClass(string classId)
         {
             using (var connection = new SqlConnection(connectionString))
@@ -2461,6 +2461,85 @@ namespace CORE.SERVICE
         }
 
         /*School Fees Implimentation*/
+        // Get all fee types
+        public async Task<List<FeeType>> GetFeeTypesAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                const string query = @"SELECT FeeTypeID, FeeTypeName, Description, Amount, ClassID, RecDateCreated 
+                                       FROM SchoolManagement.FeeTypes";
 
+                var feeTypes = await connection.QueryAsync<FeeType>(query);
+                return feeTypes.AsList();
+            }
+        }
+
+        // Get all student fees
+        public async Task<IEnumerable<StudentFee>> GetStudentFeesAsync(int studentId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                return await connection.QueryAsync<StudentFee>(
+                    "SELECT * FROM SchoolManagement.StudentFees WHERE StudentID = @StudentID",
+                    new { StudentID = studentId });
+            }
+        }
+
+        /*logic to save fees*/
+        public async Task<bool> SaveStudentFeeAsync(StudentFee studentFee)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                Console.WriteLine("Executing query...");
+                const string query = @"
+        INSERT INTO SchoolManagement.StudentFees 
+        (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID)
+        VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID)";
+
+                Console.WriteLine($"Query: {query}");
+                var result = await connection.ExecuteAsync(query, studentFee);
+                Console.WriteLine($"Rows affected: {result}");
+                return result > 0;
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Error: {ex.Message}");
+                throw new ApplicationException("An error occurred while saving the student fee.", ex);
+            }
+
+        }
+
+        /*logic to display student outstanding balance*/
+        public async Task<StudentFee> GetStudentFeeAsync(int studentId, int feeTypeId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                const string query = @"
+            SELECT TOP 1 AmountLeft
+            FROM SchoolManagement.StudentFees
+            WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID
+            ORDER BY PaymentDate DESC";
+
+                return await connection.QueryFirstOrDefaultAsync<StudentFee>(query, new { StudentID = studentId, FeeTypeID = feeTypeId });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching student fee: {ex.Message}");
+                throw;
+            }
+        }
+
+        // Method to fetch all classes
+        public async Task<List<Class>> GetsAllClassesAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = "SELECT DISTINCT ClassID FROM SchoolManagement.Classes";
+            var classes = await connection.QueryAsync<Class>(query);
+            return classes.AsList();
+        }
+       
     }
 }

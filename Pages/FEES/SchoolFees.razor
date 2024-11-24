@@ -1,0 +1,302 @@
+﻿@page "/core/pages/fees/schoolfees"
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@inject NotificationMessageService NotificationService
+@inject AuthService StudentService
+@inject IJSRuntime jsRuntime
+
+<!-- Custom CSS -->
+<style>
+    .text-blue {
+        color: blue;
+    }
+
+    .text-red {
+        color: red;
+    }
+
+    .student-list-container {
+        max-width: 300px;
+        float: left;
+        margin-right: 20px;
+    }
+
+    .form-container {
+        margin-left: 320px;
+    }
+
+    .input-group {
+        margin-bottom: 15px;
+    }
+</style>
+
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <h3>School Fees Payment</h3>
+
+    <div class="student-list-container">
+        <RadzenFieldset Text="STUDENTS NAMES" Icon="search">
+            <!-- Search Box for Students -->
+            <div class="input-group">
+                <RadzenLabel Text="Search Student" />
+                <RadzenTextBox @bind-Value="SearchTerm"
+                               Style="width: 100%; margin-bottom: 10px;"
+                               Placeholder="Enter student name..."
+                               Change="FilterStudents" />
+            </div>
+
+            <!-- List of Students -->
+            <RadzenListBox Data="@FilteredStudents"
+                           TextProperty="FullName"
+                           ValueProperty="StudentID"
+                           @bind-Value="SelectedStudentID"
+                           Change="OnStudentSelected"
+                           Style="width: 100%; height: 600px;"
+                           Placeholder="Select a Student" />
+        </RadzenFieldset>
+    </div>
+
+    <div class="form-container" style="max-width: 800px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; background-color: #f9f9f9;">
+        <!-- Date and FeeID -->
+        <div class="row input-group">
+            <div class="col-md-6">
+                <RadzenLabel Text="Payment Date" />
+                <RadzenDatePicker @bind-Value="PaymentDate" Style="width: 100%;" />
+            </div>
+            <div class="col-md-6">
+                <RadzenLabel Text="Fee ID" />
+                <RadzenTextBox @bind-Value="FeeID" Style="width: 100%;" Disabled="true" />
+            </div>
+        </div>
+
+        <div class="row input-group">
+            <div class="col-md-6">
+                <RadzenLabel Text="Outstanding Balance" />
+                <RadzenTextBox Value="@OutstandingBalance.ToString("F2")"
+                               Style="width: 100%; background-color: #ffe2e6;"
+                               Disabled="true"
+                               Placeholder="Outstanding Balance" />
+            </div>
+        </div>
+
+
+        <!-- Fee Type Dropdown -->
+        <div class="row input-group">
+            <RadzenLabel Text="Fee Type" />
+            <RadzenDropDown @bind-Value="SelectedFeeTypeID"
+                            Data="@FeeTypes"
+                            TextProperty="FeeTypeName"
+                            ValueProperty="FeeTypeID"
+                            Style="width: 100%;"
+                            Change="LoadClassFeeDetails"
+                            Placeholder="Select Fee Type" />
+
+            <div class="row input-group">
+                <!-- Class Dropdown -->
+                <RadzenLabel Text="Class" />
+                <RadzenDropDown @bind-Value="SelectedClassID"
+                                Data="@Classes"
+                                TextProperty="ClassID"
+                                ValueProperty="ClassID"
+                                Style="width: 100%;"
+                                Placeholder="Select Class"
+                                Change="OnClassSelected" />
+            </div>
+        </div>
+
+        <!-- Payment Details -->
+        <RadzenFieldset Legend="Payment Details" Style="margin-top: 20px;">
+            <RadzenLabel Text="Amount Paid" />
+            <RadzenNumeric @bind-Value="AmountPaid"
+                           Style="width: 100%;"
+                           Min="0"
+                           Max="@TotalAmountLeft"
+                           Change="@(async (decimal value) => UpdateAmountLeft(value))" />
+
+            <RadzenLabel Text="Payment Method" Style="margin-top: 10px;" />
+            <RadzenDropDown @bind-Value="PaymentMethod"
+                            Data="@PaymentMethods"
+                            Placeholder="Select Payment Method"
+                            Style="width: 100%;" />
+
+            <RadzenLabel Text="Note" Style="margin-top: 10px;" />
+            <RadzenTextBox @bind-Value="Note"
+                           Style="width: 100%;"
+                           Multiline="true" />
+        </RadzenFieldset>
+
+        <!-- Total Amount Details -->
+        <div class="row input-group">
+            <div class="col-md-6">
+                <RadzenLabel Text="Total Amount Paid" />
+                <RadzenNumeric @bind-Value="AmountPaid"
+                               Style="width: 100%;"
+                               Min="0"
+                               Max="@TotalAmountLeft" />
+            </div>
+            <div class="col-md-6">
+                <RadzenLabel Text="Total Amount Left" />
+                <RadzenTextBox Value="@TotalAmountLeft.ToString("F2")"
+                               Style="width: 100%; background-color: #d9f7be;"
+                               Disabled="true"
+                               Class="@(TotalAmountLeft == 0 ? "text-blue" : "text-red")" />
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <RadzenButton Text="Save Payment" Click="SavePayment" Style="width: 100%; margin-top: 20px;" />
+    </div>
+}
+@code {
+    private DateTime PaymentDate = DateTime.Now;
+    private string FeeID = string.Empty;
+    private int SelectedStudentID;
+    private int SelectedFeeTypeID;
+    private decimal AmountPaid = 0;
+    private string PaymentMethod;
+    private string Note = string.Empty;
+    private bool isLoading = false;
+    private decimal TotalAmountLeft = 0;
+    private int userId; // Added for tracking UserID
+    private List<Student> Students = new List<Student>();
+    private List<Student> FilteredStudents = new List<Student>();
+    private List<FeeType> FeeTypes = new List<FeeType>();
+    private List<string> PaymentMethods = new List<string> { "Cash", "Card", "Online" };
+    private decimal OutstandingBalance = 0;
+    private string SearchTerm = string.Empty;
+    private string SelectedClassID; // Holds the selected class
+    private List<Class> Classes = new List<Class>(); // Stores the list of classes
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        try
+        {
+            // Fetch classes
+            Classes = await StudentService.GetsAllClassesAsync();
+
+            // Existing initialization logic
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+            var user = await StudentService.GetUserByUsernameAsync(username);
+            if (user != null)
+            {
+                userId = user.UserID;
+            }
+
+            Students = await StudentService.GetAllStudents();
+            FilteredStudents = Students; // Initialize the filtered list with all students
+            FeeTypes = await StudentService.GetFeeTypesAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Initialization Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnClassSelected(object value)
+    {
+        SelectedClassID = value?.ToString();
+
+        // Optionally, filter students by class
+        if (!string.IsNullOrEmpty(SelectedClassID))
+        {
+            FilteredStudents = Students.Where(s => s.ClassID == SelectedClassID).ToList();
+        }
+        else
+        {
+            FilteredStudents = Students;
+        }
+    }
+
+    private void FilterStudents(object value)
+    {
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            FilteredStudents = Students; // Reset filter if search is empty
+        }
+        else
+        {
+            FilteredStudents = Students
+                .Where(s => s.FullName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private async Task OnStudentSelected(object value)
+    {
+        SelectedStudentID = Convert.ToInt32(value);
+
+        // Fetch outstanding balance for the selected student
+        var studentFee = await StudentService.GetStudentFeeAsync(SelectedStudentID, SelectedFeeTypeID);
+        OutstandingBalance = studentFee?.AmountLeft ?? 0;
+
+        // Update TotalAmountLeft
+        TotalAmountLeft = OutstandingBalance;
+    }
+
+
+    private async Task LoadClassFeeDetails(object value)
+    {
+        SelectedFeeTypeID = Convert.ToInt32(value);
+        TotalAmountLeft = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID)?.Amount ?? 0;
+    }
+
+    private async Task SavePayment()
+    {
+        if (AmountPaid <= 0 || SelectedStudentID == 0 || SelectedFeeTypeID == 0)
+        {
+            NotificationService.ShowNotification("Validation Error", "All fields are required.", NotificationSeverity.Warning);
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            var payment = new StudentFee
+                {
+                    StudentID = SelectedStudentID,
+                    FeeTypeID = SelectedFeeTypeID,
+                    StudentName = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.FullName, // Ensure this is set
+                    FeeTypeName = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID)?.FeeTypeName, // Ensure this is set
+                    ClassID = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.ClassID, // Ensure this is set
+                    AmountPaid = AmountPaid,
+                    AmountLeft = TotalAmountLeft - AmountPaid,
+                    PaymentDate = PaymentDate,
+                    Note = Note,
+                    UserID = userId
+                };
+
+            var success = await StudentService.SaveStudentFeeAsync(payment);
+            if (success)
+            {
+                NotificationService.ShowNotification("Success", "Payment saved successfully.", NotificationSeverity.Success);
+            }
+            else
+            {
+                NotificationService.ShowNotification("Error", "Failed to save payment.", NotificationSeverity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void UpdateAmountLeft(decimal value)
+    {
+        TotalAmountLeft -= value;
+    }
+}
