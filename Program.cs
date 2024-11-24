@@ -16,12 +16,12 @@ builder.Services.AddServerSideBlazor().AddHubOptions(o =>
 {
     o.MaximumReceiveMessageSize = 10 * 1024 * 1024;
 });
+builder.Services.AddScoped<NotificationMessageService>();
 builder.Services.AddScoped<DialogService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
-builder.Services.AddScoped<NotificationMessageService>();
 builder.Services.AddScoped<AuthStateService>();
 // Configure the database context
 //builder.Services.AddDbContext<INTELDbContext>(options =>

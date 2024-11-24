@@ -1,0 +1,11 @@
+﻿@* <RadzenDialog @ref="paymentDialog">
+    <DialogTemplate>
+        <RadzenForm>
+            <RadzenTextBox @bind-Value="payment.AmountPaid" Placeholder="Amount Paid" Type="number" />
+            <RadzenDropDown @bind-Value="payment.PaymentMethod" Data="paymentMethods" TextProperty="Name" ValueProperty="Code" />
+            <RadzenTextBox @bind-Value="payment.ReferenceNumber" Placeholder="Reference Number" />
+            <RadzenButton Text="Submit Payment" Click="@(args => SubmitPayment())" />
+        </RadzenForm>
+    </DialogTemplate>
+</RadzenDialog> *@
+

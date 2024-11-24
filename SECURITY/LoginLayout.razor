@@ -54,6 +54,7 @@
     {
         try
         {
+            isLoading = true;
             // Retrieve software version from the AuthService
             SoftwareVersion = await authService.GetSoftwareVersionAsync();
 
