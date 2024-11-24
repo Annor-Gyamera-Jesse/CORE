@@ -95,6 +95,18 @@
                             Style="width: 100%;"
                             Change="LoadClassFeeDetails"
                             Placeholder="Select Fee Type" />
+
+            <div class="row input-group">
+                <!-- Class Dropdown -->
+                <RadzenLabel Text="Class" />
+                <RadzenDropDown @bind-Value="SelectedClassID"
+                                Data="@Classes"
+                                TextProperty="ClassID"
+                                ValueProperty="ClassID"
+                                Style="width: 100%;"
+                                Placeholder="Select Class"
+                                Change="OnClassSelected" />
+            </div>
         </div>
 
         <!-- Payment Details -->
@@ -157,13 +169,18 @@
     private List<string> PaymentMethods = new List<string> { "Cash", "Card", "Online" };
     private decimal OutstandingBalance = 0;
     private string SearchTerm = string.Empty;
+    private string SelectedClassID; // Holds the selected class
+    private List<Class> Classes = new List<Class>(); // Stores the list of classes
 
     protected override async Task OnInitializedAsync()
     {
         isLoading = true;
         try
         {
-            // Fetch UserID from sessionStorage
+            // Fetch classes
+            Classes = await StudentService.GetsAllClassesAsync();
+
+            // Existing initialization logic
             var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
             var user = await StudentService.GetUserByUsernameAsync(username);
             if (user != null)
@@ -182,6 +199,21 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task OnClassSelected(object value)
+    {
+        SelectedClassID = value?.ToString();
+
+        // Optionally, filter students by class
+        if (!string.IsNullOrEmpty(SelectedClassID))
+        {
+            FilteredStudents = Students.Where(s => s.ClassID == SelectedClassID).ToList();
+        }
+        else
+        {
+            FilteredStudents = Students;
         }
     }
 
