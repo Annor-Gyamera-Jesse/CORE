@@ -69,13 +69,6 @@
                 <RadzenDatePicker @bind-Value="PaymentDate" Style="width: 100%;" />
             </div>
             <div class="col-md-6">
-                <RadzenLabel Text="Fee ID" />
-                <RadzenTextBox @bind-Value="FeeID" Style="width: 100%;" Disabled="true" />
-            </div>
-        </div>
-
-        <div class="row input-group">
-            <div class="col-md-6">
                 <RadzenLabel Text="Outstanding Balance" />
                 <RadzenTextBox Value="@OutstandingBalance.ToString("F2")"
                                Style="width: 100%; background-color: #ffe2e6;"
