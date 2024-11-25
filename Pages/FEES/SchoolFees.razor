@@ -88,13 +88,14 @@
         <!-- Fee Type Dropdown -->
         <div class="row input-group">
             <RadzenLabel Text="Fee Type" />
-            <RadzenDropDown @bind-Value="SelectedFeeTypeID"
-                            Data="@FeeTypes"
-                            TextProperty="FeeTypeName"
-                            ValueProperty="FeeTypeID"
-                            Style="width: 100%;"
-                            Change="LoadClassFeeDetails"
-                            Placeholder="Select Fee Type" />
+          <RadzenDropDown @bind-Value="SelectedFeeTypeID"
+                Data="@FeeTypes"
+                TextProperty="FeeTypeName"
+                ValueProperty="FeeTypeID"
+                Style="width: 100%;"
+                Disabled="@string.IsNullOrEmpty(SelectedClassID)"
+                Change="LoadClassFeeDetails"
+                Placeholder="Select Fee Type" />
 
             <div class="row input-group">
                 <!-- Class Dropdown -->
@@ -206,15 +207,18 @@
     {
         SelectedClassID = value?.ToString();
 
-        // Optionally, filter students by class
+        // Filter students based on the selected class
         if (!string.IsNullOrEmpty(SelectedClassID))
         {
             FilteredStudents = Students.Where(s => s.ClassID == SelectedClassID).ToList();
         }
         else
         {
-            FilteredStudents = Students;
+            FilteredStudents = Students; // Reset the list if no class is selected
         }
+
+        // Clear any previously selected fee type when the class changes
+        SelectedFeeTypeID = 0;
     }
 
     private void FilterStudents(object value)
@@ -235,11 +239,14 @@
     {
         SelectedStudentID = Convert.ToInt32(value);
 
-        // Fetch outstanding balance for the selected student
+        // Fetch the student's fee details based on selected class and fee type
         var studentFee = await StudentService.GetStudentFeeAsync(SelectedStudentID, SelectedFeeTypeID);
-        OutstandingBalance = studentFee?.AmountLeft ?? 0;
+        if (studentFee != null)
+        {
+            OutstandingBalance = studentFee.AmountLeft ?? studentFee.AmountPaid;
+        }
 
-        // Update TotalAmountLeft
+        // Update TotalAmountLeft with the student's fee amount
         TotalAmountLeft = OutstandingBalance;
     }
 
@@ -247,7 +254,21 @@
     private async Task LoadClassFeeDetails(object value)
     {
         SelectedFeeTypeID = Convert.ToInt32(value);
-        TotalAmountLeft = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID)?.Amount ?? 0;
+
+        // Fetch fee details for the selected fee type
+        var feeType = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID);
+        if (feeType != null)
+        {
+            // Use the fee amount from the FeeType for the total amount left
+            TotalAmountLeft = feeType.Amount;
+
+            // Update OutstandingBalance accordingly
+            if (SelectedStudentID > 0)
+            {
+                var studentFee = await StudentService.GetStudentFeeAsync(SelectedStudentID, SelectedFeeTypeID);
+                OutstandingBalance = studentFee?.AmountLeft ?? TotalAmountLeft;
+            }
+        }
     }
 
     private async Task SavePayment()
