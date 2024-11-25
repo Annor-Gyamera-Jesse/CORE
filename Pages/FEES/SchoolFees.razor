@@ -37,7 +37,8 @@
 
 @if (!isLoading)
 {
-    <h3>School Fees Payment</h3>
+    
+    <RadzenHeader title="School Fees Payment"/>
 
     <div class="student-list-container">
         <RadzenFieldset Text="STUDENTS NAMES" Icon="search">
@@ -60,21 +61,15 @@
                            Placeholder="Select a Student" />
         </RadzenFieldset>
     </div>
-
+    
     <div class="form-container" style="max-width: 800px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; background-color: #f9f9f9;">
         <!-- Date and FeeID -->
+        <RadzenFieldset Text="FEES PAYMENT" Icon="money">
         <div class="row input-group">
             <div class="col-md-6">
                 <RadzenLabel Text="Payment Date" />
                 <RadzenDatePicker @bind-Value="PaymentDate" Style="width: 100%;" />
             </div>
-            <div class="col-md-6">
-                <RadzenLabel Text="Fee ID" />
-                <RadzenTextBox @bind-Value="FeeID" Style="width: 100%;" Disabled="true" />
-            </div>
-        </div>
-
-        <div class="row input-group">
             <div class="col-md-6">
                 <RadzenLabel Text="Outstanding Balance" />
                 <RadzenTextBox Value="@OutstandingBalance.ToString("F2")"
@@ -84,19 +79,8 @@
             </div>
         </div>
 
-
-        <!-- Fee Type Dropdown -->
-        <div class="row input-group">
-            <RadzenLabel Text="Fee Type" />
-            <RadzenDropDown @bind-Value="SelectedFeeTypeID"
-                            Data="@FeeTypes"
-                            TextProperty="FeeTypeName"
-                            ValueProperty="FeeTypeID"
-                            Style="width: 100%;"
-                            Change="LoadClassFeeDetails"
-                            Placeholder="Select Fee Type" />
-
-            <div class="row input-group">
+        
+        <div class="row input-group">  
                 <!-- Class Dropdown -->
                 <RadzenLabel Text="Class" />
                 <RadzenDropDown @bind-Value="SelectedClassID"
@@ -106,6 +90,19 @@
                                 Style="width: 100%;"
                                 Placeholder="Select Class"
                                 Change="OnClassSelected" />
+
+
+            <div class="row input-group">
+                    <!-- Fee Type Dropdown -->
+                    <RadzenLabel Text="Fee Type" />
+                    <RadzenDropDown @bind-Value="SelectedFeeTypeID"
+                                    Data="@FeeTypes"
+                                    TextProperty="FeeTypeName"
+                                    ValueProperty="FeeTypeID"
+                                    Style="width: 100%;"
+                                    Disabled="@string.IsNullOrEmpty(SelectedClassID)"
+                                    Change="LoadClassFeeDetails"
+                                    Placeholder="Select Fee Type" />
             </div>
         </div>
 
@@ -150,7 +147,9 @@
 
         <!-- Save Button -->
         <RadzenButton Text="Save Payment" Click="SavePayment" Style="width: 100%; margin-top: 20px;" />
+    </RadzenFieldset>
     </div>
+
 }
 @code {
     private DateTime PaymentDate = DateTime.Now;
@@ -206,15 +205,18 @@
     {
         SelectedClassID = value?.ToString();
 
-        // Optionally, filter students by class
+        // Filter students based on the selected class
         if (!string.IsNullOrEmpty(SelectedClassID))
         {
             FilteredStudents = Students.Where(s => s.ClassID == SelectedClassID).ToList();
         }
         else
         {
-            FilteredStudents = Students;
+            FilteredStudents = Students; // Reset the list if no class is selected
         }
+
+        // Clear any previously selected fee type when the class changes
+        SelectedFeeTypeID = 0;
     }
 
     private void FilterStudents(object value)
@@ -235,19 +237,56 @@
     {
         SelectedStudentID = Convert.ToInt32(value);
 
-        // Fetch outstanding balance for the selected student
+        // Fetch the student's fee details based on the selected class and fee type
         var studentFee = await StudentService.GetStudentFeeAsync(SelectedStudentID, SelectedFeeTypeID);
-        OutstandingBalance = studentFee?.AmountLeft ?? 0;
 
-        // Update TotalAmountLeft
+        if (studentFee != null)
+        {
+            OutstandingBalance = studentFee.AmountLeft ?? studentFee.AmountPaid;
+        }
+        else
+        {
+            OutstandingBalance = 0;
+        }
+
+        // Reset the TotalAmountLeft based on the OutstandingBalance
         TotalAmountLeft = OutstandingBalance;
+
+        // Optionally, refresh the FeeType and Class dropdowns to clear previous selections
+        SelectedFeeTypeID = 0; // Clear the FeeType selection
+        SelectedClassID = null; // Optionally reset class selection
+
+        // Fetch any additional details if necessary (such as FeeTypes or Classes based on the student)
+        if (SelectedStudentID > 0)
+        {
+            // You can reload the FeeTypes or any other necessary data when a student is selected
+            FeeTypes = await StudentService.GetFeeTypesAsync();
+        }
+
+        // Update the UI by refreshing the component or form fields
+        StateHasChanged();  // Forces the page to re-render
     }
+
 
 
     private async Task LoadClassFeeDetails(object value)
     {
         SelectedFeeTypeID = Convert.ToInt32(value);
-        TotalAmountLeft = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID)?.Amount ?? 0;
+
+        // Fetch fee details for the selected fee type
+        var feeType = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID);
+        if (feeType != null)
+        {
+            // Use the fee amount from the FeeType for the total amount left
+            TotalAmountLeft = feeType.Amount;
+
+            // Update OutstandingBalance accordingly
+            if (SelectedStudentID > 0)
+            {
+                var studentFee = await StudentService.GetStudentFeeAsync(SelectedStudentID, SelectedFeeTypeID);
+                OutstandingBalance = studentFee?.AmountLeft ?? TotalAmountLeft;
+            }
+        }
     }
 
     private async Task SavePayment()
