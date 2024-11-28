@@ -41,6 +41,43 @@
         isLoading = false;
     }
 
+    // async Task PrintReport(ReportViewPage page)
+    // {
+    //     Console.WriteLine("PrintReport called");
+    //     try
+    //     {
+    //         isLoading = true;
+    //         Console.WriteLine("Loading report...");
+    //         var report = new FastReport.Report();
+    //         report.Load("wwwroot/ReprtPageTemplate.frx");
+    //         Console.WriteLine("Report loaded");
+    //         report.Prepare();
+    //         Console.WriteLine("Report prepared");
+
+    //         var exportService = new FastReport.Export.Pdf.PDFExport();
+    //         var stream = new MemoryStream();
+    //         exportService.Export(report, stream);
+    //         Console.WriteLine("Report exported to stream");
+    //         var data = stream.ToArray();
+    //         Console.WriteLine("Stream converted to byte array");
+    //         var base64pdf = Convert.ToBase64String(data);
+    //         Console.WriteLine($"Base64 string: {base64pdf}");
+
+    //         await JSRuntime.InvokeVoidAsync("printJS", base64pdf);
+    //         Console.WriteLine("printJS function called");
+    //         Notify.ShowNotification("Printing Issued.", "", NotificationSeverity.Warning);
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine($"Error printing report: {ex.Message}");
+    //         Notify.ShowNotification($"Error printing report: {ex.Message}", "", NotificationSeverity.Warning);
+    //     }
+    //     finally
+    //     {
+    //         isLoading = false;
+    //     }
+    // }
+
     async Task PrintReport(ReportViewPage page)
     {
         Console.WriteLine("PrintReport called");
@@ -48,8 +85,28 @@
         {
             isLoading = true;
             Console.WriteLine("Loading report...");
+
             var report = new FastReport.Report();
-            report.Load("wwwroot/ReprtPageTemplate.frx");
+
+            // Load different report templates based on the page Title
+            switch (page.Title)
+            {
+                case "Exams":
+                    report.Load("wwwroot/ReprtPageTemplate.frx");
+                    break;
+                case "LESSON NOTE":
+                    report.Load("wwwroot/LessonNoteReportTemplate.frx");
+                    break;
+                case "ATTENDANCE":
+                    report.Load("wwwroot/All_Teachers_Attendance.frx");
+                    break;
+                case "ALL STUDENTS FEES PAYMENTS":
+                    report.Load("wwwroot/All_School_Fees_Payments.frx");
+                    break;
+                default:
+                    throw new Exception("Report type not recognized.");
+            }
+
             Console.WriteLine("Report loaded");
             report.Prepare();
             Console.WriteLine("Report prepared");
