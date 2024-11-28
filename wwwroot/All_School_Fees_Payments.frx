@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" TextQuality="Regular" ReportInfo.Description="Demonstrates the &quot;Keep Together&quot; feature. To use it:&#13;&#10;- select the group header;&#13;&#10;- right-click it and select the &quot;Keep Together&quot; menu item. This will keep the entire group on a page. If the group can not fit on a page, it will start from a new page.&#13;&#10;Note: you can use the Keep properties of a data band as well. " ReportInfo.Created="01/18/2008 00:04:46" ReportInfo.Modified="11/28/2024 16:26:32" ReportInfo.CreatorVersion="2024.1.7.0">
+  <Styles>
+    <Style Name="EvenRows" Fill.Color="Linen" Font="Arial, 10pt"/>
+  </Styles>
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqvJkRtuQTNUPf1PnWNsd9hxYHHo6EN+FZxLF1U3iMCQYRRhljhqbxmd+Lfzz6N/6aX024W/HG9gdcoegN3Sd7102kcWOcRhqc0IICe/33lPvUA5bqL9z6Wmu+54hpLUKTlLnife33TdEalDEk3QC+2mTVb9oxFgQCNCv4kpNDEItFpgsX/Sui58RI0AC+vD5N">
+      <TableDataSource Name="SchoolManagement_StudentFees" DataType="System.Int32" Enabled="true" TableName="SchoolManagement.&quot;StudentFees&quot;">
+        <Column Name="FeeID" DataType="System.Int32"/>
+        <Column Name="StudentID" DataType="System.Int32"/>
+        <Column Name="FeeTypeID" DataType="System.Int32"/>
+        <Column Name="StudentName" DataType="System.String"/>
+        <Column Name="FeeTypeName" DataType="System.String"/>
+        <Column Name="ClassID" DataType="System.String"/>
+        <Column Name="AmountPaid" DataType="System.Decimal"/>
+        <Column Name="AmountLeft" DataType="System.Decimal"/>
+        <Column Name="PaymentDate" DataType="System.DateTime"/>
+        <Column Name="DueDate" DataType="System.DateTime"/>
+        <Column Name="Note" DataType="System.String"/>
+        <Column Name="UserID" DataType="System.Int32"/>
+        <Column Name="RecDateCreated" DataType="System.DateTime"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+    <MsSqlDataConnection Name="Connection1" ConnectionString="rijcmlqvJkRtuQTNUPf1PnWNsd9hxYHHo6EN+FZxLF1U3iMCQYRRhljhqbxmd+Lfzz6N/6aX024W/HG9gdcoegN3Sd7102kcWOcRhqc0IICe/33lPvUA5bqL9z6Wmu+54hpLUKTlLnife33TdEalDEk3QC+2mTVb9oxFgQCNCv4kpNDEIuOR+B7ami2mFNRvor6/mbd">
+      <TableDataSource Name="SchoolManagement_LoginScreenDetails" DataType="System.Int32" Enabled="true" TableName="SchoolManagement.&quot;LoginScreenDetails&quot;">
+        <Column Name="Title" Enabled="false" DataType="System.String"/>
+        <Column Name="CompanyImage" Enabled="false" DataType="System.Byte[]" BindableControl="Picture"/>
+        <Column Name="SchoolName" DataType="System.String"/>
+        <Column Name="CompanyRegisteredName" Enabled="false" DataType="System.String"/>
+        <Column Name="SoftWareVerssion" Enabled="false" DataType="System.String"/>
+        <Column Name="CompanyRegisteredDate" Enabled="false" DataType="System.Int32"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+    <Total Name="TotalOrders" TotalType="Count" Evaluator="Data2" PrintOn="GroupFooter1"/>
+  </Dictionary>
+  <ReportPage Name="Page1" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="37.8" CanGrow="true" Guides="0">
+      <TextObject Name="Text20" Left="132.3" Width="444.15" Height="28.35" Text="[SchoolManagement_LoginScreenDetails.SchoolName]" HorzAlign="Center" Font="Arial Black, 14pt, style=Bold"/>
+    </ReportTitleBand>
+    <GroupHeaderBand Name="GroupHeader1" Top="41.8" Width="718.2" Height="28.35" Fill.Color="DarkOrange" Condition="[Orders.CustomerID]" KeepTogether="true">
+      <TextObject Name="Text15" Left="170.1" Width="378" Height="18.9" Text="[SchoolManagement_StudentFees.FeeTypeName]" HorzAlign="Center" Font="Arial Rounded MT Bold, 11pt"/>
+      <ChildBand Name="Child1" Top="74.15" Width="718.2" Height="18.9" Fill.Color="Orange">
+        <TextObject Name="Text5" Width="236.25" Height="18.9" Text="NAME" HorzAlign="Center" VertAlign="Center" Font="Arial Black, 11pt, style=Bold"/>
+        <TextObject Name="Text8" Left="264.6" Width="94.5" Height="18.9" Text="CLASS" HorzAlign="Center" VertAlign="Center" Font="Arial Black, 11pt, style=Bold"/>
+        <TextObject Name="Text14" Left="378" Width="122.85" Height="18.9" Text="AMOUNT PAID" HorzAlign="Center" VertAlign="Center" Font="Arial Black, 11pt, style=Bold"/>
+        <TextObject Name="Text17" Left="538.65" Width="122.85" Height="18.9" Text="AMOUNT LEFT" HorzAlign="Center" VertAlign="Center" Font="Arial Black, 11pt, style=Bold"/>
+      </ChildBand>
+      <DataBand Name="Data2" Top="97.05" Width="718.2" Height="18.9" EvenStyle="EvenRows" DataSource="SchoolManagement_StudentFees">
+        <TextObject Name="Text13" Width="236.25" Height="18.9" Text="[SchoolManagement_StudentFees.StudentName]" HorzAlign="Center" Font="Cascadia Code, 10pt"/>
+        <TextObject Name="Text16" Left="264.6" Width="94.5" Height="18.9" Text="[SchoolManagement_StudentFees.ClassID]" HorzAlign="Center" Font="Cascadia Code, 10pt"/>
+        <TextObject Name="Text18" Left="378" Width="122.85" Height="18.9" Text="[SchoolManagement_StudentFees.AmountPaid]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" WordWrap="false" Font="Cascadia Code, 10pt" Trimming="EllipsisCharacter"/>
+        <TextObject Name="Text19" Left="538.65" Width="122.85" Height="18.9" Text="[SchoolManagement_StudentFees.AmountLeft]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" WordWrap="false" Font="Cascadia Code, 10pt" Trimming="EllipsisCharacter"/>
+        <Sort>
+          <Sort Expression="[Orders.OrderID]"/>
+        </Sort>
+      </DataBand>
+      <GroupFooterBand Name="GroupFooter1" Top="119.95" Width="718.2" Height="37.8"/>
+    </GroupHeaderBand>
+    <PageFooterBand Name="PageFooter1" Top="161.75" Width="718.2" Height="28.35" Fill.Color="WhiteSmoke">
+      <TextObject Name="Text10" Left="614.25" Top="9.45" Width="94.5" Height="18.9" Text="[PageN]" HorzAlign="Right" Font="Tahoma, 8pt"/>
+      <TextObject Name="Text12" Left="9.45" Width="217.35" Height="28.35" Cursor="Hand" Hyperlink.Value="https://www.fast-report.com/en/product/fast-report-net/" Text="Generated by INTEL CORE" VertAlign="Center" Font="Tahoma, 8pt, style=Underline" TextFill.Color="Blue"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

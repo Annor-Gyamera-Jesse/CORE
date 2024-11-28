@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<inherited BaseReport="..\..\..\..\..\..\Program Files (x86)\FastReports\FastReport .NET Trial\Demos\Reports\Inherited Report - base.frx" BaseReportAbsolutePath="C:\Program Files (x86)\FastReports\FastReport .NET Trial\Demos\Reports\Inherited Report - base.frx" ScriptLanguage="CSharp" TextQuality="Regular" ReportInfo.Description="This report demonstrates how to use report inheritance. To do this:&#13;&#10;- first, create the base report and save it to a file;&#13;&#10;- next, select &quot;File|New...&quot; menu item and choose &quot;Inherited report&quot; item. In the open file dialog, select the base report that you have created before;&#13;&#10;- add bands, objects, datasources.&#13;&#10;As you can see, the items that are defined in the base report are marked with &quot;lock&quot; sign. That means you cannot delete or rename such items or move them across bands. You may change the base report as you want: add new objects, change existing objects' appearance, delete objects. All changes made to the base report will be automatically reflected in the inherited one." ReportInfo.Created="10/28/2008 02:40:54" ReportInfo.Modified="11/28/2024 14:53:44" ReportInfo.CreatorVersion="2024.1.7.0">
+  <Dictionary>
+    <MsSqlDataConnection Name="Connection" ConnectionString="rijcmlqvJkRtuQTNUPf1PnWNsd9hxYHHo6EN+FZxLF1U3iMCQYRRhljhqbxmd+Lfzz6N/6aX024W/HG9gdcoegN3Sd7102kcWOcRhqc0IICe/33lPvUA5bqL9z6Wmu+54hpLUKTlLnife33TdEalDEk3QC+2mTVb9oxFgQCNCv4kpNDEIvFujudcKE6D3izPHVzPU8f">
+      <TableDataSource Name="SchoolManagement_TeachersAttendance" DataType="System.Int32" Enabled="true" TableName="SchoolManagement.&quot;TeachersAttendance&quot;">
+        <Column Name="TeachersAttendanceID" DataType="System.Int32"/>
+        <Column Name="TeacherFirstName" DataType="System.String"/>
+        <Column Name="TeacherLastName" DataType="System.String"/>
+        <Column Name="EnableSwitch" DataType="System.Boolean" BindableControl="CheckBox"/>
+        <Column Name="ClockIN" DataType="System.DateTime"/>
+        <Column Name="RecDateCreated" DataType="System.DateTime"/>
+        <Column Name="UserID" DataType="System.Int32"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+    <MsSqlDataConnection Name="Connection1" ConnectionString="rijcmlqvJkRtuQTNUPf1PnWNsd9hxYHHo6EN+FZxLF1U3iMCQYRRhljhqbxmd+Lfzz6N/6aX024W/HG9gdcoegN3Sd7102kcWOcRhqc0IICe/33lPvUA5bqL9z6Wmu+54hpLUKTlLnife33TdEalDEk3QC+2mTVb9oxFgQCNCv4kpNDEIsQo2SvX4956AoTr9+lPdqL">
+      <TableDataSource Name="SchoolManagement_LoginScreenDetails" DataType="System.Int32" Enabled="true" TableName="SchoolManagement.&quot;LoginScreenDetails&quot;">
+        <Column Name="Title" DataType="System.String"/>
+        <Column Name="CompanyImage" DataType="System.Byte[]" BindableControl="Picture"/>
+        <Column Name="SchoolName" DataType="System.String"/>
+        <Column Name="CompanyRegisteredName" DataType="System.String"/>
+        <Column Name="SoftWareVerssion" DataType="System.String"/>
+        <Column Name="CompanyRegisteredDate" DataType="System.Int32"/>
+      </TableDataSource>
+    </MsSqlDataConnection>
+    <TableDataSource Name="Categories" ReferenceName="NorthWind.Categories" DataType="System.Int32" Enabled="true">
+      <Column Name="CategoryID" DataType="System.Int32"/>
+      <Column Name="CategoryName" DataType="System.String"/>
+      <Column Name="Description" DataType="System.String"/>
+      <Column Name="Picture" DataType="System.Byte[]" BindableControl="Picture"/>
+    </TableDataSource>
+    <TableDataSource Name="Customers" ReferenceName="NorthWind.Customers" DataType="System.Int32" Enabled="true">
+      <Column Name="CustomerID" DataType="System.String"/>
+      <Column Name="CompanyName" DataType="System.String"/>
+      <Column Name="ContactName" DataType="System.String"/>
+      <Column Name="ContactTitle" DataType="System.String"/>
+      <Column Name="Address" DataType="System.String"/>
+      <Column Name="City" DataType="System.String"/>
+      <Column Name="Region" DataType="System.String"/>
+      <Column Name="PostalCode" DataType="System.String"/>
+      <Column Name="Country" DataType="System.String"/>
+      <Column Name="Phone" DataType="System.String"/>
+      <Column Name="Fax" DataType="System.String"/>
+    </TableDataSource>
+    <TableDataSource Name="Employees" ReferenceName="NorthWind.Employees" DataType="System.Int32" Enabled="true">
+      <Column Name="EmployeeID" DataType="System.Int32"/>
+      <Column Name="LastName" DataType="System.String"/>
+      <Column Name="FirstName" DataType="System.String"/>
+      <Column Name="Title" DataType="System.String"/>
+      <Column Name="TitleOfCourtesy" DataType="System.String"/>
+      <Column Name="BirthDate" DataType="System.DateTime"/>
+      <Column Name="HireDate" DataType="System.DateTime"/>
+      <Column Name="Address" DataType="System.String"/>
+      <Column Name="City" DataType="System.String"/>
+      <Column Name="Region" DataType="System.String"/>
+      <Column Name="PostalCode" DataType="System.String"/>
+      <Column Name="Country" DataType="System.String"/>
+      <Column Name="HomePhone" DataType="System.String"/>
+      <Column Name="Extension" DataType="System.String"/>
+      <Column Name="Photo" DataType="System.Byte[]" BindableControl="Picture"/>
+      <Column Name="Notes" DataType="System.String"/>
+      <Column Name="ReportsTo" DataType="System.Int32"/>
+    </TableDataSource>
+    <TableDataSource Name="Order Details" ReferenceName="NorthWind.Order Details" DataType="System.Int32" Enabled="true">
+      <Column Name="OrderID" DataType="System.Int32"/>
+      <Column Name="ProductID" DataType="System.Int32"/>
+      <Column Name="UnitPrice" DataType="System.Decimal"/>
+      <Column Name="Quantity" DataType="System.Int16"/>
+      <Column Name="Discount" DataType="System.Single"/>
+    </TableDataSource>
+    <TableDataSource Name="Orders" ReferenceName="NorthWind.Orders" DataType="System.Int32" Enabled="true">
+      <Column Name="OrderID" DataType="System.Int32"/>
+      <Column Name="CustomerID" DataType="System.String"/>
+      <Column Name="EmployeeID" DataType="System.Int32"/>
+      <Column Name="OrderDate" DataType="System.DateTime"/>
+      <Column Name="RequiredDate" DataType="System.DateTime"/>
+      <Column Name="ShippedDate" DataType="System.DateTime"/>
+      <Column Name="ShipVia" DataType="System.Int32"/>
+      <Column Name="Freight" DataType="System.Decimal"/>
+      <Column Name="ShipName" DataType="System.String"/>
+      <Column Name="ShipAddress" DataType="System.String"/>
+      <Column Name="ShipCity" DataType="System.String"/>
+      <Column Name="ShipRegion" DataType="System.String"/>
+      <Column Name="ShipPostalCode" DataType="System.String"/>
+      <Column Name="ShipCountry" DataType="System.String"/>
+      <Column Name="Latitude" DataType="System.Double"/>
+      <Column Name="Longitude" DataType="System.Double"/>
+    </TableDataSource>
+    <TableDataSource Name="Products" ReferenceName="NorthWind.Products" DataType="System.Int32" Enabled="true">
+      <Column Name="ProductID" DataType="System.Int32"/>
+      <Column Name="ProductName" DataType="System.String"/>
+      <Column Name="SupplierID" DataType="System.Int32"/>
+      <Column Name="CategoryID" DataType="System.Int32"/>
+      <Column Name="QuantityPerUnit" DataType="System.String"/>
+      <Column Name="UnitPrice" DataType="System.Decimal"/>
+      <Column Name="UnitsInStock" DataType="System.Int16"/>
+      <Column Name="UnitsOnOrder" DataType="System.Int16"/>
+      <Column Name="ReorderLevel" DataType="System.Int16"/>
+      <Column Name="Discontinued" DataType="System.Boolean" BindableControl="CheckBox"/>
+      <Column Name="EAN13" DataType="System.String"/>
+    </TableDataSource>
+    <TableDataSource Name="Shippers" ReferenceName="NorthWind.Shippers" DataType="System.Int32" Enabled="true">
+      <Column Name="ShipperID" DataType="System.Int32"/>
+      <Column Name="CompanyName" DataType="System.String"/>
+      <Column Name="Phone" DataType="System.String"/>
+    </TableDataSource>
+    <TableDataSource Name="Suppliers" ReferenceName="NorthWind.Suppliers" DataType="System.Int32" Enabled="true">
+      <Column Name="SupplierID" DataType="System.Int32"/>
+      <Column Name="CompanyName" DataType="System.String"/>
+      <Column Name="ContactName" DataType="System.String"/>
+      <Column Name="ContactTitle" DataType="System.String"/>
+      <Column Name="Address" DataType="System.String"/>
+      <Column Name="City" DataType="System.String"/>
+      <Column Name="Region" DataType="System.String"/>
+      <Column Name="PostalCode" DataType="System.String"/>
+      <Column Name="Country" DataType="System.String"/>
+      <Column Name="Phone" DataType="System.String"/>
+      <Column Name="Fax" DataType="System.String"/>
+      <Column Name="HomePage" DataType="System.String"/>
+    </TableDataSource>
+    <TableDataSource Name="MatrixDemo" ReferenceName="NorthWind.MatrixDemo" DataType="System.Int32" Enabled="true">
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="Year" DataType="System.Int32"/>
+      <Column Name="Month" DataType="System.Int32"/>
+      <Column Name="ItemsSold" DataType="System.Int32"/>
+      <Column Name="Revenue" DataType="System.Decimal"/>
+    </TableDataSource>
+    <TableDataSource Name="Unicode" ReferenceName="NorthWind.Unicode" DataType="System.Int32" Enabled="true">
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="UnicodeName" DataType="System.String"/>
+      <Column Name="Text" DataType="System.String"/>
+      <Column Name="Rtl" DataType="System.Boolean" BindableControl="CheckBox"/>
+      <Column Name="Active" DataType="System.Boolean" BindableControl="CheckBox"/>
+    </TableDataSource>
+    <BusinessObjectDataSource Name="Categories BusinessObject" ReferenceName="Categories BusinessObject" DataType="System.Collections.Generic.List`1[[DemoNew.DemoModel.Model+Category, Demo New, Version=2024.1.7.0, Culture=neutral, PublicKeyToken=null]]" Enabled="true">
+      <Column Name="Name" DataType="System.String"/>
+      <Column Name="Description" DataType="System.String"/>
+      <BusinessObjectDataSource Name="Products1" Alias="Products" Enabled="false" DataType="System.Collections.Generic.List`1[[DemoNew.DemoModel.Model+Product, Demo New, Version=2024.1.7.0, Culture=neutral, PublicKeyToken=null]]" PropName="Products"/>
+    </BusinessObjectDataSource>
+  </Dictionary>
+  <inherited Name="Page1">
+    <ReportTitleBand Name="ReportTitle1" ZOrder="-1" Width="718.2" Height="94.5" CanGrow="true" Guides="0">
+      <TextObject Name="Text5" Top="66.15" Width="718.2" Height="28.35" Text="TEACHERS ATTENDANCE" HorzAlign="Center" VertAlign="Center" Font="Tahoma, 14pt, style=Bold"/>
+      <TextObject Name="Text28" Width="718.2" Height="28.35" Anchor="Top, Left, Right" Fill.Color="WhiteSmoke" Cursor="Hand" Hyperlink.Value="http://fast.report/33526" Hyperlink.OpenLinkInNewTab="true" Text="[SchoolManagement_LoginScreenDetails.SchoolName]" HorzAlign="Center" VertAlign="Center" Font="Tahoma, 11pt, style=Bold, Underline" TextFill.Color="Blue"/>
+    </ReportTitleBand>
+    <inherited Name="PageHeader1" Top="98.5" Height="47.25">
+      <inherited Name="Text3" Left="595.35" Height="28.35"/>
+      <inherited Name="Text4" Left="737.1" Top="-103.95" Height="28.35"/>
+      <TextObject Name="Text8" ZOrder="2" Left="359.1" Top="28.35" Width="141.75" Height="18.9" Fill.Color="Plum" Text="MODE" HorzAlign="Center" VertAlign="Center" Font="Tahoma, 10pt, style=Bold"/>
+      <TextObject Name="Text10" ZOrder="3" Left="500.85" Top="28.35" Width="217.35" Height="18.9" Fill.Color="Plum" Text="ARRIVAL" HorzAlign="Center" VertAlign="Center" Font="Tahoma, 10pt, style=Bold"/>
+      <TextObject Name="Text12" ZOrder="4" Top="28.35" Width="359.1" Height="18.9" Fill.Color="Plum" Text="TEACHERS NAME" HorzAlign="Center" VertAlign="Center" Font="Tahoma, 10pt, style=Bold"/>
+    </inherited>
+    <DataBand Name="Data1" ZOrder="0" Top="149.75" Width="718.2" Height="18.9" DataSource="SchoolManagement_TeachersAttendance">
+      <TextObject Name="Text29" Width="179.55" Height="18.9" Text="[SchoolManagement_TeachersAttendance.TeacherFirstName]" HorzAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text30" Left="179.55" Width="179.55" Height="18.9" Text="[SchoolManagement_TeachersAttendance.TeacherLastName]" HorzAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text32" Left="510.3" Width="189" Height="18.9" Text="[SchoolManagement_TeachersAttendance.ClockIN]" Format="Date" Format.Format="d" HorzAlign="Center" Font="Arial, 10pt"/>
+      <CheckBoxObject Name="CheckBox1" Left="425.25" Width="18.9" Height="18.9" DataColumn="SchoolManagement_TeachersAttendance.EnableSwitch"/>
+    </DataBand>
+    <inherited Name="PageFooter1" Top="172.65" Height="66.15" Fill.Color="WhiteSmoke">
+      <inherited Name="Text2" Left="595.35" Top="28.35" Height="28.35"/>
+      <inherited Name="Text1" Left="9.45" Top="28.35" Height="28.35"/>
+      <TextObject Name="Text26" ZOrder="2" Left="292.95" Top="28.35" Width="217.35" Height="28.35" Cursor="Hand" Hyperlink.Value="https://www.fast-report.com/en/product/fast-report-net/" Text="Generated by INTEL CORE" HorzAlign="Center" VertAlign="Center" Font="Tahoma, 8pt, style=Underline" TextFill.Color="Blue"/>
+    </inherited>
+  </inherited>
+</inherited>
