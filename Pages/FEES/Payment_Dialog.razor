@@ -58,25 +58,23 @@
 
             // Build CSV content
             var csvBuilder = new StringBuilder();
-            csvBuilder.AppendLine("StudentName,FeeTypeName,ClassID,AmountPaid,AmountLeft");
+            csvBuilder.AppendLine("Student Fee Report");
+            csvBuilder.AppendLine(""); // Blank line for separation
+            csvBuilder.AppendLine("StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft");
 
             foreach (var fee in studentFeeData)
             {
-                csvBuilder.AppendLine(                    
-                    $"{fee.StudentName}," +
-                    $"{fee.FeeTypeName}," +
-                    $"{fee.ClassID}," +
-                    $"{fee.AmountPaid}," +
-                    $"{fee.AmountLeft}\""
+                csvBuilder.AppendLine(
+                    $"{fee.StudentName}, {fee.FeeTypeName}, {fee.ClassID}, {fee.AmountPaid}, {fee.AmountLeft}"
                 );
             }
 
             var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
             var base64Csv = Convert.ToBase64String(csvData);
 
-            // Trigger download in the browser
-            var fileName = $"Student_Fees_{selectedStudentId}.csv";
-            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "text/csv", base64Csv);
+            // Trigger download as PDF (jsPDF will be used on the client side)
+            var fileName = $"Student_Fees_{selectedStudentId}.pdf";
+            await JSRuntime.InvokeVoidAsync("downloadPdf", fileName, base64Csv);
         }
         catch (Exception ex)
         {
