@@ -12,6 +12,7 @@
 
     public class StudentFee
     {
+        public int FeeID { get; set; }
         public int StudentID { get; set; }
         public int FeeTypeID { get; set; }
         public string StudentName { get; set; }

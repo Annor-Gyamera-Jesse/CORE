@@ -1,11 +1,91 @@
-﻿@* <RadzenDialog @ref="paymentDialog">
-    <DialogTemplate>
-        <RadzenForm>
-            <RadzenTextBox @bind-Value="payment.AmountPaid" Placeholder="Amount Paid" Type="number" />
-            <RadzenDropDown @bind-Value="payment.PaymentMethod" Data="paymentMethods" TextProperty="Name" ValueProperty="Code" />
-            <RadzenTextBox @bind-Value="payment.ReferenceNumber" Placeholder="Reference Number" />
-            <RadzenButton Text="Submit Payment" Click="@(args => SubmitPayment())" />
-        </RadzenForm>
-    </DialogTemplate>
-</RadzenDialog> *@
+﻿@inject AuthService authService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+@using CORE.MODEL
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using System.Text
+<RadzenNotification />
 
+<RadzenTextBox Placeholder="Search student by name..." Value="@searchText" Style="width: 100%;"
+               Change="@(args => SearchStudents(args))" />
+
+<RadzenDropDown Data="@students" TextProperty="FullName" ValueProperty="StudentID"
+                @bind-Value="selectedStudentId" Placeholder="Select a student" Style="width: 100%;" />
+
+<RadzenButton Text="Generate Report" Click="@GenerateStudentReport" Disabled="@isLoading" Style="margin-top: 10px;" />
+
+@code {
+    private string searchText;
+    private int selectedStudentId;
+    private List<Student> students = new();
+    private bool isLoading;
+
+    private async Task SearchStudents(object args)
+    {
+        if (args is string searchText && !string.IsNullOrWhiteSpace(searchText))
+        {
+            this.searchText = searchText;
+            try
+            {
+                students = (await authService.SearchStudentsAsync(searchText)).ToList();
+            }
+            catch (Exception ex)
+            {
+                Notify.ShowNotification($"Error searching students: {ex.Message}", "", NotificationSeverity.Error);
+            }
+        }
+    }
+
+    private async Task GenerateStudentReport()
+    {
+        if (selectedStudentId == 0)
+        {
+            Notify.ShowNotification("Please select a student.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            var studentFeeData = await authService.GetStudentFeesByStudentIdAsync(selectedStudentId);
+            if (studentFeeData == null || !studentFeeData.Any())
+            {
+                Notify.ShowNotification("No data found for the selected student.", "", NotificationSeverity.Warning);
+                return;
+            }
+
+            // Build CSV content
+            var csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine("StudentName,FeeTypeName,ClassID,AmountPaid,AmountLeft");
+
+            foreach (var fee in studentFeeData)
+            {
+                csvBuilder.AppendLine(                    
+                    $"{fee.StudentName}," +
+                    $"{fee.FeeTypeName}," +
+                    $"{fee.ClassID}," +
+                    $"{fee.AmountPaid}," +
+                    $"{fee.AmountLeft}\""
+                );
+            }
+
+            var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+            var base64Csv = Convert.ToBase64String(csvData);
+
+            // Trigger download in the browser
+            var fileName = $"Student_Fees_{selectedStudentId}.csv";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "text/csv", base64Csv);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error generating report: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+}
