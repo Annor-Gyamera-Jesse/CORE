@@ -8,6 +8,7 @@
 @using CORE.SERVICE.NOTIFICATION
 @inject NotificationMessageService Notify
 @using FastReport.Export.Pdf;
+@inject DialogService DialogService
 <RadzenNotification />
 
 <LoadingSpinner Visible="isLoading" />
@@ -86,6 +87,18 @@
             isLoading = true;
             Console.WriteLine("Loading report...");
 
+            if (page.Title == "FEES")
+            {
+                // Trigger the OpenPaymentDialog
+                var schoolFeesService = new CORE.Pages.FEES.SchoolFeesCodeBehind
+                    {
+                        DialogService = DialogService
+                    };
+                await schoolFeesService.OpenPaymentDialog();
+                Console.WriteLine("Payment dialog opened for FEES report.");
+                return; // Exit the method as no further processing is required
+            }
+
             var report = new FastReport.Report();
 
             // Load different report templates based on the page Title
@@ -100,8 +113,8 @@
                 case "ATTENDANCE":
                     report.Load("wwwroot/All_Teachers_Attendance.frx");
                     break;
-                case "ALL STUDENTS FEES PAYMENTS":
-                    report.Load("wwwroot/All_School_Fees_Payments.frx");
+                case "FEES":
+                    report.Load("wwwroot/Student_Fees.frx");
                     break;
                 default:
                     throw new Exception("Report type not recognized.");
@@ -134,6 +147,7 @@
             isLoading = false;
         }
     }
+
 
     async Task ExportReport(ReportViewPage page, string fileType)
     {

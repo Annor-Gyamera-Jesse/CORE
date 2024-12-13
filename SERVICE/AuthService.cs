@@ -7,6 +7,7 @@ using CORE.SERVICE.MainLayout.Module;
 using static CORE.MODEL.Teachers_Time_Table;
 using static CORE.Pages.COURSES.View_Teacher_Subject_Assign_ByID;
 using System.Data;
+using System.Data.Common;
 
 namespace CORE.SERVICE
 {
@@ -2475,16 +2476,60 @@ namespace CORE.SERVICE
         }
 
         // Get all student fees
-        public async Task<IEnumerable<StudentFee>> GetStudentFeesAsync(int studentId)
+        public async Task<IEnumerable<StudentFee>> GetStudentFeesByNameAsync(string studentName)
         {
-            using (var connection = new SqlConnection(connectionString))
+            const string query = @"
+        SELECT FeeID, StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, 
+               AmountPaid, AmountLeft, PaymentDate, DueDate, Note, UserID, RecDateCreated
+        FROM SchoolManagement.StudentFees
+        WHERE StudentName = @StudentName";
+
+            try
             {
-                await connection.OpenAsync();
-                return await connection.QueryAsync<StudentFee>(
-                    "SELECT * FROM SchoolManagement.StudentFees WHERE StudentID = @StudentID",
-                    new { StudentID = studentId });
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    return await connection.QueryAsync<StudentFee>(query, new { StudentName = studentName });
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log or handle exception
+                Console.WriteLine($"Error fetching fees for StudentName {studentName}: {ex.Message}");
+                return Enumerable.Empty<StudentFee>(); // Return an empty collection on failure
             }
         }
+
+        //public async Task<IEnumerable<StudentFee>> GetStudentFeesByStudentIdAsync(int studentId)
+        //{
+        //    const string query = "EXEC GetStudentFees @StudentID";
+
+        //    try
+        //    {
+        //        using (var connection = new SqlConnection(connectionString))
+        //        {
+        //            await connection.OpenAsync();
+        //            return await connection.QueryAsync<StudentFee>(query, new { StudentID = studentId });
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log or handle exception
+        //        Console.WriteLine($"Error fetching fees for StudentID {studentId}: {ex.Message}");
+        //        return Enumerable.Empty<StudentFee>(); // Return an empty collection on failure
+        //    }
+        //}
+        public async Task<IEnumerable<StudentFee>> GetStudentFeesByStudentIdAsync(int studentId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var result = await connection.QueryAsync<StudentFee>(
+                "GetStudentFees",
+                new { StudentID = studentId },
+                commandType: CommandType.StoredProcedure);
+            return result;
+        }
+
+
 
         /*logic to save fees*/
         public async Task<bool> SaveStudentFeeAsync(StudentFee studentFee)
@@ -2540,6 +2585,24 @@ namespace CORE.SERVICE
             var classes = await connection.QueryAsync<Class>(query);
             return classes.AsList();
         }
-       
+
+        /**/
+        public async Task<IEnumerable<Student>> SearchStudentsAsync(string searchText)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+            SELECT TOP 10 StudentID, 
+                         StudentFirstName, 
+                         StudentLastName, 
+                         ClassID 
+            FROM SchoolManagement.Students
+            WHERE CONCAT(StudentFirstName, ' ', StudentLastName) LIKE @SearchText";
+
+                return await connection.QueryAsync<Student>(
+                    query,
+                    new { SearchText = $"%{searchText}%" });
+            }
+        }
     }
 }
