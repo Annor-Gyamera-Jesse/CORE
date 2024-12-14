@@ -27,7 +27,7 @@
     doc.line(20, 35, 190, 35); // Horizontal line below the title
 
     // Define table headers and column widths
-    const headers = ['Student Name', 'Fee Type', 'Class ID', 'Amount Paid', 'Amount Left'];
+    const headers = ['Student Name', 'Fee Type', 'Class', 'Amount Paid', 'Amount Left'];
     const columnWidths = [60, 40, 30, 30, 30]; // Adjust column widths for better fit
 
     // Table positioning
