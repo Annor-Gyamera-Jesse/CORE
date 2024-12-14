@@ -40,8 +40,7 @@
             try
             {
                 isLoading = true;
-                students = (await authService.SearchStudentsAsync(searchText)).ToList();
-                Notify.ShowNotification("Search completed.", "", NotificationSeverity.Success);
+                students = (await authService.SearchStudentsAsync(searchText)).ToList();      
             }
             catch (Exception ex)
             {
@@ -75,7 +74,7 @@
             var csvBuilder = new StringBuilder();
             csvBuilder.AppendLine("Student Fee Report");
             csvBuilder.AppendLine(""); // Blank line for separation
-            csvBuilder.AppendLine("StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft");
+            //csvBuilder.AppendLine("StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft");
 
             foreach (var fee in studentFeeData)
             {
