@@ -87,17 +87,17 @@
             isLoading = true;
             Console.WriteLine("Loading report...");
 
-            if (page.Title == "FEES")
-            {
-                // Trigger the OpenPaymentDialog
-                var schoolFeesService = new CORE.Pages.FEES.SchoolFeesCodeBehind
-                    {
-                        DialogService = DialogService
-                    };
-                await schoolFeesService.OpenPaymentDialog();
-                Console.WriteLine("Payment dialog opened for FEES report.");
-                return; // Exit the method as no further processing is required
-            }
+            // if (page.Title == "FEES")
+            // {
+            //     Trigger the OpenPaymentDialog
+            //     var schoolFeesService = new CORE.Pages.FEES.SchoolFeesCodeBehind
+            //         {
+            //             DialogService = DialogService
+            //         };
+            //     await schoolFeesService.OpenPaymentDialog();
+            //     Console.WriteLine("Payment dialog opened for FEES report.");
+            //     return; Exit the method as no further processing is required
+            // }
 
             var report = new FastReport.Report();
 

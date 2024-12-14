@@ -3,10 +3,12 @@
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
+@using CORE.Tool_Components
 @using Radzen
 @inject NotificationMessageService NotificationService
 @inject AuthService StudentService
 @inject IJSRuntime jsRuntime
+@inherits SchoolFeesCodeBehind 
 <RadzenNotification />
 
 <!-- Custom CSS -->
@@ -32,6 +34,17 @@
     .input-group {
         margin-bottom: 15px;
     }
+
+    /* PRINT STUDENT REPOR */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .right-align {
+        margin-left: auto;
+    }
 </style>
 
 <LoadingSpinner Visible="isLoading" />
@@ -39,7 +52,11 @@
 @if (!isLoading)
 {
     
-    <RadzenHeader title="School Fees Payment"/>
+    <RadzenHeader title="School Fees Payment" class="header-container">
+        <RadzenFieldset Text="PRINT STUDENT REPORT" class="right-align">
+            <FeesToolPanelComponent OnFeesDialog="FeesDialog" />
+        </RadzenFieldset>
+    </RadzenHeader>
 
     <div class="student-list-container">
         <RadzenFieldset Text="STUDENTS NAMES" Icon="search">
@@ -166,7 +183,7 @@
     private List<Student> Students = new List<Student>();
     private List<Student> FilteredStudents = new List<Student>();
     private List<FeeType> FeeTypes = new List<FeeType>();
-    private List<string> PaymentMethods = new List<string> { "Cash", "Card", "Online" };
+    private List<string> PaymentMethods = new List<string> { "CASH", "BANK", "ONLINE","MOMO" };
     private decimal OutstandingBalance = 0;
     private string SearchTerm = string.Empty;
     private string SelectedClassID; // Holds the selected class
@@ -339,4 +356,6 @@
     {
         TotalAmountLeft -= value;
     }
+
+    async void FeesDialog() => await OpenPaymentDialog();
 }
