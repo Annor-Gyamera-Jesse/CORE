@@ -1,6 +1,4 @@
-﻿using CORE.Pages.LESSONS_NOTES;
-using CORE.Pages.TEACHERS_ASSESMENT;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Radzen;
 
 namespace CORE.Pages.FEES
@@ -12,7 +10,7 @@ namespace CORE.Pages.FEES
 
         public async Task OpenPaymentDialog()
         {
-            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "1000px", Resizable = false, Height = "512px" };
+            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "600px", Resizable = false, Height = "301px" };
             var dialogTitle = $"Payment";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<Payment_Dialog>(dialogTitle, null, dialogOptions);
