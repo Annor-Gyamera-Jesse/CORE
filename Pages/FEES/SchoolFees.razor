@@ -62,6 +62,15 @@
         <RadzenFieldset Text="STUDENTS NAMES" Icon="search">
             <!-- Search Box for Students -->
             <div class="input-group">
+                <RadzenLabel Text="Class" />
+                <RadzenDropDown @bind-Value="SelectedClassID"
+                                Data="@Classes"
+                                TextProperty="ClassID"
+                                ValueProperty="ClassID"
+                                Style="width: 100%; margin-bottom: 10px;"
+                                Placeholder="Select Class"
+                                Change="OnClassSelected" />
+
                 <RadzenLabel Text="Search Student" />
                 <RadzenTextBox @bind-Value="SearchTerm"
                                Style="width: 100%; margin-bottom: 10px;"
@@ -100,14 +109,14 @@
         
         <div class="row input-group">  
                 <!-- Class Dropdown -->
-                <RadzenLabel Text="Class" />
+@*                 <RadzenLabel Text="Class" />
                 <RadzenDropDown @bind-Value="SelectedClassID"
                                 Data="@Classes"
                                 TextProperty="ClassID"
                                 ValueProperty="ClassID"
                                 Style="width: 100%;"
                                 Placeholder="Select Class"
-                                Change="OnClassSelected" />
+                                Change="OnClassSelected" /> *@
 
 
             <div class="row input-group">
@@ -120,18 +129,18 @@
                                     Style="width: 100%;"
                                     Disabled="@string.IsNullOrEmpty(SelectedClassID)"
                                     Change="LoadClassFeeDetails"
-                                    Placeholder="Select Fee Type" />
+                                    Placeholder="Select Fee Type" />                
             </div>
         </div>
 
         <!-- Payment Details -->
         <RadzenFieldset Legend="Payment Details" Style="margin-top: 20px;">
-            <RadzenLabel Text="Amount Paid" />
-            <RadzenNumeric @bind-Value="AmountPaid"
-                           Style="width: 100%;"
-                           Min="0"
-                           Max="@TotalAmountLeft"
-                           Change="@(async (decimal value) => UpdateAmountLeft(value))" />
+                <RadzenLabel Text="Amount Paid" />
+                <RadzenNumeric TValue="decimal"
+                               @bind-Value="AmountPaid"
+                               Style="width: 100%;"
+                               Max="@OutstandingBalance"
+                               Change="@((decimal value) => UpdateAmountLeft(value))" />
 
             <RadzenLabel Text="Payment Method" Style="margin-top: 10px;" />
             <RadzenDropDown @bind-Value="PaymentMethod"
@@ -352,10 +361,28 @@
         }
     }
 
-    private void UpdateAmountLeft(decimal value)
+   private void UpdateAmountLeft(decimal value)
+{
+    // Ensure the entered amount does not exceed the outstanding balance
+    if (value > OutstandingBalance)
     {
-        TotalAmountLeft -= value;
+        NotificationService.ShowNotification("Error", "Amount Paid exceeds Outstanding Balance.", NotificationSeverity.Error);
+        AmountPaid = OutstandingBalance;
     }
+    else if (value < 0)
+    {
+        NotificationService.ShowNotification("Error", "Amount Paid cannot be negative.", NotificationSeverity.Error);
+        AmountPaid = 0; // Reset to zero
+    }
+    else
+    {
+        AmountPaid = value;
+    }
+
+    // Recalculate the remaining balance
+    TotalAmountLeft = OutstandingBalance - AmountPaid;
+}
+
 
     async void FeesDialog() => await OpenPaymentDialog();
 }
