@@ -1,19 +1,24 @@
-﻿@* ToolComponent Page *@
+﻿@using CORE.Pages.LOADING_COMPONENT
+@* ToolComponent Page *@
 
 <style>
 
     .toolset-btn {
-        margin-bottom: 5px;
-        width: 100%;
-        font-size: 14px
+    margin-bottom: 5px;
+    width: 100%;
+    font-size: 14px
     }
 </style>
 
-<div class="row mt-2">
-    <RadzenButton Text="Export Fees" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OnFeesDialog />   
-</div>
-
+<LoadingSpinner Visible="isLoading" />
+@if (!isLoading)
+{
+    <div class="row mt-2">
+        <RadzenButton Text="Export Fees" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OnFeesDialog />   
+    </div>
+}
 @code {
+    private bool isLoading = false;
     [Parameter] public Action OnFeesDialog { get; set; }
    
 }
