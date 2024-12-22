@@ -23,7 +23,7 @@
     <div class="col-md-4">
         <RadzenFieldset Text="TEACHERS">
             <RadzenListBox @bind-Value="selectedTeacherId" AllowFiltering="true" AllowVirtualization="true"
-                           Data="@teachersAttendance" TextProperty="TeacherFirstName" ValueProperty="TeachersAttendanceID"
+                           Data="@teachersAttendance" TextProperty="TeacherFirstName" ValueProperty="TeacherID"
                            Style="width: 100%; height: 300px;" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                            Change="@(args => OnTeacherSelectionChange((int)args))">
             </RadzenListBox>
@@ -106,7 +106,7 @@
     {
         if (selectedValue > 0)
         {
-            var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeachersAttendanceID == selectedValue);
+            var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeacherID == selectedValue);
             if (selectedTeacher != null)
             {
                 attendanceOutModel.SelectedTeacher = $"{selectedTeacher.TeacherFirstName} {selectedTeacher.TeacherLastName}";
@@ -121,7 +121,7 @@
 
         if (selectedTeacherId > 0)
         {
-            selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeachersAttendanceID == selectedTeacherId);
+            selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeacherID == selectedTeacherId);
         }
 
         if (selectedTeacher != null)

@@ -1,0 +1,18 @@
+﻿
+<style>
+
+    .toolset-btn {
+        margin-bottom: 5px;
+        width: 100%;
+        font-size: 14px
+    }
+</style>
+
+<div class="row mt-2">
+    <RadzenButton Text="Fees" Icon="list" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Secondary" Click=@OnTeachersAttendanceReportDialog />
+</div>
+
+@code {
+    [Parameter] public Action OnTeachersAttendanceReportDialog { get; set; }
+
+}

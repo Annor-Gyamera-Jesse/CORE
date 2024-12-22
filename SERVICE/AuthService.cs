@@ -1379,7 +1379,7 @@ namespace CORE.SERVICE
                 {
                     await connection.OpenAsync();
 
-                    var query = "SELECT TeachersAttendanceID, TeacherFirstName, TeacherLastName, EnableSwitch, ClockIN FROM SchoolManagement.TeachersAttendance";
+                    var query = "SELECT TeacherID, TeacherFirstName, TeacherLastName, EnableSwitch, ClockIN FROM SchoolManagement.TeachersAttendance";
 
                     using (var command = new SqlCommand(query, connection))
                     {
@@ -1390,7 +1390,7 @@ namespace CORE.SERVICE
                             {
                                 var teacher = new TeacherAttendance
                                 {
-                                    TeachersAttendanceID = reader.GetInt32(0),
+                                    TeacherID = reader.GetInt32(0),
                                     TeacherFirstName = reader.GetString(1),
                                     TeacherLastName = reader.GetString(2),
                                     EnableSwitch = DBNull.Value.Equals(reader["EnableSwitch"]) ? false : reader.GetBoolean(3),
@@ -2602,7 +2602,40 @@ namespace CORE.SERVICE
                 return await connection.QueryAsync<Student>(
                     query,
                     new { SearchText = $"%{searchText}%" });
+            }            
+        }
+
+        /*report on Teacher Attendance*/
+        public async Task<IEnumerable<TeacherAttendance>> GetTeachersAttendanceAsync(string teacherFullName = null)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            var result = await connection.QueryAsync<TeacherAttendance>(
+                "GetTeachersAttendanceByFullName",  // Ensure this matches the procedure name
+                new { TeacherFullName = teacherFullName },  // Only pass one parameter
+                commandType: CommandType.StoredProcedure
+            );
+
+            return result;
+        }
+
+        public async Task<IEnumerable<TeacherAttendance>> SearchTeachersAsync(string searchText)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+            SELECT TOP 10 TeacherID, 
+                         TeacherFirstName, 
+                         TeacherLastName                        
+            FROM SchoolManagement.Teacher
+            WHERE CONCAT(TeacherFirstName, ' ', TeacherLastName) LIKE @SearchText";
+
+                return await connection.QueryAsync<TeacherAttendance>(
+                    query,
+                    new { SearchText = $"%{searchText}%" });
             }
         }
+
+
     }
 }

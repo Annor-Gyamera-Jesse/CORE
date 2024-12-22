@@ -1,0 +1,131 @@
+﻿@inject AuthService authService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using System.Text
+@using System.Text.Json
+<RadzenNotification />
+
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <div class="card" style="padding: 20px; max-width: 600px; margin: auto;">
+        <RadzenTextBox Placeholder="🔍 Search teacher by name..." Value="@searchText"
+                       Style="width: 100%; margin-bottom: 20px;"
+                       Change="@(args => SearchTeachers(args))" />
+
+        <RadzenDropDown Data="@teachers" TextProperty="FullName" ValueProperty="TeacherID"
+                        @bind-Value="selectedTeacherId" Placeholder="Select a teacher"
+                        Style="width: 100%; margin-bottom: 20px;" />
+
+        <RadzenButton Text="Generate Attendance Report" Icon="save_alt" Click="@GenerateAttendanceReport"
+                      Disabled="@isLoading" Style="width: 100%; margin-bottom: 10px;" />
+    </div>
+}
+@code {
+    private string searchText;
+    private int selectedTeacherId;
+    private List<TeacherAttendance> teachers = new();
+    private bool isLoading;
+
+    private async Task SearchTeachers(object args)
+    {
+        if (args is string searchText && !string.IsNullOrWhiteSpace(searchText))
+        {
+            this.searchText = searchText;
+            try
+            {
+                isLoading = true;
+                teachers = (await authService.SearchTeachersAsync(searchText)).ToList();
+            }
+            catch (Exception ex)
+            {
+                Notify.ShowNotification($"Error searching teachers: {ex.Message}", "", NotificationSeverity.Error);
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+    }
+
+    private async Task GenerateAttendanceReport()
+    {
+        if (selectedTeacherId == 0)
+        {
+            Notify.ShowNotification("Please select a teacher.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        var selectedTeacher = teachers.FirstOrDefault(t => t.TeacherID == selectedTeacherId);
+
+        if (selectedTeacher == null)
+        {
+            Notify.ShowNotification("No teacher found for the selected name.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        Notify.ShowNotification($"Generating report for: {selectedTeacher.FullName}...", "", NotificationSeverity.Info);
+
+        isLoading = true;
+        try
+        {
+            var attendanceData = await authService.GetTeachersAttendanceAsync(selectedTeacher.FullName);
+
+            // Debugging: Log the entire attendance data to inspect its content
+            Console.WriteLine("Attendance Data: " + JsonSerializer.Serialize(attendanceData));
+
+            if (attendanceData == null || !attendanceData.Any())
+            {
+                Notify.ShowNotification("No attendance data found for the selected teacher.", "", NotificationSeverity.Warning);
+                return;
+            }
+
+            Notify.ShowNotification("Attendance data found, generating report...", "", NotificationSeverity.Info);
+
+            var csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine("Teacher Attendance Report");
+            csvBuilder.AppendLine(""); // Blank line for separation
+
+            foreach (var attendance in attendanceData)
+            {
+                // Check the values directly in the loop
+                Console.WriteLine($"ClockInTime: {attendance.ClockInTime}, ClockOutTime: {attendance.ClockOutTime}");
+
+                // Use default value if ClockInTime is null
+                var clockIn = attendance.ClockInTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A";
+                var clockOut = attendance.ClockOutTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A";                                
+
+                // Debug: Log the values of ClockInTime and ClockOutTime
+                Console.WriteLine($"Formatted ClockInTime: {clockIn}, Formatted ClockOutTime: {clockOut}");
+
+                csvBuilder.AppendLine($"{attendance.TeacherFirstName}, {attendance.TeacherLastName}, {clockIn}, {clockOut}");
+            }
+
+            File.WriteAllText("TeacherAttendanceReport.csv", csvBuilder.ToString());
+
+            var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+            var base64Csv = Convert.ToBase64String(csvData);
+
+            var fileName = $"Teacher_Attendance_{selectedTeacher.FullName}.pdf";
+            await JSRuntime.InvokeVoidAsync("downloadPdf", fileName, base64Csv);
+
+            Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error generating report: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+}

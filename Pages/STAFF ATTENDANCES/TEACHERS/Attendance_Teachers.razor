@@ -4,9 +4,12 @@
 @inject AuthService AuthService
 @inject NotificationMessageService Notify
 @using CORE.SERVICE.NOTIFICATION
+@using CORE.Tool_Components
 @using Radzen
 @using Radzen.Blazor
 @inject IJSRuntime JSRuntime
+@inherits Attendance_Teachers_codebehind
+
 <RadzenNotification />
 
 <style>
@@ -63,6 +66,10 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         border-radius: 8px;
         padding: 20px;
+    }
+
+    .right-align {
+        margin-left: auto;
     }
 </style>
 
@@ -132,6 +139,10 @@
 </div>
 
 
+<RadzenFieldset Text="PRINT STUDENT REPORT" class="right-align">
+<Teachers_Attendance_Component OnTeachersAttendanceReportDialog="TeachersAttendanceReport" />
+</RadzenFieldset>
+
 @code {
     List<TeachersRegistration> teachers;
     List<TeacherAttendance> attendanceRecords = new List<TeacherAttendance>();
@@ -190,7 +201,7 @@
         }
     }
 
-    
+    async void TeachersAttendanceReport() => await OpenTeachersAttendanceReportDialog();
 
     public class AttendanceModel
     {
