@@ -45,6 +45,17 @@
     .right-align {
         margin-left: auto;
     }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
+
 </style>
 
 <LoadingSpinner Visible="isLoading" />
@@ -52,11 +63,12 @@
 @if (!isLoading)
 {
     
-    <RadzenHeader title="School Fees Payment" class="header-container">
-        <RadzenFieldset Text="PRINT STUDENT REPORT" class="right-align">
+    <RadzenHeader title="School Fees Payment" class="header-container compact-header">
+        <RadzenFieldset Text="EXPORT STUDENT REPORT" class="right-align">
             <FeesToolPanelComponent OnFeesDialog="FeesDialog" />
         </RadzenFieldset>
     </RadzenHeader>
+    <br/>
 
     <div class="student-list-container">
         <RadzenFieldset Text="STUDENTS NAMES" Icon="search">
