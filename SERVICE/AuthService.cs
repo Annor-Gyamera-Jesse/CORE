@@ -1443,9 +1443,9 @@ namespace CORE.SERVICE
 
                     var query = @"
                     INSERT INTO SchoolManagement.TeachersAttendanceOut 
-                    (TeacherFirstName, TeacherLastName, EnableSwitch, ClockIN, ClockOUT, UserID)
+                    (TeacherFirstName, TeacherLastName, EnableSwitch, ClockOUT, UserID)
                     VALUES 
-                    (@TeacherFirstName, @TeacherLastName, @EnableSwitch, @ClockIN, @ClockOUT, @UserID)
+                    (@TeacherFirstName, @TeacherLastName, @EnableSwitch, @ClockOUT, @UserID)
                 ";
 
                     using (var command = new SqlCommand(query, connection))

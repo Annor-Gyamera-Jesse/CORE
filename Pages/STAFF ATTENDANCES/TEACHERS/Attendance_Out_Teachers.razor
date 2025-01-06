@@ -58,10 +58,8 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Teacher First Name</th>
-            <th>Last Name</th>
+            <th>Teachers Name</th>
             <th>Enable Switch</th>
-            <th>Clock In</th>
             <th>Clock Out</th>
         </tr>
     </thead>
@@ -70,9 +68,7 @@
         {
             <tr>
                 <td>@record.TeacherFirstName</td>
-                <td>@record.TeacherLastName</td>
-                <td>@record.EnableSwitch</td>
-                <td>@record.ClockIN</td>
+                <td>@record.EnableSwitch</td>                
                 <td>@record.ClockOUT</td>
             </tr>
         }
@@ -85,8 +81,6 @@
     ClockOutModel attendanceOutModel = new ClockOutModel();
     int selectedTeacherId;
     ElementReference clockOutForm;
-    private Timer timer;
-    private const string LastResetTimeKey = "lastResetTime";
     private int userId;
 
     protected override async Task OnInitializedAsync()
@@ -102,12 +96,11 @@
         teachersAttendance = await authService.GetTodaysAttendanceAsync();
     }
 
-
     void OnTeacherSelectionChange(int selectedValue)
     {
         if (selectedValue > 0)
         {
-            var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeachersAttendanceID == selectedValue);
+            var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeacherID == selectedValue);
             if (selectedTeacher != null)
             {
                 attendanceOutModel.SelectedTeacher = $"{selectedTeacher.TeacherFirstName} {selectedTeacher.TeacherLastName}";
@@ -118,9 +111,24 @@
 
     async Task ClockOut()
     {
-        var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeacherID == selectedTeacherId);
-        if (selectedTeacher != null)
+        try
         {
+            // Log the selectedTeacherId to ensure it's valid
+            Console.WriteLine($"Selected Teacher ID: {selectedTeacherId}");
+
+            var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeacherID == selectedTeacherId);
+
+            // Check if selectedTeacher is found
+            if (selectedTeacher == null)
+            {
+                Console.WriteLine("Teacher not found.");
+                Notify.ShowNotification("Error", "Teacher not found.", NotificationSeverity.Error);
+                return;
+            }
+
+            // Log attendance out model status
+            Console.WriteLine($"Attendance Out Model IsClockedOut: {attendanceOutModel.IsClockedOut}");
+
             var newRecord = new TeachersAttendanceOut
                 {
                     TeacherFirstName = selectedTeacher.TeacherFirstName,
@@ -130,7 +138,13 @@
                     UserID = userId
                 };
 
+            // Log the record to be saved
+            Console.WriteLine($"New Attendance Out Record: {newRecord.TeacherFirstName} {newRecord.TeacherLastName}, {newRecord.ClockOUT}");
+
             bool saved = await authService.SaveTeachersAttendanceOutAsync(newRecord);
+
+            // Log save result
+            Console.WriteLine($"Attendance Save Result: {saved}");
 
             if (saved)
             {
@@ -142,45 +156,19 @@
                 Notify.ShowNotification("Error", "Failed to clock out.", NotificationSeverity.Error);
             }
         }
-    }
-
-
-    private void SetTimer()
-    {
-        timer = new Timer(86400000); // 24 hours in milliseconds
-        timer.Elapsed += async (sender, e) => await CheckAndResetAttendanceRecords();
-        timer.Start();
-    }
-
-    private async Task CheckAndResetAttendanceRecords()
-    {
-        var lastResetTimeString = await JSRuntime.InvokeAsync<string>("localStorage.getItem", LastResetTimeKey);
-        DateTime lastResetTime;
-        if (DateTime.TryParse(lastResetTimeString, out lastResetTime))
+        catch (Exception ex)
         {
-            if ((DateTime.Now - lastResetTime).TotalHours >= 24)
-            {
-                ResetAttendanceRecords();
-                await JSRuntime.InvokeVoidAsync("localStorage.setItem", LastResetTimeKey, DateTime.Now.ToString());
-            }
-        }
-        else
-        {
-            // First time setup
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", LastResetTimeKey, DateTime.Now.ToString());
+            // Log any exceptions that occur
+            Console.WriteLine($"Error: {ex.Message}");
+            Notify.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
         }
     }
 
-    private void ResetAttendanceRecords()
-    {
-        attendanceOutRecords.Clear();
-        StateHasChanged(); // Update the UI
-    }
 
     public class ClockOutModel
     {
         public string SelectedTeacher { get; set; }
-        public string ClockInTime { get; set; }
+        public string ClockInTime { get; set; } // Displaying ClockInTime as string
         public bool IsClockedOut { get; set; }
     }
 }
