@@ -23,7 +23,7 @@
     <div class="col-md-4">
         <RadzenFieldset Text="TEACHERS">
             <RadzenListBox @bind-Value="selectedTeacherId" AllowFiltering="true" AllowVirtualization="true"
-                           Data="@teachersAttendance" TextProperty="TeacherFirstName" ValueProperty="TeachersAttendanceID"
+                           Data="@teachersAttendance" TextProperty="TeacherFirstName" ValueProperty="TeacherID"
                            Style="width: 100%; height: 300px;" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                            Change="@(args => OnTeacherSelectionChange((int)args))">
             </RadzenListBox>
@@ -97,10 +97,11 @@
         {
             userId = user.UserID;
         }
-        teachersAttendance = await authService.GetTeacherAttendanceAsync();
-        await CheckAndResetAttendanceRecords();
-        SetTimer();
+
+        // Fetch today's attendance
+        teachersAttendance = await authService.GetTodaysAttendanceAsync();
     }
+
 
     void OnTeacherSelectionChange(int selectedValue)
     {
@@ -117,41 +118,32 @@
 
     async Task ClockOut()
     {
-        TeacherAttendance selectedTeacher = null;
-
-        if (selectedTeacherId > 0)
-        {
-            selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeachersAttendanceID == selectedTeacherId);
-        }
-
+        var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeacherID == selectedTeacherId);
         if (selectedTeacher != null)
         {
             var newRecord = new TeachersAttendanceOut
-            {
-                TeacherFirstName = selectedTeacher.TeacherFirstName,
-                TeacherLastName = selectedTeacher.TeacherLastName,
-                EnableSwitch = attendanceOutModel.IsClockedOut,
-                ClockIN = selectedTeacher.ClockIN,
-                ClockOUT = DateTime.Now,
-                UserID = userId  // Set the UserID here
-            };
+                {
+                    TeacherFirstName = selectedTeacher.TeacherFirstName,
+                    TeacherLastName = selectedTeacher.TeacherLastName,
+                    EnableSwitch = attendanceOutModel.IsClockedOut,
+                    ClockOUT = DateTime.Now,
+                    UserID = userId
+                };
 
             bool saved = await authService.SaveTeachersAttendanceOutAsync(newRecord);
 
             if (saved)
             {
                 attendanceOutRecords.Add(newRecord);
-                Notify.ShowNotification($"Teacher", $"{newRecord.TeacherFirstName}, Clock Out: {newRecord.ClockOUT}", NotificationSeverity.Success);
-
-                attendanceOutModel = new ClockOutModel();
-                StateHasChanged();
+                Notify.ShowNotification($"Success", "Clock out recorded successfully!", NotificationSeverity.Success);
             }
             else
             {
-                Notify.ShowNotification("ALERT", "Failed to clock out.", NotificationSeverity.Error);
+                Notify.ShowNotification("Error", "Failed to clock out.", NotificationSeverity.Error);
             }
         }
     }
+
 
     private void SetTimer()
     {

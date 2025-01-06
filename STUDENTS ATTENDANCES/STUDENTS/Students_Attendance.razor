@@ -4,11 +4,30 @@
 @inject AuthService authService
 @inject IJSRuntime JSRuntime
 
+<style>
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
+</style>
+
 <RadzenFieldset>
     <ChildContent>
         <RadzenLabel Text="Select Class" />
         <RadzenDropDown Data="@classData" TextProperty="ClassID" ValueProperty="ClassID" @bind-Value="selectedClass" />
         <RadzenButton Text="Take Attendance" Click="@TakeAttendance" />
+        <RadzenFieldset Text="EXPORT STUDENT REPORT" class="right-align">
+
+        </RadzenFieldset>
     </ChildContent>
 </RadzenFieldset>
 

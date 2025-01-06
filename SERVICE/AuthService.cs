@@ -1278,7 +1278,7 @@ namespace CORE.SERVICE
 
         //---------End Of Students Attendance---------------//
 
-        //----------------For Teacher Attendance-Clock-In----------//
+        //----------------For Teacher Attendance-Clock-In----------//      
         public async Task<List<TeachersRegistration>> GetTeachersAsync()
         {
             try
@@ -1368,6 +1368,21 @@ namespace CORE.SERVICE
             }
         }
 
+        /*This  a method to retrieve teachers who clocked in today*/
+        public async Task<List<TeacherAttendance>> GetTodaysAttendanceAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = @"
+            SELECT TeacherID, TeacherFirstName, TeacherLastName, EnableSwitch, ClockIN 
+            FROM SchoolManagement.TeachersAttendance
+            WHERE CAST(ClockIN AS DATE) = CAST(GETDATE() AS DATE)";
+
+                return (await connection.QueryAsync<TeacherAttendance>(query)).ToList();
+            }
+        }
+
+
         //----------------For Teacher Attendance-Clock-In-End ----------//
 
 
@@ -1437,8 +1452,7 @@ namespace CORE.SERVICE
                     {
                         command.Parameters.AddWithValue("@TeacherFirstName", attendanceRecord.TeacherFirstName);
                         command.Parameters.AddWithValue("@TeacherLastName", attendanceRecord.TeacherLastName);
-                        command.Parameters.AddWithValue("@EnableSwitch", attendanceRecord.EnableSwitch);
-                        command.Parameters.AddWithValue("@ClockIN", attendanceRecord.ClockIN);
+                        command.Parameters.AddWithValue("@EnableSwitch", attendanceRecord.EnableSwitch);                        
                         command.Parameters.AddWithValue("@ClockOUT", attendanceRecord.ClockOUT);
                         command.Parameters.AddWithValue("@UserID", attendanceRecord.UserID);  // Include UserID parameter
 
