@@ -1473,6 +1473,37 @@ namespace CORE.SERVICE
             }
         }
 
+        /*View All Attendance*/
+        public async Task<IEnumerable<TeacherAttendanceViewModel>> GetTeacherAttendanceViewAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Updated query to join on TeacherFirstName
+                var query = @"
+            SELECT 
+                t.TeacherID,
+                t.TeacherFirstName,
+                t.TeacherLastName,
+                t.ClockIN,
+                t.EnableSwitch,
+                tao.ClockOUT
+            FROM 
+                SchoolManagement.TeachersAttendance t
+            LEFT JOIN 
+                SchoolManagement.TeachersAttendanceOut tao 
+                ON t.TeacherFirstName = tao.TeacherFirstName
+        ";
+
+                // Execute the query and map the result to TeacherAttendanceViewModel
+                return await connection.QueryAsync<TeacherAttendanceViewModel>(query);
+            }
+        }
+
+
+
+
         //---------Exams--------------//
 
         public async Task<List<string>> GetSchoolExamsCoursesAsync()

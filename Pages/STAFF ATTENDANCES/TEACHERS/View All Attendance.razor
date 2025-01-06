@@ -1,0 +1,38 @@
+﻿@page "/teacher-attendance"
+@inject AuthService authService
+@using CORE.MODEL
+@using CORE.SERVICE
+
+<PageTitle>Teacher Attendance</PageTitle>
+
+<RadzenDataGrid TItem="TeacherAttendanceViewModel" Data="@teacherAttendanceView" AutoGenerateColumns="false" ColumnWidth="200px">
+    <Columns>
+        <RadzenDataGridColumn TItem="TeacherAttendanceViewModel" Property="TeacherFirstName" Title="First Name" />
+        <RadzenDataGridColumn TItem="TeacherAttendanceViewModel" Property="TeacherLastName" Title="Last Name" />
+        <RadzenDataGridColumn TItem="TeacherAttendanceViewModel" Property="ClockIN" Title="Clock In" FormatString="{0:HH:mm:ss}" />
+
+        <!-- Handling NULL for ClockOUT -->
+        <RadzenDataGridColumn TItem="TeacherAttendanceViewModel" Title="Clock Out">
+            <Template Context="data">
+                @if (data.ClockOUT.HasValue)
+                {
+                    @data.ClockOUT.Value.ToString("HH:mm:ss")
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+
+@code {
+    private IEnumerable<TeacherAttendanceViewModel> teacherAttendanceView;
+
+    protected override async Task OnInitializedAsync()
+    {
+        teacherAttendanceView = await authService.GetTeacherAttendanceViewAsync();
+    }
+}
