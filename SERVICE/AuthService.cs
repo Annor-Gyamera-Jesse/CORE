@@ -1502,6 +1502,40 @@ namespace CORE.SERVICE
         }
 
 
+        /*to filter the data in the view atttendance*/
+        public async Task<IEnumerable<TeacherAttendanceViewModel>> GetFilteredTeacherAttendanceViewAsync(string teacherFirstName, DateTime startDate, DateTime endDate)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT 
+                t.TeacherID,
+                t.TeacherFirstName,
+                t.TeacherLastName,
+                t.ClockIN,
+                t.EnableSwitch,
+                tao.ClockOUT
+            FROM 
+                SchoolManagement.TeachersAttendance t
+            LEFT JOIN 
+                SchoolManagement.TeachersAttendanceOut tao 
+                ON t.TeacherFirstName = tao.TeacherFirstName
+            WHERE 
+                t.TeacherFirstName LIKE @TeacherFirstName
+                AND t.ClockIN BETWEEN @StartDate AND @EndDate
+        ";
+
+                // Use Dapper to execute the query with the parameters
+                return await connection.QueryAsync<TeacherAttendanceViewModel>(query, new
+                {
+                    TeacherFirstName = $"%{teacherFirstName}%",
+                    StartDate = startDate,
+                    EndDate = endDate
+                });
+            }
+        }
 
 
         //---------Exams--------------//
