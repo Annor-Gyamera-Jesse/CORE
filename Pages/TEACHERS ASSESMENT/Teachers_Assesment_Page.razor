@@ -17,8 +17,8 @@
             <RadzenColumn Size="6">
                 <RadzenDropDown @bind-Value="selectedStudent" Data="@students" TextProperty="FullName" ValueProperty="StudentID" Placeholder="Select a student" Style="width: 100%; margin-bottom: 10px;" />
             </RadzenColumn>
-                        <RadzenColumn Size="7">
-                <RadzenDropDown @bind-Value="selectedCourse" Data="courses" TextProperty="SCID" ValueProperty="SCID" Placeholder="Select Subject" Style="width: 90%; margin-bottom:10%;"/>
+            <RadzenColumn Size="7">
+                <RadzenDropDown @bind-Value="selectedCourse" Data="courses" TextProperty="SCID" ValueProperty="SCID" Placeholder="Select Subject" Style="width: 50%; margin-bottom:8%;"/>
             </RadzenColumn>
         </RadzenRow>
 
@@ -92,6 +92,7 @@
             }
 
             classes = (await teacherAssessmentService.GetClasssesAsync()).ToList();
+            courses = (await teacherAssessmentService.GetSchoolCoursesAsync()).ToList();
         }
         catch (Exception ex)
         {
@@ -137,7 +138,7 @@
             assessment.Y = y;
             assessment.X_Y = x_y;
             assessment.UserID = userId;
-
+            assessment.Course = selectedCourse;
             var result = await teacherAssessmentService.SaveAssessmentAsync(assessment);
 
             if (result > 0)

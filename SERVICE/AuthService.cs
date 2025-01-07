@@ -2113,8 +2113,8 @@ namespace CORE.SERVICE
             using (var connection = new SqlConnection(connectionString))
             {
                 var sql = @"
-            INSERT INTO SchoolManagement.TeachersAssesment (StudentName, ClassID, TEST1, TEST2, GROUPWORK, HOMEWORK, CLASSTEST, TOTAL_X, EXAMS_SCORE, Y, X_Y, POSITION, UserID)
-            VALUES (@StudentName, @ClassID, @TEST1, @TEST2, @GROUPWORK, @HOMEWORK, @CLASSTEST, @TOTAL_X, @EXAMS_SCORE, @Y, @X_Y, @POSITION, @UserID)";
+            INSERT INTO SchoolManagement.TeachersAssesment (StudentName, ClassID, TEST1, TEST2, GROUPWORK, HOMEWORK, CLASSTEST, TOTAL_X, EXAMS_SCORE, Y, X_Y, POSITION, UserID, Course)
+            VALUES (@StudentName, @ClassID, @TEST1, @TEST2, @GROUPWORK, @HOMEWORK, @CLASSTEST, @TOTAL_X, @EXAMS_SCORE, @Y, @X_Y, @POSITION, @UserID, @Course)";
 
                 return await connection.ExecuteAsync(sql, assessment);
             }
