@@ -17,5 +17,6 @@
         public int POSITION { get; set; }
         public int UserID { get; set; }
         public int StudentID { get; set; }
+        public string Course { get; set; }
     }
 }
