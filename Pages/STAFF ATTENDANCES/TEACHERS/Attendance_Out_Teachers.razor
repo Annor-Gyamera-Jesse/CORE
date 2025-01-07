@@ -23,7 +23,7 @@
     <div class="col-md-4">
         <RadzenFieldset Text="TEACHERS">
             <RadzenListBox @bind-Value="selectedTeacherId" AllowFiltering="true" AllowVirtualization="true"
-                           Data="@teachersAttendance" TextProperty="TeacherFirstName" ValueProperty="TeachersAttendanceID"
+                           Data="@teachersAttendance" TextProperty="TeacherFirstName" ValueProperty="TeacherID"
                            Style="width: 100%; height: 300px;" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                            Change="@(args => OnTeacherSelectionChange((int)args))">
             </RadzenListBox>
@@ -58,10 +58,8 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Teacher First Name</th>
-            <th>Last Name</th>
+            <th>Teachers Name</th>
             <th>Enable Switch</th>
-            <th>Clock In</th>
             <th>Clock Out</th>
         </tr>
     </thead>
@@ -70,9 +68,7 @@
         {
             <tr>
                 <td>@record.TeacherFirstName</td>
-                <td>@record.TeacherLastName</td>
-                <td>@record.EnableSwitch</td>
-                <td>@record.ClockIN</td>
+                <td>@record.EnableSwitch</td>                
                 <td>@record.ClockOUT</td>
             </tr>
         }
@@ -85,8 +81,6 @@
     ClockOutModel attendanceOutModel = new ClockOutModel();
     int selectedTeacherId;
     ElementReference clockOutForm;
-    private Timer timer;
-    private const string LastResetTimeKey = "lastResetTime";
     private int userId;
 
     protected override async Task OnInitializedAsync()
@@ -97,16 +91,16 @@
         {
             userId = user.UserID;
         }
-        teachersAttendance = await authService.GetTeacherAttendanceAsync();
-        await CheckAndResetAttendanceRecords();
-        SetTimer();
+
+        // Fetch today's attendance
+        teachersAttendance = await authService.GetTodaysAttendanceAsync();
     }
 
     void OnTeacherSelectionChange(int selectedValue)
     {
         if (selectedValue > 0)
         {
-            var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeachersAttendanceID == selectedValue);
+            var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeacherID == selectedValue);
             if (selectedTeacher != null)
             {
                 attendanceOutModel.SelectedTeacher = $"{selectedTeacher.TeacherFirstName} {selectedTeacher.TeacherLastName}";
@@ -117,78 +111,64 @@
 
     async Task ClockOut()
     {
-        TeacherAttendance selectedTeacher = null;
-
-        if (selectedTeacherId > 0)
+        try
         {
-            selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeachersAttendanceID == selectedTeacherId);
-        }
+            // Log the selectedTeacherId to ensure it's valid
+            Console.WriteLine($"Selected Teacher ID: {selectedTeacherId}");
 
-        if (selectedTeacher != null)
-        {
-            var newRecord = new TeachersAttendanceOut
+            var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeacherID == selectedTeacherId);
+
+            // Check if selectedTeacher is found
+            if (selectedTeacher == null)
             {
-                TeacherFirstName = selectedTeacher.TeacherFirstName,
-                TeacherLastName = selectedTeacher.TeacherLastName,
-                EnableSwitch = attendanceOutModel.IsClockedOut,
-                ClockIN = selectedTeacher.ClockIN,
-                ClockOUT = DateTime.Now,
-                UserID = userId  // Set the UserID here
-            };
+                Console.WriteLine("Teacher not found.");
+                Notify.ShowNotification("Error", "Teacher not found.", NotificationSeverity.Error);
+                return;
+            }
+
+            // Log attendance out model status
+            Console.WriteLine($"Attendance Out Model IsClockedOut: {attendanceOutModel.IsClockedOut}");
+
+            var newRecord = new TeachersAttendanceOut
+                {
+                    TeacherFirstName = selectedTeacher.TeacherFirstName,
+                    TeacherLastName = selectedTeacher.TeacherLastName,
+                    EnableSwitch = attendanceOutModel.IsClockedOut,
+                    ClockOUT = DateTime.Now,
+                    UserID = userId
+                };
+
+            // Log the record to be saved
+            Console.WriteLine($"New Attendance Out Record: {newRecord.TeacherFirstName} {newRecord.TeacherLastName}, {newRecord.ClockOUT}");
 
             bool saved = await authService.SaveTeachersAttendanceOutAsync(newRecord);
+
+            // Log save result
+            Console.WriteLine($"Attendance Save Result: {saved}");
 
             if (saved)
             {
                 attendanceOutRecords.Add(newRecord);
-                Notify.ShowNotification($"Teacher", $"{newRecord.TeacherFirstName}, Clock Out: {newRecord.ClockOUT}", NotificationSeverity.Success);
-
-                attendanceOutModel = new ClockOutModel();
-                StateHasChanged();
+                Notify.ShowNotification($"Success", "Clock out recorded successfully!", NotificationSeverity.Success);
             }
             else
             {
-                Notify.ShowNotification("ALERT", "Failed to clock out.", NotificationSeverity.Error);
+                Notify.ShowNotification("Error", "Failed to clock out.", NotificationSeverity.Error);
             }
         }
-    }
-
-    private void SetTimer()
-    {
-        timer = new Timer(86400000); // 24 hours in milliseconds
-        timer.Elapsed += async (sender, e) => await CheckAndResetAttendanceRecords();
-        timer.Start();
-    }
-
-    private async Task CheckAndResetAttendanceRecords()
-    {
-        var lastResetTimeString = await JSRuntime.InvokeAsync<string>("localStorage.getItem", LastResetTimeKey);
-        DateTime lastResetTime;
-        if (DateTime.TryParse(lastResetTimeString, out lastResetTime))
+        catch (Exception ex)
         {
-            if ((DateTime.Now - lastResetTime).TotalHours >= 24)
-            {
-                ResetAttendanceRecords();
-                await JSRuntime.InvokeVoidAsync("localStorage.setItem", LastResetTimeKey, DateTime.Now.ToString());
-            }
-        }
-        else
-        {
-            // First time setup
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", LastResetTimeKey, DateTime.Now.ToString());
+            // Log any exceptions that occur
+            Console.WriteLine($"Error: {ex.Message}");
+            Notify.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
         }
     }
 
-    private void ResetAttendanceRecords()
-    {
-        attendanceOutRecords.Clear();
-        StateHasChanged(); // Update the UI
-    }
 
     public class ClockOutModel
     {
         public string SelectedTeacher { get; set; }
-        public string ClockInTime { get; set; }
+        public string ClockInTime { get; set; } // Displaying ClockInTime as string
         public bool IsClockedOut { get; set; }
     }
 }

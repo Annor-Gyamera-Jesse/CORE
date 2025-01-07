@@ -1278,7 +1278,7 @@ namespace CORE.SERVICE
 
         //---------End Of Students Attendance---------------//
 
-        //----------------For Teacher Attendance-Clock-In----------//
+        //----------------For Teacher Attendance-Clock-In----------//      
         public async Task<List<TeachersRegistration>> GetTeachersAsync()
         {
             try
@@ -1368,6 +1368,21 @@ namespace CORE.SERVICE
             }
         }
 
+        /*This  a method to retrieve teachers who clocked in today*/
+        public async Task<List<TeacherAttendance>> GetTodaysAttendanceAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = @"
+            SELECT TeacherID, TeacherFirstName, TeacherLastName, EnableSwitch, ClockIN 
+            FROM SchoolManagement.TeachersAttendance
+            WHERE CAST(ClockIN AS DATE) = CAST(GETDATE() AS DATE)";
+
+                return (await connection.QueryAsync<TeacherAttendance>(query)).ToList();
+            }
+        }
+
+
         //----------------For Teacher Attendance-Clock-In-End ----------//
 
 
@@ -1428,17 +1443,16 @@ namespace CORE.SERVICE
 
                     var query = @"
                     INSERT INTO SchoolManagement.TeachersAttendanceOut 
-                    (TeacherFirstName, TeacherLastName, EnableSwitch, ClockIN, ClockOUT, UserID)
+                    (TeacherFirstName, TeacherLastName, EnableSwitch, ClockOUT, UserID)
                     VALUES 
-                    (@TeacherFirstName, @TeacherLastName, @EnableSwitch, @ClockIN, @ClockOUT, @UserID)
+                    (@TeacherFirstName, @TeacherLastName, @EnableSwitch, @ClockOUT, @UserID)
                 ";
 
                     using (var command = new SqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@TeacherFirstName", attendanceRecord.TeacherFirstName);
                         command.Parameters.AddWithValue("@TeacherLastName", attendanceRecord.TeacherLastName);
-                        command.Parameters.AddWithValue("@EnableSwitch", attendanceRecord.EnableSwitch);
-                        command.Parameters.AddWithValue("@ClockIN", attendanceRecord.ClockIN);
+                        command.Parameters.AddWithValue("@EnableSwitch", attendanceRecord.EnableSwitch);                        
                         command.Parameters.AddWithValue("@ClockOUT", attendanceRecord.ClockOUT);
                         command.Parameters.AddWithValue("@UserID", attendanceRecord.UserID);  // Include UserID parameter
 
@@ -1458,6 +1472,71 @@ namespace CORE.SERVICE
                 return false;
             }
         }
+
+        /*View All Attendance*/
+        public async Task<IEnumerable<TeacherAttendanceViewModel>> GetTeacherAttendanceViewAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Updated query to join on TeacherFirstName
+                var query = @"
+            SELECT 
+                t.TeacherID,
+                t.TeacherFirstName,
+                t.TeacherLastName,
+                t.ClockIN,
+                t.EnableSwitch,
+                tao.ClockOUT
+            FROM 
+                SchoolManagement.TeachersAttendance t
+            LEFT JOIN 
+                SchoolManagement.TeachersAttendanceOut tao 
+                ON t.TeacherFirstName = tao.TeacherFirstName
+        ";
+
+                // Execute the query and map the result to TeacherAttendanceViewModel
+                return await connection.QueryAsync<TeacherAttendanceViewModel>(query);
+            }
+        }
+
+
+        /*to filter the data in the view atttendance*/
+        public async Task<IEnumerable<TeacherAttendanceViewModel>> GetFilteredTeacherAttendanceViewAsync(string teacherFirstName, DateTime startDate, DateTime endDate)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                var query = @"
+            SELECT 
+                t.TeacherID,
+                t.TeacherFirstName,
+                t.TeacherLastName,
+                t.ClockIN,
+                t.EnableSwitch,
+                tao.ClockOUT
+            FROM 
+                SchoolManagement.TeachersAttendance t
+            LEFT JOIN 
+                SchoolManagement.TeachersAttendanceOut tao 
+                ON t.TeacherFirstName = tao.TeacherFirstName
+            WHERE 
+                t.TeacherFirstName LIKE @TeacherFirstName
+                AND t.ClockIN BETWEEN @StartDate AND @EndDate
+        ";
+
+                // Use Dapper to execute the query with the parameters
+                return await connection.QueryAsync<TeacherAttendanceViewModel>(query, new
+                {
+                    TeacherFirstName = $"%{teacherFirstName}%",
+                    StartDate = startDate,
+                    EndDate = endDate
+                });
+            }
+        }
+
 
         //---------Exams--------------//
 

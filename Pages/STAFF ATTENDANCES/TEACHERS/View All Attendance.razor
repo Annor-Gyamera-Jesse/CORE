@@ -1,0 +1,61 @@
+﻿@page "/teacher-attendance"
+@inject AuthService authService
+@using CORE.MODEL
+@using CORE.SERVICE
+@using Radzen.Blazor
+
+<PageTitle>Teacher Attendance</PageTitle>
+
+<div class="filter-container">
+    <RadzenTextBox @bind-Value="searchTeacherName" Placeholder="Search by Teacher Name" Style="width: 300px" />
+    <RadzenDatePicker @bind-Value="startDate" Placeholder="Start Date" Style="width: 150px" />
+    <RadzenDatePicker @bind-Value="endDate" Placeholder="End Date" Style="width: 150px" />
+    <RadzenButton Text="Sort" Click="OnSortClick" />
+</div>
+
+<RadzenDataGrid TItem="TeacherAttendanceViewModel" Data="@teacherAttendanceView" AutoGenerateColumns="false" ColumnWidth="200px">
+    <Columns>
+        <RadzenDataGridColumn TItem="TeacherAttendanceViewModel" Property="TeacherFirstName" Title="First Name" />
+        <RadzenDataGridColumn TItem="TeacherAttendanceViewModel" Property="TeacherLastName" Title="Last Name" />
+        <RadzenDataGridColumn TItem="TeacherAttendanceViewModel" Property="ClockIN" Title="Clock In" FormatString="{0:HH:mm:ss}" />
+
+        <!-- Handling NULL for ClockOUT -->
+        <RadzenDataGridColumn TItem="TeacherAttendanceViewModel" Title="Clock Out">
+            <Template Context="data">
+                @if (data.ClockOUT.HasValue)
+                {
+                    @data.ClockOUT.Value.ToString("HH:mm:ss")
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    private IEnumerable<TeacherAttendanceViewModel> teacherAttendanceView;
+    private string searchTeacherName = string.Empty;
+    private DateTime? startDate = null;
+    private DateTime? endDate = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initially load all teacher attendance data
+        teacherAttendanceView = await authService.GetTeacherAttendanceViewAsync();
+    }
+
+    private async Task OnSortClick()
+    {
+        if (string.IsNullOrEmpty(searchTeacherName) || startDate == null || endDate == null)
+        {
+            // Display message or handle case when input is incomplete
+            return;
+        }
+
+        // Filter data based on searchTeacherName and the selected date range
+        teacherAttendanceView = await authService.GetFilteredTeacherAttendanceViewAsync(searchTeacherName, startDate.Value, endDate.Value);
+    }
+}
