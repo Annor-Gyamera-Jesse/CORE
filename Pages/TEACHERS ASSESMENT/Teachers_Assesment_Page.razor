@@ -17,6 +17,9 @@
             <RadzenColumn Size="6">
                 <RadzenDropDown @bind-Value="selectedStudent" Data="@students" TextProperty="FullName" ValueProperty="StudentID" Placeholder="Select a student" Style="width: 100%; margin-bottom: 10px;" />
             </RadzenColumn>
+                        <RadzenColumn Size="7">
+                <RadzenDropDown @bind-Value="selectedCourse" Data="courses" TextProperty="SCID" ValueProperty="SCID" Placeholder="Select Subject" Style="width: 90%; margin-bottom:10%;"/>
+            </RadzenColumn>
         </RadzenRow>
 
         @if (selectedStudent != 0)
@@ -74,6 +77,8 @@
     private double x_y;
     private int userId;
     private string uploadMessage;
+    private string selectedCourse;
+    private List<SchoolCourse> courses;
 
     protected override async Task OnInitializedAsync()
     {
