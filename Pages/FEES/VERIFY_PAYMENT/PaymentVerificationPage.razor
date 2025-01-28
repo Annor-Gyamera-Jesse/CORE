@@ -1,0 +1,76 @@
+﻿@page "/core/pages/fees/verify-payment"
+@inject PaymentVerificationService PaymentVerificationService
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using Radzen.Blazor
+@inject NotificationMessageService NotificationService
+
+<RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
+
+<RadzenPanelContainer>
+    <RadzenPanel>
+        <h3>Verify Payment</h3>
+
+        <RadzenTextBox @bind-Value="reference" Placeholder="Enter Transaction Reference" Style="width: 100%;" />
+        <RadzenButton Text="Verify" Click="OnVerifyClicked" Style="margin-top: 10px;" Disabled="@isLoading" />
+
+        @if (verificationResult != null)
+        {
+            <RadzenCard>
+                <h4>Status: @verificationResult.Status</h4>
+                <p>@verificationResult.Message</p>
+
+                <RadzenGrid Data="@detailedInfo" TItem="KeyValuePair<string, string>" Style="margin-top: 20px;">
+                    <Columns>
+                        <RadzenGridColumn TItem="KeyValuePair<string, string>" Property="Key" Title="Field" />
+                        <RadzenGridColumn TItem="KeyValuePair<string, string>" Property="Value" Title="Value" />
+                    </Columns>
+                </RadzenGrid>
+            </RadzenCard>
+        }
+    </RadzenPanel>
+</RadzenPanelContainer>
+
+@code {
+    private string reference;
+    private bool isLoading = false;
+    private PaymentVerificationResult verificationResult;
+    private Dictionary<string, string> detailedInfo = new();
+
+    private async Task OnVerifyClicked()
+    {
+        if (string.IsNullOrWhiteSpace(reference))
+        {
+            NotificationService.ShowNotification("Error", "Transaction reference cannot be empty.", NotificationSeverity.Warning);
+            return;
+        }
+
+        isLoading = true;
+        verificationResult = null;
+        detailedInfo.Clear();
+
+        try
+        {
+            verificationResult = await PaymentVerificationService.VerifyTransactionAsync(reference);
+            NotificationService.ShowNotification("Success", "Payment verification completed.", NotificationSeverity.Success);
+
+            // Populate detailedInfo for display in the grid
+            if (verificationResult.Details != null)
+            {
+                detailedInfo = verificationResult.Details
+                    .OrderBy(x => x.Key)
+                    .ToDictionary(x => x.Key, x => x.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Verification failed: {ex.Message}", NotificationSeverity.Error);
+        }
+
+        isLoading = false;
+    }
+}

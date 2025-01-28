@@ -23,6 +23,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<TooltipService>();
 builder.Services.AddScoped<ContextMenuService>();
 builder.Services.AddScoped<AuthStateService>();
+builder.Services.AddScoped<PaymentVerificationService>();
+
 // Configure the database context
 //builder.Services.AddDbContext<INTELDbContext>(options =>
 //{
