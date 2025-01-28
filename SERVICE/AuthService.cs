@@ -2608,6 +2608,21 @@ namespace CORE.SERVICE
             return result;
         }
 
+        public async Task<List<FeeType>> GetFeeTypesByClassAsync(string classId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                const string query = @"
+      SELECT FeeTypeID, FeeTypeName, Description, Amount, ClassID, RecDateCreated
+      FROM SchoolManagement.FeeTypes
+      WHERE ClassID = @ClassID 
+      AND DeletedBy IS NULL"; // Ensure the fee type has not been deleted
+
+                var feeTypes = await connection.QueryAsync<FeeType>(query, new { ClassID = classId });
+                return feeTypes.AsList();
+            }
+        }
+
 
 
         /*logic to save fees*/
