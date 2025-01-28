@@ -7,6 +7,12 @@
         public string Description { get; set; }
         public decimal Amount { get; set; }
         public string ClassID { get; set; }
+        public DateTime RecDateCreated { get; set; }
+        public int? UserID { get; set; }
+        public int? DeletedBy { get; set; }
+        public DateTime? DeletedOnRecDateCreated { get; set; }
+        public int? EditBy { get; set; }
+        public DateTime? EditedOnRecDateCreated { get; set; }
     }
 
 

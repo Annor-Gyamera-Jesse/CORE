@@ -1,0 +1,232 @@
+﻿@page "/core/pages/fees/set-fee-amount"
+@using CORE.MODEL
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject IJSRuntime jsRuntime
+@inject AuthService StudentService
+@inject NotificationService NotificationService
+@inject NotificationMessageService NotificationService
+<RadzenNotification />
+@using CORE.Pages.LOADING_COMPONENT
+
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <RadzenDropDown @bind-Value="selectedClassId" Data="@classes" TextProperty="ClassID" ValueProperty="ClassID" Placeholder="Select Class" />
+    <RadzenDropDown @bind-Value="selectedFeeTypeId" Data="@feeTypes" TextProperty="FeeTypeName" ValueProperty="FeeTypeID" Placeholder="Select Fee Type" />
+    <RadzenNumeric @bind-Value="feeAmount" Min="0" Placeholder="Enter Amount" />
+
+    <RadzenButton Text="Submit" Click="HandleCreate" ButtonStyle="ButtonStyle.Primary" />
+
+    @if (selectedFeeTypeId > 0 && !string.IsNullOrEmpty(selectedClassId))
+    {
+        <RadzenButton Text="Edit" Click="() => HandleEdit(selectedFeeType)" ButtonStyle="ButtonStyle.Info" />
+        <RadzenButton Text="Delete" Click="() => HandleDelete(selectedFeeType)" ButtonStyle="ButtonStyle.Danger" />
+    }
+
+    <RadzenDataGrid @ref="feeGrid" Data="@feeTypes" TItem="FeeType" ShowPaging="true" PageSize="5">
+        <Columns>
+            <RadzenDataGridColumn TItem="FeeType" Property="ClassID" Title="Class ID" />
+            <RadzenDataGridColumn TItem="FeeType" Property="FeeTypeName" Title="Fee Type" />
+            <RadzenDataGridColumn TItem="FeeType" Property="Amount" Title="Amount" />
+            <br />
+            <RadzenDataGridColumn TItem="FeeType">
+                <Template Context="fee">
+                    <RadzenButton Text="Edit" ButtonStyle="ButtonStyle.Info" Click="() => HandleEdit(fee)" />
+                    <RadzenButton Text="Delete" ButtonStyle="ButtonStyle.Danger" Click="() => HandleDelete(fee)" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="FeeType" Property="EditBy" Title="Edited By UserID">
+                <Template Context="fee">
+                    @if (fee.EditBy != null)
+                    {
+                        <span>@fee.EditBy</span>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="FeeType" Property="EditedOnRecDateCreated" Title="Edited On">
+                <Template Context="fee">
+                    @if (fee.EditedOnRecDateCreated != null)
+                    {
+                        <span>@fee.EditedOnRecDateCreated</span>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="FeeType" Property="DeletedBy" Title="Deleted By UserID">
+                <Template Context="fee">
+                    @if (fee.DeletedBy != null)
+                    {
+                        <span>@fee.DeletedBy</span>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="FeeType" Property="DeletedOnRecDateCreated" Title="Deleted On">
+                <Template Context="fee">
+                    @if (fee.DeletedOnRecDateCreated != null)
+                    {
+                        <span>@fee.DeletedOnRecDateCreated</span>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    private List<Class> classes = new List<Class>();       // List to hold the classes
+    private List<FeeType> feeTypes = new List<FeeType>();  // List to hold the fee types
+
+    private string selectedClassId;
+    private int selectedFeeTypeId;
+    private decimal feeAmount;
+    private bool isLoading = false;
+    private FeeType selectedFeeType; // To hold the current selected fee for editing
+    private RadzenDataGrid<FeeType> feeGrid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        try
+        {
+            // Fetch classes and fee types
+            classes = await StudentService.GetAllforsetfeesFeeTypesAsync();       // Fetching classes
+            feeTypes = await StudentService.GetAllFeeTypesAsync();     // Fetching fee types
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Initialization Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleCreate()
+    {
+        isLoading = true;
+        try
+        {
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+            var user = await StudentService.GetUserByUsernameAsync(username);
+
+            if (user != null)
+            {
+                var userId = user.UserID;
+                string feeTypeName = feeTypes.FirstOrDefault(ft => ft.FeeTypeID == selectedFeeTypeId)?.FeeTypeName;
+
+                if (string.IsNullOrEmpty(feeTypeName))
+                {
+                    NotificationService.ShowNotification("Error", "Fee Type Name is required.", NotificationSeverity.Error);
+                    return;
+                }
+
+                // Check if the fee record already exists for the given class and fee type
+                var existingFee = feeTypes.FirstOrDefault(ft => ft.ClassID == selectedClassId && ft.FeeTypeID == selectedFeeTypeId);
+
+                if (existingFee != null)
+                {
+                    // If exists, call HandleEdit to update
+                    selectedFeeType = existingFee;
+                    await HandleEdit(); // Update the existing record
+                }
+                else
+                {
+                    // If not exists, insert a new record
+                    await StudentService.InsertFeeAmountAsync(selectedClassId, selectedFeeTypeId, feeAmount, userId, feeTypeName);
+
+                    // Refresh the list of fee types
+                    feeTypes = await StudentService.GetAllFeeTypesAsync();
+                    NotificationService.ShowNotification("", "Fee Amount Created Successfully", NotificationSeverity.Success);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Initialization Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+
+
+    private async Task HandleEdit(FeeType fee = null)
+    {
+        if (fee != null)
+        {
+            selectedFeeType = fee;
+            selectedClassId = fee.ClassID;
+            selectedFeeTypeId = fee.FeeTypeID;
+            feeAmount = fee.Amount;
+        }
+
+        if (selectedFeeType != null)
+        {
+            isLoading = true;
+            try
+            {
+                var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+                var user = await StudentService.GetUserByUsernameAsync(username);
+
+                if (user != null)
+                {
+                    var userId = user.UserID;
+                    await StudentService.UpdateFeeAmountAsync(selectedFeeType.FeeTypeID, selectedFeeType.ClassID, feeAmount, userId);
+
+                    // Refresh the fee types list
+                    feeTypes = await StudentService.GetAllFeeTypesAsync();
+                    NotificationService.ShowNotification("", "Fee Amount Updated Successfully", NotificationSeverity.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificationService.ShowNotification("Error", $"Edit Error: {ex.Message}", NotificationSeverity.Error);
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+    }
+
+
+    private async Task HandleDelete(FeeType fee)
+    {
+        if (fee == null) return;
+
+        bool confirmed = await jsRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete the fee type: {fee.FeeTypeName}?");
+        if (!confirmed) return;
+
+        isLoading = true;
+        try
+        {
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+            var user = await StudentService.GetUserByUsernameAsync(username);
+
+            if (user != null)
+            {
+                await StudentService.DeleteFeeAmountAsync(fee.FeeTypeID, user.UserID);
+
+                // Refresh the grid data
+                feeTypes = await StudentService.GetAllFeeTypesAsync();
+                NotificationService.ShowNotification("", "Fee Type Deleted Successfully", NotificationSeverity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Delete Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+}
