@@ -2660,7 +2660,7 @@ namespace CORE.SERVICE
         public async Task<List<Class>> GetsAllClassesAsync()
         {
             using var connection = new SqlConnection(connectionString);
-            string query = "SELECT DISTINCT ClassID FROM SchoolManagement.Classes";
+            string query = "SELECT DISTINCT ClassID FROM SchoolManagement.Class";
             var classes = await connection.QueryAsync<Class>(query);
             return classes.AsList();
         }
@@ -2683,5 +2683,137 @@ namespace CORE.SERVICE
                     new { SearchText = $"%{searchText}%" });
             }
         }
+
+        // Fetch all classes (ensure the correct class model is used)
+        public async Task<List<Class>> GetAllClassesforsetfeesamountAsync()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    var query = "SELECT * FROM SchoolManagement.Class";  // Ensure the correct query here for fetching classes
+                    var result = await connection.QueryAsync<Class>(query);
+                    return result.AsList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetAllClassesAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+        // Fetch all fee types for the dropdown
+        public async Task<List<FeeType>> GetAllFeeTypesAsync()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    var query = "SELECT * FROM SchoolManagement.FeeTypes";
+                    var result = await connection.QueryAsync<FeeType>(query);
+                    return result.AsList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetAllFeeTypesAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+        // Insert the fee amount for the selected class and fee type
+        public async Task InsertFeeAmountAsync(string classId, int feeTypeId, decimal amount, int userId, string feeTypeName)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = @"
+                INSERT INTO SchoolManagement.FeeTypes (ClassID, FeeTypeName, Amount, UserID, RecDateCreated)
+                VALUES (@ClassID, @FeeTypeName, @Amount, @UserID, GETDATE())";
+
+                    var parameters = new
+                    {
+                        ClassID = classId,                        
+                        FeeTypeName = feeTypeName, // Add this parameter
+                        Amount = amount,
+                        UserID = userId
+                    };
+
+                    await connection.ExecuteAsync(query, parameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in InsertFeeAmountAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+
+
+        public async Task<List<Class>> GetAllforsetfeesFeeTypesAsync()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    var query = "SELECT * FROM SchoolManagement.Class";  // Modify this query based on your database
+                    var result = await connection.QueryAsync<Class>(query);
+                    return result.AsList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetAllClassesAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        public async Task InsertforsetfeesFeeAmountAsync(string classId, int feeTypeId, decimal amount, int userId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var query = @"
+            INSERT INTO SchoolManagement.FeeTypes (ClassID, FeeTypeID, Amount, UserID)
+            VALUES (@ClassID, @FeeTypeID, @Amount, @UserID)";
+                await connection.ExecuteAsync(query, new { ClassID = classId, FeeTypeID = feeTypeId, Amount = amount, UserID = userId });
+            }
+        }
+
+        public async Task UpdateFeeAmountAsync(int feeTypeId, string classId, decimal amount, int userId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var query = @"
+            UPDATE SchoolManagement.FeeTypes
+            SET Amount = @Amount, EditedOnRecDateCreated = GETDATE(), EditBy = @UserID
+            WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID";
+                await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, ClassID = classId, Amount = amount, UserID = userId });
+            }
+        }
+
+        public async Task DeleteFeeAmountAsync(int feeTypeId, int userId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var query = @"
+            UPDATE SchoolManagement.FeeTypes
+            SET DeletedBy = @UserID, DeletedOnRecDateCreated = GETDATE()
+            WHERE FeeTypeID = @FeeTypeID";
+                await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, UserID = userId });
+            }
+        }
+
     }
 }
