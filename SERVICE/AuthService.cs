@@ -1640,6 +1640,31 @@ namespace CORE.SERVICE
             }
         }
 
+        // Method to get the list of students for a specific class
+        public async Task<IEnumerable<Student>> GetStudentsByClassInExams(string classId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var sqlQuery = "SELECT * FROM SchoolManagement.Students WHERE ClassID = @ClassID";
+
+                return await connection.QueryAsync<Student>(sqlQuery, new { ClassID = classId });
+            }
+        }
+
+        // Method to get assessments for a specific student
+        public async Task<IEnumerable<TeachersAssessment>> GetAssessmentByStudentAsync(string studentName)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Use StudentName instead of StudentID
+                var sqlQuery = "SELECT * FROM SchoolManagement.TeachersAssesment WHERE StudentName = @StudentName";
+
+                return await connection.QueryAsync<TeachersAssessment>(sqlQuery, new { StudentName = studentName });
+            }
+        }
 
 
         //-------Display All Teachers In School---------//
