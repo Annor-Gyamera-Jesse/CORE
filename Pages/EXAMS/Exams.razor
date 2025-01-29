@@ -184,10 +184,10 @@
 
                 <div class="mt-3">
                     <!-- RadzenDropDown for selecting student -->
-                    <RadzenDropDown @bind-Value="selectedStudent"
+                    <RadzenDropDown @bind-Value="selectedStudentName"
                                     Data="@students"
                                     TextProperty="FullName"
-                                    ValueProperty="StudentID"
+                                    ValueProperty="FullName"
                                     Placeholder="Select Student"
                                     Disabled="@(students == null || !students.Any())"
                                     Style="width: 100%" />
@@ -198,25 +198,30 @@
                     <!-- RadzenButton to trigger the search -->
                     <RadzenButton Text="Search"
                                   Click="SearchAssessment"
-                                  Disabled="@(selectedStudent == null)" />
+                                  Disabled="@(string.IsNullOrEmpty(selectedStudentName))" />
+
                 </div>
 
                 <div class="mt-3">
                     <!-- RadzenGrid to display assessment data -->
-                    <RadzenGrid Data="@assessment" TItem="TeachersAssessment">
-                        <Columns>
-                            <RadzenGridColumn TItem="TeachersAssessment" Property="StudentName" Title="Student Name" />
-                            <RadzenGridColumn TItem="TeachersAssessment" Property="ClassID" Title="Class ID" />
-                            <RadzenGridColumn TItem="TeachersAssessment" Property="Test1" Title="Test 1" />
-                            <RadzenGridColumn TItem="TeachersAssessment" Property="Test2" Title="Test 2" />
-                            <RadzenGridColumn TItem="TeachersAssessment" Property="GroupWork" Title="Group Work" />
-                            <RadzenGridColumn TItem="TeachersAssessment" Property="Homework" Title="Homework" />
-                            <RadzenGridColumn TItem="TeachersAssessment" Property="ClassTest" Title="Class Test" />
-                            <RadzenGridColumn TItem="TeachersAssessment" Property="Total_X" Title="Total" />
-                            <RadzenGridColumn TItem="TeachersAssessment" Property="Exams_Score" Title="Exams Score" />
-                            <RadzenGridColumn TItem="TeachersAssessment" Property="Position" Title="Position" />
-                        </Columns>
-                    </RadzenGrid>
+                    <div class="mt-3">
+                        <!-- RadzenGrid to display assessment data -->
+                        <RadzenGrid Data="@assessment" TItem="TeachersAssessment" ColumnWidth="200px" Style="overflow-x: auto;">
+                            <Columns>
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="StudentName" Title="Student Name" Width="250px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="ClassID" Title="Class ID" Width="150px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="Test1" Title="Test 1" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="Test2" Title="Test 2" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="GroupWork" Title="Group Work" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="Homework" Title="Homework" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="ClassTest" Title="Class Test" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="Total_X" Title="Total" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="Exams_Score" Title="Exams Score" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="Position" Title="Position" Width="120px" />
+                            </Columns>
+                        </RadzenGrid>
+                    </div>
+
                 </div>
             </RadzenFieldset>
         </div>
@@ -423,12 +428,18 @@ private List<string> classes = new List<string>();
     // Method to fetch assessment data when a student is selected
     private async Task SearchAssessment()
     {
-        if (!string.IsNullOrEmpty(selectedStudentName)) // Check if StudentName is set
+        if (!string.IsNullOrEmpty(selectedStudentName))
         {
+            Console.WriteLine($"Searching for assessments for student: {selectedStudentName}");
             var assessments = await authService.GetAssessmentByStudentAsync(selectedStudentName);
-            assessment = assessments.ToList(); // Ensure assessment is a list of items
+            assessment = assessments.ToList();
+        }
+        else
+        {
+            Console.WriteLine("No student selected.");
         }
     }
+
 
 
     protected override async Task OnInitializedAsync()

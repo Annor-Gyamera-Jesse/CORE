@@ -1659,7 +1659,7 @@ namespace CORE.SERVICE
             {
                 await connection.OpenAsync();
 
-                // Use StudentName instead of StudentID
+                // Use StudentName to query assessments
                 var sqlQuery = "SELECT * FROM SchoolManagement.TeachersAssesment WHERE StudentName = @StudentName";
 
                 return await connection.QueryAsync<TeachersAssessment>(sqlQuery, new { StudentName = studentName });
