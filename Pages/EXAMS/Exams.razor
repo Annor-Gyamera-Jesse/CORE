@@ -208,16 +208,18 @@
                         <!-- RadzenGrid to display assessment data -->
                         <RadzenGrid Data="@assessment" TItem="TeachersAssessment" ColumnWidth="200px" Style="overflow-x: auto;">
                             <Columns>
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="Course" Title="Course" Width="120px" />
                                 <RadzenGridColumn TItem="TeachersAssessment" Property="StudentName" Title="Student Name" Width="250px" />
                                 <RadzenGridColumn TItem="TeachersAssessment" Property="ClassID" Title="Class ID" Width="150px" />
-                                <RadzenGridColumn TItem="TeachersAssessment" Property="Test1" Title="Test 1" Width="120px" />
-                                <RadzenGridColumn TItem="TeachersAssessment" Property="Test2" Title="Test 2" Width="120px" />
-                                <RadzenGridColumn TItem="TeachersAssessment" Property="GroupWork" Title="Group Work" Width="120px" />
-                                <RadzenGridColumn TItem="TeachersAssessment" Property="Homework" Title="Homework" Width="120px" />
-                                <RadzenGridColumn TItem="TeachersAssessment" Property="ClassTest" Title="Class Test" Width="120px" />
-                                <RadzenGridColumn TItem="TeachersAssessment" Property="Total_X" Title="Total" Width="120px" />
-                                <RadzenGridColumn TItem="TeachersAssessment" Property="Exams_Score" Title="Exams Score" Width="120px" />
-                                <RadzenGridColumn TItem="TeachersAssessment" Property="Position" Title="Position" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="TEST1" Title="Test 1" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="TEST2" Title="Test 2" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="GROUPWORK" Title="Group Work" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="HOMEWORK" Title="Homework" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="CLASSTEST" Title="Class Test" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="TOTAL_X" Title="Total" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="Y" Title="Y" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="X_Y" Title="X_Y" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="POSITION" Title="Subject Position" Width="120px" />                                
                             </Columns>
                         </RadzenGrid>
                     </div>
@@ -397,8 +399,8 @@ private List<string> classes = new List<string>();
                 {
                     foreach (var student in students)
                     {
-                        Console.WriteLine($"Student: {student.StudentID} - {student.FullName}");
-                        NotificationService.ShowNotification($"Student: {student.StudentID} - {student.FullName}", " ", NotificationSeverity.Warning);
+                        // Console.WriteLine($"Student: {student.StudentID} - {student.FullName}");
+                        // NotificationService.ShowNotification($"Student: {student.StudentID} - {student.FullName}", " ", NotificationSeverity.Warning);
                     }
                 }
                 else
