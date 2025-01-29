@@ -6,11 +6,12 @@
 @using Radzen
 @inject NotificationMessageService Notify
 @using System.Globalization
+@inject NotificationMessageService NotificationService
 <RadzenNotification />
 
 <div class="container mt-4">
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-8">
             <RadzenFieldset Text="EXAMS RESULT">
             <form @ref="examsForm" @onsubmit="@AddExam">
                 <RadzenForm Data="@examModel">
@@ -169,6 +170,65 @@
             </form>
             </RadzenFieldset>
         </div>
+        <!-- Right Section: Assessment Search List Box -->
+        <div class="col-md-4">
+            <RadzenFieldset Text="Assessment Search">
+                <div class="mt-3">
+                    <!-- RadzenDropDown for selecting class -->
+                    <RadzenDropDown @bind-Value="selectedClass"
+                                    Data="@classes"
+                                    Placeholder="Select Class"
+                                    Change="OnClassChanged"
+                                    Style="width: 100%" />
+                </div>
+
+                <div class="mt-3">
+                    <!-- RadzenDropDown for selecting student -->
+                    <RadzenDropDown @bind-Value="selectedStudentName"
+                                    Data="@students"
+                                    TextProperty="FullName"
+                                    ValueProperty="FullName"
+                                    Placeholder="Select Student"
+                                    Disabled="@(students == null || !students.Any())"
+                                    Style="width: 100%" />
+
+                </div>
+
+                <div class="mt-3">
+                    <!-- RadzenButton to trigger the search -->
+                    <RadzenButton Text="Search"
+                                  Click="SearchAssessment"
+                                  Disabled="@(string.IsNullOrEmpty(selectedStudentName))" />
+
+                </div>
+
+                <div class="mt-3">
+                    <!-- RadzenGrid to display assessment data -->
+                    <div class="mt-3">
+                        <!-- RadzenGrid to display assessment data -->
+                        <RadzenGrid Data="@assessment" TItem="TeachersAssessment" ColumnWidth="200px" Style="overflow-x: auto;">
+                            <Columns>
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="Course" Title="Course" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="StudentName" Title="Student Name" Width="250px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="ClassID" Title="Class ID" Width="150px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="TEST1" Title="Test 1" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="TEST2" Title="Test 2" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="GROUPWORK" Title="Group Work" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="HOMEWORK" Title="Homework" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="CLASSTEST" Title="Class Test" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="TOTAL_X" Title="Total" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="Y" Title="Y" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="X_Y" Title="X_Y" Width="120px" />
+                                <RadzenGridColumn TItem="TeachersAssessment" Property="POSITION" Title="Subject Position" Width="120px" />                                
+                            </Columns>
+                        </RadzenGrid>
+                    </div>
+
+                </div>
+            </RadzenFieldset>
+        </div>
+
+
 
         <RadzenFieldset Text="VIEW">
         <div class="col-md-12 mt-4">
@@ -236,6 +296,12 @@
     List<Student> studentList = new List<Student>();
     [Inject]
     protected IJSRuntime JSRuntime { get; set; }
+private string selectedClass;
+private int? selectedStudent;
+private IEnumerable<Student> students;
+private IEnumerable<TeachersAssessment> assessment;    
+private List<string> classes = new List<string>();
+    private string selectedStudentName;
 
     void AddExam()
     {
@@ -314,11 +380,75 @@
         }
     }
 
+    // Method to fetch students when a class is selected
+    private async Task OnClassChanged(object value)
+    {
+        try
+        {
+            selectedClass = value?.ToString();
+
+            if (!string.IsNullOrEmpty(selectedClass))
+            {
+                // Fetch students for the selected class
+                students = (await authService.GetStudentsByClassInExams(selectedClass)).ToList();
+
+                Console.WriteLine($"Class Selected: {selectedClass}");
+                
+
+                if (students.Any())
+                {
+                    foreach (var student in students)
+                    {
+                        // Console.WriteLine($"Student: {student.StudentID} - {student.FullName}");
+                        // NotificationService.ShowNotification($"Student: {student.StudentID} - {student.FullName}", " ", NotificationSeverity.Warning);
+                    }
+                }
+                else
+                {
+                    NotificationService.ShowNotification(" ", "No students found for the selected class.", NotificationSeverity.Info);
+                    Console.WriteLine("No students found for the selected class.");
+                }
+            }
+            else
+            {
+                students = new List<Student>(); // Ensure it's not null
+                Console.WriteLine("No class selected.");
+                NotificationService.ShowNotification("", "No class selected.", NotificationSeverity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching students: {ex.Message}");
+            NotificationService.ShowNotification("Error", $" fetching students: {ex.Message}", NotificationSeverity.Error);
+            students = new List<Student>(); // Ensure the UI does not break
+        }
+
+        StateHasChanged(); // Ensure UI updates
+    }
+
+
+    // Method to fetch assessment data when a student is selected
+    private async Task SearchAssessment()
+    {
+        if (!string.IsNullOrEmpty(selectedStudentName))
+        {
+            Console.WriteLine($"Searching for assessments for student: {selectedStudentName}");
+            var assessments = await authService.GetAssessmentByStudentAsync(selectedStudentName);
+            assessment = assessments.ToList();
+        }
+        else
+        {
+            Console.WriteLine("No student selected.");
+        }
+    }
+
+
 
     protected override async Task OnInitializedAsync()
     {
         // Fetch data for dropdowns
         courseList = await authService.GetSchoolExamsCoursesAsync();
         classList = await authService.GetClassesAsync();
+        classes = await authService.GetClassesAsync();
     }
 }
