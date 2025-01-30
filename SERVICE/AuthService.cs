@@ -2862,11 +2862,9 @@ namespace CORE.SERVICE
             using (var connection = new SqlConnection(connectionString))
             {
                 string query = @"
-            SELECT StudentID, 
-                   CONCAT(StudentFirstName, ' ', StudentLastName) AS FullName, 
-                   ClassID 
-            FROM SchoolManagement.Students
-            WHERE CONCAT(StudentFirstName, ' ', StudentLastName) LIKE @SearchTerm";
+               SELECT StudentID, StudentFirstName, StudentLastName, ClassID 
+               FROM SchoolManagement.Students
+               WHERE CONCAT(StudentFirstName, ' ', StudentLastName) LIKE @SearchTerm";
 
                 return await connection.QueryAsync<Student>(query, new { SearchTerm = "%" + searchTerm + "%" });
             }
