@@ -2855,5 +2855,35 @@ namespace CORE.SERVICE
             }
         }
 
+        /*AccountReconciliationService*/
+        // Search for students by name
+        public async Task<IEnumerable<Student>> SearchStudentAsync(string searchTerm)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = @"
+               SELECT StudentID, StudentFirstName, StudentLastName, ClassID 
+               FROM SchoolManagement.Students
+               WHERE CONCAT(StudentFirstName, ' ', StudentLastName) LIKE @SearchTerm";
+
+                return await connection.QueryAsync<Student>(query, new { SearchTerm = "%" + searchTerm + "%" });
+            }
+        }
+
+
+        // Get student fee details
+        public async Task<IEnumerable<StudentFee>> GetStudentFeesAsync(int studentId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = @"
+                    SELECT FeeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, DueDate, Note 
+                    FROM SchoolManagement.StudentFees
+                    WHERE StudentID = @StudentID";
+
+                return await connection.QueryAsync<StudentFee>(query, new { StudentID = studentId });
+            }
+        }
+
     }
 }

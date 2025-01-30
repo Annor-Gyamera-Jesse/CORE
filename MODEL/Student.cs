@@ -25,6 +25,7 @@ namespace CORE.MODEL
         public string StudentMedicalReport { get; set; }
         public int UserID { get; set; }
         public string FullName => $"{StudentFirstName} {StudentLastName}";
+        public string DisplayInfo => $"{FullName} - {ClassID}";
 
     }
 
