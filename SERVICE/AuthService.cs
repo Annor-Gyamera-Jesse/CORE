@@ -1902,12 +1902,12 @@ namespace CORE.SERVICE
         }
 
         //filter the db to pull out the date range
-        public async Task<List<LessonNote>> GetLessonNotesByDateRangeAsync(DateTime fromDate, DateTime toDate)
+        public async Task<List<TEACHERSLESSONNOTES>> GetLessonNotesByDateRangeAsync(DateTime fromDate, DateTime toDate)
         {
             using (var connection = new SqlConnection(connectionString))
             {
                 string sql = "SELECT * FROM SchoolManagement.TEACHERSLESSONNOTES WHERE RecDateCreated BETWEEN @FromDate AND @ToDate";
-                return (await connection.QueryAsync<LessonNote>(sql, new { FromDate = fromDate, ToDate = toDate })).ToList();
+                return (await connection.QueryAsync<TEACHERSLESSONNOTES>(sql, new { FromDate = fromDate, ToDate = toDate })).ToList();
             }
         }
 
@@ -2033,7 +2033,7 @@ namespace CORE.SERVICE
         }
 
         //----For viewing Lesson Note submitted in the View lesson note dialog----//
-        public async Task<IEnumerable<LessonNote>> GetSubmittedLessonNotesAsync()
+        public async Task<IEnumerable<TEACHERSLESSONNOTES>> GetSubmittedLessonNotesAsync()
         {
             using (var connection = new SqlConnection(connectionString))
             {
@@ -2042,20 +2042,26 @@ namespace CORE.SERVICE
                 FROM SchoolManagement.TEACHERSLESSONNOTES ln
                 JOIN SchoolManagement.Users u ON ln.UserId = u.UserID";
 
-                var lessonNotes = await connection.QueryAsync<LessonNote>(query);
+                var lessonNotes = await connection.QueryAsync<TEACHERSLESSONNOTES>(query);
                 return lessonNotes;
             }
         }
-        public async Task UpdateLessonNoteStatusAsync(LessonNote note, int userId)
+        public async Task UpdateLessonNoteStatusAsync(TEACHERSLESSONNOTES note, int userId)
         {
+            // Ensure the status is valid before proceeding
+            if (!Enum.IsDefined(typeof(Lesson_Note_Dialog_Status), note.Status))
+            {
+                throw new ArgumentException($"Invalid status value: {note.Status}. Valid values are: {string.Join(", ", Enum.GetValues(typeof(Lesson_Note_Dialog_Status)).Cast<Lesson_Note_Dialog_Status>())}");
+            }
+
             using (var connection = new SqlConnection(connectionString))
             {
                 string query = @"
-        UPDATE SchoolManagement.TEACHERSLESSONNOTES
-        SET Status = @Status,
-            UpdatedBy = @UpdatedBy,
-            UpdatedOn = @UpdatedOn
-        WHERE LessonnotesID = @LessonnotesID";
+            UPDATE SchoolManagement.TEACHERSLESSONNOTES
+            SET Status = @Status,
+                UpdatedBy = @UpdatedBy,
+                UpdatedOn = @UpdatedOn
+            WHERE LessonnotesID = @LessonnotesID";
 
                 await connection.ExecuteAsync(query, new
                 {

@@ -24,33 +24,34 @@
     <div class="container my-5">
         @if (lessonNotes != null && lessonNotes.Any())
         {
-            <RadzenGrid Data="@lessonNotes" TItem="LessonNote" AllowPaging="true" PageSize="10" AllowSorting="true" AllowColumnResize="true" EditMode="DataGridEditMode.Single" Style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            <RadzenGrid Data="@lessonNotes" TItem="TEACHERSLESSONNOTES" AllowPaging="true" PageSize="10" AllowSorting="true" AllowColumnResize="true" EditMode="DataGridEditMode.Single" Style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
                 <Columns>
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="UserName" Title="User" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SchoolCourse" Title="School Course" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="Strand" Title="Strand" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SubStrand" Title="SubStrand" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="ContentStandard" Title="Content Standard" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="Indicator" Title="Indicator" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="TeachingLearningResources" Title="Teaching Learning Resources" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="TeachingLearningResourcePreparationNotes" Title="Preparation Notes" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SourcesLearningResources" Title="Sources" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="LearningGroup" Title="Learning Group" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="LearnerExpectation" Title="Learner Expectation" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="ImportantGradeExpectation" Title="Grade Expectation" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="LearningOutcomes" Title="Learning Outcomes" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="FormofAssessment" Title="Form of Assessment" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="LearnerEntryBehavior" Title="Entry Behavior" />
-                    <RadzenGridColumn TItem="LessonNote" Filterable="true" Sortable="true" Property="SequenceofLesson" Title="Sequence of Lesson" />
-                    <RadzenGridColumn TItem="LessonNote" Title="Change Status">
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="UserName" Title="User" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="SchoolCourse" Title="School Course" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="Strand" Title="Strand" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="SubStrand" Title="SubStrand" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="ContentStandard" Title="Content Standard" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="Indicator" Title="Indicator" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="TeachingLearningResources" Title="Teaching Learning Resources" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="TeachingLearningResourcePreparationNotes" Title="Preparation Notes" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="SourcesLearningResources" Title="Sources" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="LearningGroup" Title="Learning Group" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="LearnerExpectation" Title="Learner Expectation" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="ImportantGradeExpectation" Title="Grade Expectation" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="LearningOutcomes" Title="Learning Outcomes" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="FormofAssessment" Title="Form of Assessment" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="LearnerEntryBehavior" Title="Entry Behavior" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="SequenceofLesson" Title="Sequence of Lesson" />
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Title="Change Status">
                         <Template Context="note">
                             <RadzenDropDown @bind-Value="note.Status"
                                             Data="Enum.GetValues(typeof(Lesson_Note_Dialog_Status)).Cast<Lesson_Note_Dialog_Status>()"
-                                            Style="width: 100%; border-radius: 4px; border: 1px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.1);" />
+                                            Style="width: 100%; border-radius: 4px; border: 1px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.1);"
+                                            Change="@(args => ValidateStatusSelection(note))" />
                             <RadzenButton Text="View" Icon="visibility" Click="@(args => ViewLessonNote(note))" ButtonStyle="ButtonStyle.Info" Style="margin-top: 5px;" />
                         </Template>
                     </RadzenGridColumn>
-                    <RadzenGridColumn TItem="LessonNote" Title="Display">
+                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Title="Display">
                         <Template Context="note">                           
                             <RadzenButton Text="View" Icon="visibility" Click="@(args => ViewLessonNote(note))" ButtonStyle="ButtonStyle.Info" Style="margin-top: 5px;" />
                         </Template>
@@ -134,9 +135,9 @@
 }
 
 @code {
-    private IEnumerable<LessonNote> lessonNotes;
+    private IEnumerable<TEACHERSLESSONNOTES> lessonNotes;
     private bool isLoading = false;
-    private LessonNote selectedLessonNote; // Holds the currently selected lesson note for viewing
+    private TEACHERSLESSONNOTES selectedLessonNote; // Holds the currently selected lesson note for viewing
     private DateTime? fromDate;
     private DateTime? toDate;
 
@@ -156,6 +157,16 @@
             isLoading = false;
         }
     }
+    private void ValidateStatusSelection(TEACHERSLESSONNOTES note)
+    {
+        // Ensure that only valid statuses (1, 2, 3) are set
+        if (!Enum.IsDefined(typeof(Lesson_Note_Dialog_Status), note.Status) || note.Status == 0)
+        {
+            // Set default status to "New" if invalid value is selected
+            note.Status = Lesson_Note_Dialog_Status.New;
+        }
+    }
+
 
     async Task OnDone()
     {
@@ -163,36 +174,40 @@
         {
             isLoading = true;
 
+            // Validate status to ensure a valid value
+            foreach (var note in lessonNotes)
+            {
+                if (!Enum.IsDefined(typeof(Lesson_Note_Dialog_Status), note.Status))
+                {
+                    // Set a default value if invalid status is selected
+                    note.Status = Lesson_Note_Dialog_Status.New;
+                }
+            }
+
             string userIdStr = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", new object[] { "userID" });
 
             if (string.IsNullOrWhiteSpace(userIdStr))
             {
-                Notify.ShowNotification("Error", "User ID not found in session storage.", NotificationSeverity.Error);
+                Notify.ShowNotification("Error", "User ID is missing.", NotificationSeverity.Error);
                 return;
             }
 
-            if (!int.TryParse(userIdStr, out int userId))
-            {
-                Notify.ShowNotification("Error", "Invalid User ID format.", NotificationSeverity.Error);
-                return;
-            }
-
-            if (lessonNotes == null || !lessonNotes.Any())
-            {
-                Notify.ShowNotification("Info", "No lesson notes to update.", NotificationSeverity.Info);
-                return;
-            }
-
+            var userId = Convert.ToInt32(userIdStr);
             foreach (var note in lessonNotes)
             {
+                note.UpdatedBy = userId;
+                note.UpdatedOn = DateTime.Now;
+
+                // Assuming a service method for updating status
                 await lessonNoteService.UpdateLessonNoteStatusAsync(note, userId);
             }
 
-            Notify.ShowNotification("Info", "Statuses updated successfully!", NotificationSeverity.Success);
+            // Notify success
+            Notify.ShowNotification("Success", "Lesson notes updated successfully!", NotificationSeverity.Success);
         }
         catch (Exception ex)
         {
-            Notify.ShowNotification("Error", $"Failed to update statuses. {ex.Message}", NotificationSeverity.Error);
+            Notify.ShowNotification("Error", $"Error updating lesson notes: {ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
@@ -201,7 +216,7 @@
     }
 
     // Selects a lesson note to view its details
-    void ViewLessonNote(LessonNote note)
+    void ViewLessonNote(TEACHERSLESSONNOTES note)
     {
         selectedLessonNote = note;
     }
