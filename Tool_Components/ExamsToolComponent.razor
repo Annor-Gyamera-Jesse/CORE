@@ -1,0 +1,21 @@
+﻿@* ToolComponent Page *@
+
+<style>
+
+    .toolset-btn {
+        margin-bottom: 5px;
+        width: 100%;
+        font-size: 14px
+    }
+</style>
+
+<div class="row mt-2">
+    @* <RadzenButton Text="New Lesson Notes" Icon="assignment" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Secondary" Click=@OnOpenSubmittedLessonNotesDialog /> *@
+    <RadzenButton Text="EXAMS EXPORT" Icon="assignment" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnOpenExamsExportDialog />
+</div>
+
+@code {
+    //[Parameter] public Action OnOpenSubmittedLessonNotesDialog { get; set; }
+
+    [Parameter] public Action OnOpenExamsExportDialog { get; set; }
+}

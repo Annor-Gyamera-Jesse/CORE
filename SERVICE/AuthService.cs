@@ -2629,6 +2629,7 @@ namespace CORE.SERVICE
         //        return Enumerable.Empty<StudentFee>(); // Return an empty collection on failure
         //    }
         //}
+        /*for generating pdf report*/
         public async Task<IEnumerable<StudentFee>> GetStudentFeesByStudentIdAsync(int studentId)
         {
             using var connection = new SqlConnection(connectionString);
@@ -2889,6 +2890,18 @@ namespace CORE.SERVICE
 
                 return await connection.QueryAsync<StudentFee>(query, new { StudentID = studentId });
             }
+        }
+
+        /*for generating pdf exams export*/
+        public async Task<IEnumerable<Exam>> GetStudentExamsByStudentNameAsync(string studentName)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var result = await connection.QueryAsync<Exam>(
+                "GetStudentExams",
+                new { StudentName = studentName },
+                commandType: CommandType.StoredProcedure);
+
+            return result.ToList();
         }
 
     }
