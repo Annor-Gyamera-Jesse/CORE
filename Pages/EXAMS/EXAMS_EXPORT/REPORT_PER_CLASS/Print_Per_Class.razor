@@ -1,0 +1,98 @@
+﻿@inject AuthService authService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using System.Text
+@using CORE.SERVICE.NOTIFICATION
+
+<RadzenNotification />
+
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <div class="card" style="padding: 20px; max-width: 600px; margin: auto;">
+        <RadzenTextBox Placeholder="🔍 Search class..." Value="@searchText"
+                       Style="width: 100%; margin-bottom: 20px;" Change="@(args => SearchClasses(args))" />
+
+        <RadzenDropDown Data="@classes" TextProperty="ClassName" ValueProperty="ClassName"
+                        @bind-Value="selectedClassName" Placeholder="Select a class"
+                        Style="width: 100%; margin-bottom: 20px;" />
+
+        <RadzenButton Text="Generate Class Report" Icon="save_alt" Click="@GenerateClassReport"
+                      Disabled="@isLoading" Style="width: 100%; margin-bottom: 10px;" />
+    </div>
+}
+
+@code {
+    private string searchText;
+    private string selectedClassName;
+    private List<Class> classes = new();
+    private bool isLoading;
+
+    private async Task SearchClasses(object args)
+    {
+        if (args is string searchText && !string.IsNullOrWhiteSpace(searchText))
+        {
+            this.searchText = searchText;
+            try
+            {
+                isLoading = true;
+                classes = (await authService.SearchClassesAsync(searchText)).ToList();
+            }
+            catch (Exception ex)
+            {
+                Notify.ShowNotification($"Error searching classes: {ex.Message}", "", NotificationSeverity.Error);
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+    }
+
+    private async Task GenerateClassReport()
+    {
+        if (string.IsNullOrEmpty(selectedClassName))
+        {
+            Notify.ShowNotification("Please select a class.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            var studentExamData = await authService.GetStudentExamDataByClassAsync(selectedClassName);
+            if (studentExamData == null || !studentExamData.Any())
+            {
+                Notify.ShowNotification("No exam data found for the selected class.", "", NotificationSeverity.Warning);
+                return;
+            }
+
+            var csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine("Student Name, Class, Term, Score, Grade");
+            foreach (var exam in studentExamData)
+            {
+                csvBuilder.AppendLine($"{exam.StudentName}, {exam.ClassName}, {exam.Term}, {exam.TotalScore}, {exam.Grade}");
+            }
+
+            var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+            var base64Csv = Convert.ToBase64String(csvData);
+
+            var fileName = $"{selectedClassName}_Exam_Report.pdf";
+            await JSRuntime.InvokeVoidAsync("downloadPdf", fileName, base64Csv);
+
+            Notify.ShowNotification("Class report generated successfully.", "", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error generating report: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -2892,7 +2892,7 @@ namespace CORE.SERVICE
             }
         }
 
-        /*for generating pdf exams export*/
+        /*for generating pdf exams export per student*/
         public async Task<IEnumerable<Exam>> GetStudentExamsByStudentNameAsync(string studentName)
         {
             using var connection = new SqlConnection(connectionString);
@@ -2903,6 +2903,56 @@ namespace CORE.SERVICE
 
             return result.ToList();
         }
+
+        /*exams report per class*/
+        public async Task<List<Exam>> GetStudentExamDataByClassAsync(string className)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var result = await connection.QueryAsync<Exam>(
+                        "GetStudentExamDataByClass",
+                        new { ClassName = className },
+                        commandType: CommandType.StoredProcedure
+                    );
+
+                    return result.ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions
+                throw new Exception("Error retrieving student exam data by class.", ex);
+            }
+        }
+
+        public async Task<IEnumerable<Class>> SearchClassesAsync(string searchText)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var result = await connection.QueryAsync<Class>(
+                        "SearchClasses",
+                        new { SearchText = searchText },
+                        commandType: CommandType.StoredProcedure
+                    );
+
+                    return result.ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions
+                throw new Exception("Error searching classes.", ex);
+            }
+        }
+
 
     }
 }

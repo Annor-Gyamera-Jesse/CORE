@@ -36,11 +36,11 @@
 
 
   <RadzenHeader title="REPORT GENERATING" class="header-container compact-header">
-        <RadzenFieldset Text="EXPORT STUDENT EXAMS REPORT" class="right-align">
-        <ExamsToolComponent OnOpenExamsExportDialog="OnOpenExamsExport" />
-            </RadzenFieldset>
+    <RadzenFieldset Text="EXPORT STUDENT EXAMS REPORT" class="right-align">
+        <ExamsToolComponent OnOpenExamsExportDialog="OnOpenExamsExport" OnOpenClassExamsExportDialog="OnOpenClassExamsExportDialog" />
+</RadzenFieldset>
             </RadzenHeader>
-
+            <br/>
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8">
@@ -475,6 +475,7 @@ private List<string> classes = new List<string>();
     }
 
     async void OnOpenExamsExport() => await OpenExamsExportDialog();
+    async void OnOpenClassExamsExportDialog() => await OpenExamsPerClassExportDialog();
 
     protected override async Task OnInitializedAsync()
     {
