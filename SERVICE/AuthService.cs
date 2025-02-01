@@ -2929,27 +2929,13 @@ namespace CORE.SERVICE
             }
         }
 
-        public async Task<IEnumerable<Class>> SearchClassesAsync(string searchText)
+        public async Task<IEnumerable<string>> GetExamsAllClassesAsync()
         {
-            try
+            using (var connection = new SqlConnection(connectionString))
             {
-                using (var connection = new SqlConnection(connectionString))
-                {
-                    await connection.OpenAsync();
-
-                    var result = await connection.QueryAsync<Class>(
-                        "SearchClasses",
-                        new { SearchText = searchText },
-                        commandType: CommandType.StoredProcedure
-                    );
-
-                    return result.ToList();
-                }
-            }
-            catch (Exception ex)
-            {
-                // Handle exceptions
-                throw new Exception("Error searching classes.", ex);
+                await connection.OpenAsync();
+                string query = "SELECT ClassID FROM SchoolManagement.Class ORDER BY ClassID";
+                return await connection.QueryAsync<string>(query);
             }
         }
 

@@ -4,8 +4,9 @@
 @using CORE.MODEL
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
-@using System.Text
 @using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using System.Text
 
 <RadzenNotification />
 
@@ -14,42 +15,51 @@
 @if (!isLoading)
 {
     <div class="card" style="padding: 20px; max-width: 600px; margin: auto;">
-        <RadzenTextBox Placeholder="🔍 Search class..." Value="@searchText"
-                       Style="width: 100%; margin-bottom: 20px;" Change="@(args => SearchClasses(args))" />
+        <RadzenDropDown Data="@classList" Placeholder="Select Class"
+                        @bind-Value="selectedClassName" Style="width: 100%; margin-bottom: 20px;"
+                        Change="@(args => OnClassSelectionChanged())" />
 
-        <RadzenDropDown Data="@classes" TextProperty="ClassName" ValueProperty="ClassName"
-                        @bind-Value="selectedClassName" Placeholder="Select a class"
-                        Style="width: 100%; margin-bottom: 20px;" />
-
-        <RadzenButton Text="Generate Class Report" Icon="save_alt" Click="@GenerateClassReport"
-                      Disabled="@isLoading" Style="width: 100%; margin-bottom: 10px;" />
+        <RadzenButton Text="Generate Report" Icon="save_alt" Click="@GenerateClassReport"
+                      Disabled="@IsButtonDisabled"
+                      Style="width: 100%; margin-bottom: 10px;" />
     </div>
 }
 
 @code {
-    private string searchText;
     private string selectedClassName;
-    private List<Class> classes = new();
-    private bool isLoading;
+    private List<string> classList = new();
+    private bool isLoading = true;
 
-    private async Task SearchClasses(object args)
+    private bool IsButtonDisabled => isLoading || string.IsNullOrEmpty(selectedClassName);
+
+    protected override async Task OnInitializedAsync()
     {
-        if (args is string searchText && !string.IsNullOrWhiteSpace(searchText))
+        await LoadClasses();
+    }
+
+    private async Task LoadClasses()
+    {
+        try
         {
-            this.searchText = searchText;
-            try
-            {
-                isLoading = true;
-                classes = (await authService.SearchClassesAsync(searchText)).ToList();
-            }
-            catch (Exception ex)
-            {
-                Notify.ShowNotification($"Error searching classes: {ex.Message}", "", NotificationSeverity.Error);
-            }
-            finally
-            {
-                isLoading = false;
-            }
+            isLoading = true;
+            var classes = await authService.GetExamsAllClassesAsync();
+            classList = classes.ToList();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error loading classes: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnClassSelectionChanged()
+    {
+        if (!string.IsNullOrEmpty(selectedClassName))
+        {
+            await GenerateClassReport();
         }
     }
 
@@ -72,19 +82,19 @@
             }
 
             var csvBuilder = new StringBuilder();
-            csvBuilder.AppendLine("Student Name, Class, Term, Score, Grade");
-            foreach (var exam in studentExamData)
+            csvBuilder.AppendLine("Student Name, Class, Academic Year, Term, Score, Grade, Teachers Remarks");
+            foreach (var student in studentExamData)
             {
-                csvBuilder.AppendLine($"{exam.StudentName}, {exam.ClassName}, {exam.Term}, {exam.TotalScore}, {exam.Grade}");
+                csvBuilder.AppendLine($"{student.StudentName}, {student.ClassName}, {student.AcademicYear}, {student.Term}, {student.TotalScore}, {student.Grade}, {student.TeachersRemarks}");
             }
 
             var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
             var base64Csv = Convert.ToBase64String(csvData);
 
             var fileName = $"{selectedClassName}_Exam_Report.pdf";
-            await JSRuntime.InvokeVoidAsync("downloadPdf", fileName, base64Csv);
+            await JSRuntime.InvokeVoidAsync("downloadExamsPdfPerClass", fileName, base64Csv);
 
-            Notify.ShowNotification("Class report generated successfully.", "", NotificationSeverity.Success);
+            Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
         }
         catch (Exception ex)
         {
