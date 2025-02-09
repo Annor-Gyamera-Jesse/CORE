@@ -160,17 +160,17 @@
         var paymentData = new
         {
             StaffID = selectedStaff.StaffID,
-            BankName = selectedStaff.BankName,
-            AccountName = selectedStaff.AccountName,
-            AccountNumber = selectedStaff.AccountNumber,
-            Salary = selectedStaff.Salary,
+            CategoryID = selectedCategoryId, // Ensure this is not null or missing
+            SalaryFor = selectedMonth,
+            PaymentYear = selectedYear,
+            Amount = selectedStaff.Salary,
             OverTime = selectedStaff.OverTime,
             TaxDeduction = selectedStaff.TaxMoney,
-            NetSalary = (selectedStaff.Salary + selectedStaff.OverTime) - selectedStaff.TaxMoney,
-            PaymentMonth = selectedMonth,
-            PaymentYear = selectedYear,
-            PaymentDate = DateTime.Now
+            BankName = selectedStaff.BankName,
+            AccountName = selectedStaff.AccountName,
+            AccountNumber = selectedStaff.AccountNumber
         };
+
 
         bool success = await HrService.InsertSalaryPaymentAsync(paymentData);
 
