@@ -2891,5 +2891,144 @@ namespace CORE.SERVICE
             }
         }
 
+        public async Task<IEnumerable<Staff>> GetAllStaffAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT * FROM SchoolManagement.Staff ORDER BY StaffLastName";
+                return await connection.QueryAsync<Staff>(query);
+            }
+        }
+      
+        public async Task<List<PaymentRecord>> GetPaymentHistoryAsync(int staffId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                string query = @"
+            SELECT PayedOn, SalaryFor, PaymentYear, Salary AS Amount 
+            FROM SchoolManagement.SalaryPayments 
+            WHERE StaffID = @StaffID";
+
+                return (await connection.QueryAsync<PaymentRecord>(query, new { StaffID = staffId })).ToList();
+            }
+            catch (Exception ex)
+            {
+                // Log the error (consider using a logging framework like Serilog)
+                Console.WriteLine($"Error fetching payment history: {ex.Message}");
+                return new List<PaymentRecord>();
+            }
+        }
+
+        public async Task<bool> PaySalaryAsync(int staffId, decimal amount, DateTime payDate, int month, int year)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                string query = @"
+            INSERT INTO SchoolManagement.SalaryPayments 
+            (StaffID, PayedOn, SalaryFor, PaymentYear, Amount) 
+            VALUES (@StaffID, @PayedOn, @SalaryFor, @PaymentYear, @Amount)";
+
+                int rows = await connection.ExecuteAsync(query, new
+                {
+                    StaffID = staffId,
+                    PayedOn = payDate,
+                    SalaryFor = month,
+                    PaymentYear = year,
+                    Amount = amount
+                });
+
+                return rows > 0;
+            }
+            catch (Exception ex)
+            {
+                // Log the error (consider using a logging framework like Serilog)
+                Console.WriteLine($"Error processing salary payment: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<List<PaymentCategory>> GetPaymentCategoriesAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = "SELECT * FROM SchoolManagement.PaymentCategory";
+            return (await connection.QueryAsync<PaymentCategory>(query)).ToList();
+        }
+
+        public async Task<List<Staff>> GetStaffByCategoryAsync(int categoryId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = "SELECT * FROM SchoolManagement.Staff WHERE CategoryID = @CategoryID";
+            return (await connection.QueryAsync<Staff>(query, new { CategoryID = categoryId })).ToList();
+        }
+
+        public async Task<bool> ProcessAutomaticPaymentAsync(int categoryId, string bankName, string accountName, string accountNumber)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            // Get staff under the selected category
+            string staffQuery = "SELECT StaffID, CategoryID FROM SchoolManagement.Staff WHERE CategoryID = @CategoryID";
+            var staffList = await connection.QueryAsync<Staff>(staffQuery, new { CategoryID = categoryId });
+
+            // Get payment amount for this category
+            string salaryQuery = "SELECT Amount FROM SchoolManagement.PaymentCategory WHERE CategoryID = @CategoryID";
+            decimal salaryAmount = await connection.ExecuteScalarAsync<decimal>(salaryQuery, new { CategoryID = categoryId });
+
+            // Insert payment for each staff member
+            string insertQuery = @"
+        INSERT INTO SchoolManagement.SalaryPayments (StaffID, CategoryID, PayedOn, SalaryFor, PaymentYear, Amount)
+        VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount)";
+
+            int rowsAffected = 0;
+            foreach (var staff in staffList)
+            {
+                rowsAffected += await connection.ExecuteAsync(insertQuery, new
+                {
+                    StaffID = staff.StaffID,
+                    CategoryID = categoryId,
+                    SalaryFor = DateTime.Now.Month,
+                    PaymentYear = DateTime.Now.Year,
+                    Amount = salaryAmount
+                });
+            }
+
+            return rowsAffected > 0;
+        }
+
+        public async Task<bool> ProcessManualPaymentAsync(int staffId, decimal amount, DateTime payDate, int month, int year)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            string query = @"
+        INSERT INTO SchoolManagement.SalaryPayments (StaffID, PayedOn, SalaryFor, PaymentYear, Amount)
+        VALUES (@StaffID, @PayedOn, @SalaryFor, @PaymentYear, @Amount)";
+
+            int rowsAffected = await connection.ExecuteAsync(query, new
+            {
+                StaffID = staffId,
+                PayedOn = payDate,
+                SalaryFor = month,
+                PaymentYear = year,
+                Amount = amount
+            });
+
+            return rowsAffected > 0;
+        }
+        public async Task<bool> InsertSalaryPaymentAsync(object paymentData)
+        {
+            var query = @"
+        INSERT INTO SchoolManagement.SalaryPayments 
+        (StaffID, CategoryID, SalaryFor, PaymentYear, Amount, OverTime, TaxDeduction, BankName, AccountName, AccountNumber) 
+        VALUES 
+        (@StaffID, @CategoryID, @SalaryFor, @PaymentYear, @Amount, @OverTime, @TaxDeduction, @BankName, @AccountName, @AccountNumber)";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var result = await connection.ExecuteAsync(query, paymentData);
+                return result > 0;
+            }
+        }
+
     }
 }

@@ -1,0 +1,356 @@
+﻿@page "/hr-salary-management"
+@inject AuthService HrService
+@inject DialogService DialogService
+@using CORE.MODEL
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject NotificationMessageService Notify
+<RadzenNotification/>
+
+<RadzenRow>
+    <!-- Staff List Panel -->
+    <RadzenColumn Size="4">
+        <RadzenCard Class="shadow-lg p-3 bg-white rounded-lg">
+            <h4 class="text-lg font-bold text-blue-600">Staff List</h4>
+            <RadzenTextBox Value="@searchQuery" @onchange="FilterStaff" Placeholder="Search staff..." Style="width: 100%;" />
+            <RadzenListBox Titem="Staff" Data="filteredStaffList" @bind-Value="selectedStaff" TextProperty="StaffFullName" />
+        </RadzenCard>
+    </RadzenColumn>
+
+    <!-- Staff Details and Payment Panel -->
+    <RadzenColumn Size="8">
+        <RadzenCard Class="shadow-lg p-4 bg-white rounded-lg">
+            <RadzenDropDown @bind-Value="selectedCategoryId" Data="@paymentCategories"
+            TextProperty="CategoryName" ValueProperty="CategoryID"
+            Style="width: 100%;" Placeholder="Select Payment Category" />
+
+            <RadzenButton Text="Automatic Payment" Click="ProcessAutomaticPayment" Icon="credit_card"
+            Style="background-color: blue; color: white; width: 100%;" />
+            <RadzenButton Text="Manual Payment" Icon="money"
+            Click="HandleManualPayment"
+            Style="background-color: green; color: white; width: 100%;" />
+
+            @if (selectedStaff != null)
+            {
+
+
+                <!-- Staff Details -->
+                <RadzenRow>
+                    <RadzenColumn Size="3">
+                        <RadzenImage Path="@GetStaffImage()" Width="100px" Height="100px" Style="border-radius: 50%;" />
+                    </RadzenColumn>
+                    <RadzenColumn Size="9">
+                        <h3 class="text-xl font-bold">@selectedStaff.StaffFirstName @selectedStaff.StaffLastName</h3>
+                        <p><strong>Department:</strong> @selectedStaff.Department</p>
+                        <p><strong>Position:</strong> @selectedStaff.Position</p>
+                        <p><strong>Status:</strong> 
+                            <span class="@(selectedStaff.EmploymentStatus == "Active" ? "text-green-600" : "text-red-600")">
+                                @selectedStaff.EmploymentStatus
+                            </span>
+                        </p>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenDivider />
+
+                <!-- Salary Payment Section -->
+                <h4 class="text-lg font-bold text-blue-600">Process Salary Payment</h4>
+                <RadzenRow>
+                    <RadzenColumn Size="6">
+                        <RadzenStack>
+                            <RadzenLabel Text="Bank Name" />
+                            <RadzenTextBox @bind-Value="selectedStaff.BankName" Disabled="false" Style="width: 100%;" />
+                        </RadzenStack>
+                        <RadzenStack>
+                            <RadzenLabel Text="Account Name" />
+                            <RadzenTextBox @bind-Value="selectedStaff.AccountName" Disabled="false" Style="width: 100%;" />
+                        </RadzenStack>
+                        <RadzenStack>
+                            <RadzenLabel Text="Account Number" />
+                            <RadzenTextBox @bind-Value="selectedStaff.AccountNumber" Disabled="false" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="6">
+                        <RadzenStack>
+                            <RadzenLabel Text="Salary ($)" />
+                            <RadzenNumeric @bind-Value="selectedStaff.Salary" Disabled="false" Style="width: 100%;" />
+                        </RadzenStack>
+                        <RadzenStack>
+                            <RadzenLabel Text="Overtime ($)" />
+                            <RadzenNumeric @bind-Value="selectedStaff.OverTime" Disabled="false" Style="width: 100%;" />
+                        </RadzenStack>
+                        <RadzenStack>
+                            <RadzenLabel Text="Tax Deduction ($)" />
+                            <RadzenNumeric @bind-Value="selectedStaff.TaxMoney" Disabled="false" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <!-- Month and Year Selection -->
+                <RadzenRow>
+                    <RadzenColumn Size="6">
+                        <RadzenStack>
+                            <RadzenLabel Text="Salary For Month" />
+                            <RadzenDropDown @bind-Value="selectedMonth" Data="@months" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                    <RadzenColumn Size="6">
+                        <RadzenStack>
+                            <RadzenLabel Text="Payment Year" />
+                            <RadzenDropDown @bind-Value="selectedYear" Data="@years" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <!-- Submit Button -->
+                <RadzenButton Text="@buttonText" Icon="credit_card" Click="HandleButtonClick"
+                Style="@buttonStyle" />
+
+                <RadzenDivider />
+
+                <!-- Payment History -->
+                <h4 class="text-lg font-bold text-blue-600">Payment History</h4>
+                <RadzenGrid Data="paymentHistory" TItem="PaymentRecord">
+                    <Columns>
+                        <RadzenGridColumn TItem="PaymentRecord" Property="PayedOn" Title="Date" />
+                        <RadzenGridColumn TItem="PaymentRecord" Property="SalaryFor" Title="Month" />
+                        <RadzenGridColumn TItem="PaymentRecord" Property="PaymentYear" Title="Year" />
+                        <RadzenGridColumn TItem="PaymentRecord" Property="Salary" Title="Amount ($)" />
+                    </Columns>
+                </RadzenGrid>
+            }
+            else
+            {
+                <p class="text-center text-gray-500">Select a staff member to view details.</p>
+            }
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+
+@code {
+
+
+
+    private List<Staff> staffList = new();
+    private List<Staff> filteredStaffList = new();
+    private Staff selectedStaff;
+    private List<PaymentRecord> paymentHistory = new();
+    private string searchQuery = "";
+    private int selectedMonth = DateTime.Now.Month;
+    private int selectedYear = DateTime.Now.Year;
+    private List<int> months = Enumerable.Range(1, 12).ToList();
+    private List<int> years = Enumerable.Range(2000, 25).ToList();
+    private bool isSaved = false;
+    private string buttonText = "Save";
+    private string buttonStyle = "background-color: red; color: white; width: 100%;";
+    private List<PaymentCategory> paymentCategories = new();    
+    private int selectedCategoryId;
+    private Dictionary<int, decimal> manualPaymentAmounts = new();
+
+    private async Task HandleManualPayment()
+    {
+        if (selectedStaff == null)
+        {
+            await DialogService.Alert("Please select a staff member.", "Warning");
+            return;
+        }
+
+        var paymentData = new
+        {
+            StaffID = selectedStaff.StaffID,
+            BankName = selectedStaff.BankName,
+            AccountName = selectedStaff.AccountName,
+            AccountNumber = selectedStaff.AccountNumber,
+            Salary = selectedStaff.Salary,
+            OverTime = selectedStaff.OverTime,
+            TaxDeduction = selectedStaff.TaxMoney,
+            NetSalary = (selectedStaff.Salary + selectedStaff.OverTime) - selectedStaff.TaxMoney,
+            PaymentMonth = selectedMonth,
+            PaymentYear = selectedYear,
+            PaymentDate = DateTime.Now
+        };
+
+        bool success = await HrService.InsertSalaryPaymentAsync(paymentData);
+
+        if (success)
+        {
+             Notify.ShowNotification("Manual Payment Successful!","",NotificationSeverity.Success);
+            paymentHistory = await HrService.GetPaymentHistoryAsync(selectedStaff.StaffID);
+        }
+        else
+        {
+            await DialogService.Alert("Payment failed. Please try again.", "Error");
+        }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            paymentCategories = await HrService.GetPaymentCategoriesAsync();
+            staffList = (await HrService.GetAllStaffAsync()).ToList();
+            filteredStaffList = staffList;
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error loading staff list: {ex.Message}", "Error");
+        }
+    }
+
+    private async Task LoadStaffByCategory(ChangeEventArgs e)
+    {
+        selectedCategoryId = Convert.ToInt32(e.Value);
+        filteredStaffList = await HrService.GetStaffByCategoryAsync(selectedCategoryId);
+    }
+
+    private string GetStaffImage()
+    {
+        try
+        {
+            if (selectedStaff?.ImageData != null && selectedStaff.ImageData.Length > 0)
+            {
+                return $"data:image/png;base64,{Convert.ToBase64String(selectedStaff.ImageData)}";
+            }
+            else
+            {
+                return "default-profile.png"; // Replace with a valid placeholder image path
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading staff image: {ex.Message}");
+            return "default-profile.png";
+        }
+    }
+
+    private void FilterStaff(ChangeEventArgs e)
+    {
+        try
+        {
+            searchQuery = e.Value.ToString();
+            filteredStaffList = staffList.Where(s => s.StaffFullName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error filtering staff: {ex.Message}");
+        }
+    }
+
+    private async Task OnStaffSelect(ChangeEventArgs e)
+    {
+        try
+        {
+            selectedStaff = e.Value as Staff;
+            if (selectedStaff != null)
+            {
+                paymentHistory = await HrService.GetPaymentHistoryAsync(selectedStaff.StaffID);
+            }
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error retrieving payment history: {ex.Message}", "Error");
+        }
+    }
+
+    private async Task HandleButtonClick()
+    {
+        try
+        {
+            if (!isSaved)
+            {
+                await SaveSalaryDetails();
+                isSaved = true;
+                buttonText = "Pay Salary";
+                buttonStyle = "background-color: green; color: white; width: 100%;";
+            }
+            else
+            {
+                await ProcessPayment();
+            }
+        }
+        catch (Exception ex)
+        {
+            //await DialogService.Alert($"Error processing action: {ex.Message}", "Error");
+            Notify.ShowNotification("Error", $"Error processing action: {ex.Message}", NotificationSeverity.Error);
+        }
+    }
+
+    private async Task SaveSalaryDetails()
+    {
+        try
+        {
+            // Logic to save salary details before payment
+           // await DialogService.Alert("Salary details saved!", "Success");
+
+            Notify.ShowNotification("Success", "Salary details saved!", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+
+            // await DialogService.Alert($"Error saving salary details: {ex.Message}", "Error");
+
+            Notify.ShowNotification("Error", $"Error saving salary details: {ex.Message}", NotificationSeverity.Error);
+        }
+    }
+
+    private async Task ProcessPayment()
+    {
+        try
+        {
+            bool success = await HrService.PaySalaryAsync(selectedStaff.StaffID, selectedStaff.Salary, DateTime.Now, selectedMonth, selectedYear);
+            if (success)
+            {
+
+                //await DialogService.Alert($"Salary paid successfully to {selectedStaff.StaffFirstName}!", "Success");
+
+                Notify.ShowNotification("Success", $"Salary paid successfully to {selectedStaff.StaffFirstName}!", NotificationSeverity.Success);
+                paymentHistory = await HrService.GetPaymentHistoryAsync(selectedStaff.StaffID);
+            }
+            else
+            {
+
+                //await DialogService.Alert("Salary payment failed!", "Error");
+
+                Notify.ShowNotification("Error", "Salary payment failed!", NotificationSeverity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            //await DialogService.Alert($"Error processing salary payment: {ex.Message}", "Error");
+            Notify.ShowNotification("Error", $" Error processing salary payment: {ex.Message}", NotificationSeverity.Error);
+        }
+    }
+
+    private async Task ProcessAutomaticPayment()
+    {
+        bool success = await HrService.ProcessAutomaticPaymentAsync(selectedCategoryId, "Bank Name", "Account Name", "12345678");
+        if (success)
+        {
+            Notify.ShowNotification("Success", "Automatic payment completed successfully!", NotificationSeverity.Success);
+        }
+        else
+        {
+            Notify.ShowNotification("Error", "Automatic payment failed!", NotificationSeverity.Warning);
+        }
+    }
+
+    private async Task ProcessManualPayment(int staffId)
+    {
+        if (!manualPaymentAmounts.ContainsKey(staffId)) return;
+
+        decimal amount = manualPaymentAmounts[staffId];
+        bool success = await HrService.ProcessManualPaymentAsync(staffId, amount, DateTime.Now, DateTime.Now.Month, DateTime.Now.Year);
+
+        if (success)
+        {
+            Notify.ShowNotification("Success", "Manual payment completed!", NotificationSeverity.Success);
+        }
+        else
+        {
+            Notify.ShowNotification("Error", "Manual payment failed!", NotificationSeverity.Warning);
+        }
+    }
+}
