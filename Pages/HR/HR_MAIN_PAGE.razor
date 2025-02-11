@@ -10,108 +10,105 @@
 <RadzenRow>
     <!-- Staff List Panel -->
     <RadzenColumn Size="4">
-        <RadzenCard Class="shadow-lg p-3 bg-white rounded-lg">
-            <h4 class="text-lg font-bold text-blue-600">Staff List</h4>
-            <RadzenTextBox Value="@searchQuery" @onchange="FilterStaff" Placeholder="Search staff..." Style="width: 100%;" />
-            <RadzenListBox Titem="Staff" Data="filteredStaffList" @bind-Value="selectedStaff" TextProperty="StaffFullName" />
+        <RadzenCard Class="shadow-2xl p-4 bg-white rounded-2xl">
+            <h4 class="text-2xl font-extrabold text-indigo-600">Staff List</h4>
+            <RadzenTextBox Value="@searchQuery" @onchange="FilterStaff" Placeholder="Search staff..." Class="w-full border border-gray-300 rounded-lg p-2" />
+            <RadzenListBox TItem="Staff" Data="filteredStaffList" @bind-Value="selectedStaff" TextProperty="StaffFullName" Class="w-full rounded-lg border-gray-200" />
         </RadzenCard>
     </RadzenColumn>
 
     <!-- Staff Details and Payment Panel -->
     <RadzenColumn Size="8">
-        <RadzenCard Class="shadow-lg p-4 bg-white rounded-lg">
+        <RadzenCard Class="shadow-2xl p-6 bg-white rounded-2xl">
             <RadzenDropDown @bind-Value="selectedCategoryId" Data="@paymentCategories"
             TextProperty="CategoryName" ValueProperty="CategoryID"
-            Style="width: 100%;" Placeholder="Select Payment Category" />
+            Class="w-full border-gray-300 rounded-lg p-2" Placeholder="Select Payment Category" />
 
-            <RadzenButton Text="Automatic Payment" Click="ProcessAutomaticPayment" Icon="credit_card"
-            Style="background-color: blue; color: white; width: 100%;" />
-            <RadzenButton Text="Manual Payment" Icon="money"
-            Click="HandleManualPayment"
-            Style="background-color: green; color: white; width: 100%;" />
+            <RadzenFlexRow Class="mt-4 space-x-4">
+                <RadzenButton Text="Automatic Payment" Click="ProcessAutomaticPayment" Icon="credit_card"
+                Class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-2 px-4 rounded-lg w-1/2" />
+                <RadzenButton Text="Manual Payment" Icon="money"
+                Click="HandleManualPayment"
+                Class="bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold py-2 px-4 rounded-lg w-1/2" />
+            </RadzenFlexRow>
 
             @if (selectedStaff != null)
             {
-
-
                 <!-- Staff Details -->
-                <RadzenRow>
+                <RadzenRow Class="mt-6">
                     <RadzenColumn Size="3">
-                        <RadzenImage Path="@GetStaffImage()" Width="100px" Height="100px" Style="border-radius: 50%;" />
+                        <RadzenImage Path="@GetStaffImage()" Width="100px" Height="100px" Class="rounded-full border-4 border-gray-300 shadow-md" />
                     </RadzenColumn>
                     <RadzenColumn Size="9">
-                        <h3 class="text-xl font-bold">@selectedStaff.StaffFirstName @selectedStaff.StaffLastName</h3>
-                        <p><strong>Department:</strong> @selectedStaff.Department</p>
-                        <p><strong>Position:</strong> @selectedStaff.Position</p>
+                        <h3 class="text-2xl font-bold text-gray-700">@selectedStaff.StaffFirstName @selectedStaff.StaffLastName</h3>
+                        <p class="text-gray-600"><strong>Department:</strong> @selectedStaff.Department</p>
+                        <p class="text-gray-600"><strong>Position:</strong> @selectedStaff.Position</p>
                         <p><strong>Status:</strong> 
-                            <span class="@(selectedStaff.EmploymentStatus == "Active" ? "text-green-600" : "text-red-600")">
+                            <span class="@(selectedStaff.EmploymentStatus == "Active" ? "text-green-600" : "text-red-600") font-semibold">
                                 @selectedStaff.EmploymentStatus
                             </span>
                         </p>
                     </RadzenColumn>
                 </RadzenRow>
 
-                <RadzenDivider />
+                <RadzenDivider Class="my-6" />
 
                 <!-- Salary Payment Section -->
-                <h4 class="text-lg font-bold text-blue-600">Process Salary Payment</h4>
-                <RadzenRow>
-                    <RadzenColumn Size="6">
-                        <RadzenStack>
-                            <RadzenLabel Text="Bank Name" />
-                            <RadzenTextBox @bind-Value="selectedStaff.BankName" Disabled="false" Style="width: 100%;" />
-                        </RadzenStack>
-                        <RadzenStack>
-                            <RadzenLabel Text="Account Name" />
-                            <RadzenTextBox @bind-Value="selectedStaff.AccountName" Disabled="false" Style="width: 100%;" />
-                        </RadzenStack>
-                        <RadzenStack>
-                            <RadzenLabel Text="Account Number" />
-                            <RadzenTextBox @bind-Value="selectedStaff.AccountNumber" Disabled="false" Style="width: 100%;" />
-                        </RadzenStack>
-                    </RadzenColumn>
+           <h4 class="text-2xl font-bold text-indigo-600 mb-4">Process Salary Payment</h4>
 
-                    <RadzenColumn Size="6">
-                        <RadzenStack>
-                            <RadzenLabel Text="Salary ($)" />
-                            <RadzenNumeric @bind-Value="selectedStaff.Salary" Disabled="false" Style="width: 100%;" />
-                        </RadzenStack>
-                        <RadzenStack>
-                            <RadzenLabel Text="Overtime ($)" />
-                            <RadzenNumeric @bind-Value="selectedStaff.OverTime" Disabled="false" Style="width: 100%;" />
-                        </RadzenStack>
-                        <RadzenStack>
-                            <RadzenLabel Text="Tax Deduction ($)" />
-                            <RadzenNumeric @bind-Value="selectedStaff.TaxMoney" Disabled="false" Style="width: 100%;" />
-                        </RadzenStack>
-                    </RadzenColumn>
-                </RadzenRow>
+<RadzenCard Class="p-6 shadow-lg rounded-lg border border-gray-200">
+    <RadzenRow>
+        <!-- Left Column: Bank Details -->
+        <RadzenColumn Size="6">
+            <RadzenFieldset Text="Bank Details" Class="border-gray-300 rounded-lg p-4">
+                <RadzenLabel Text="Bank Name" Class="font-semibold text-gray-700 mb-1" />
+                <RadzenTextBox @bind-Value="selectedStaff.BankName" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
 
-                <!-- Month and Year Selection -->
-                <RadzenRow>
-                    <RadzenColumn Size="6">
-                        <RadzenStack>
-                            <RadzenLabel Text="Salary For Month" />
-                            <RadzenDropDown @bind-Value="selectedMonth" Data="@months" Style="width: 100%;" />
-                        </RadzenStack>
-                    </RadzenColumn>
-                    <RadzenColumn Size="6">
-                        <RadzenStack>
-                            <RadzenLabel Text="Payment Year" />
-                            <RadzenDropDown @bind-Value="selectedYear" Data="@years" Style="width: 100%;" />
-                        </RadzenStack>
-                    </RadzenColumn>
-                </RadzenRow>
+                <RadzenLabel Text="Account Name" Class="font-semibold text-gray-700 mb-1" />
+                <RadzenTextBox @bind-Value="selectedStaff.AccountName" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
 
-                <!-- Submit Button -->
-                <RadzenButton Text="@buttonText" Icon="credit_card" Click="HandleButtonClick"
-                Style="@buttonStyle" />
+                <RadzenLabel Text="Account Number" Class="font-semibold text-gray-700 mb-1" />
+                <RadzenTextBox @bind-Value="selectedStaff.AccountNumber" Class="w-full border-gray-300 rounded-lg p-2" />
+            </RadzenFieldset>
+        </RadzenColumn>
 
-                <RadzenDivider />
+        <!-- Right Column: Salary Details -->
+        <RadzenColumn Size="6">
+            <RadzenFieldset Text="Salary Details" Class="border-gray-300 rounded-lg p-4">
+                <RadzenLabel Text="Salary ($)" Class="font-semibold text-gray-700 mb-1" />
+                <RadzenNumeric @bind-Value="selectedStaff.Salary" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
+
+                <RadzenLabel Text="Overtime ($)" Class="font-semibold text-gray-700 mb-1" />
+                <RadzenNumeric @bind-Value="selectedStaff.OverTime" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
+
+                <RadzenLabel Text="Tax Deduction ($)" Class="font-semibold text-gray-700 mb-1" />
+                <RadzenNumeric @bind-Value="selectedStaff.TaxMoney" Class="w-full border-gray-300 rounded-lg p-2" />
+            </RadzenFieldset>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenDivider Class="my-6" />
+
+    <!-- Month & Year Selection -->
+    <RadzenFieldset Text="Payment Period" Class="border-gray-300 rounded-lg p-4">
+        <RadzenFlexRow Class="space-x-4">
+            <RadzenDropDown @bind-Value="selectedMonth" Data="@months" Placeholder="Select Month" Class="w-1/2 border-gray-300 rounded-lg p-2" />
+            <RadzenDropDown @bind-Value="selectedYear" Data="@years" Placeholder="Select Year" Class="w-1/2 border-gray-300 rounded-lg p-2" />
+        </RadzenFlexRow>
+    </RadzenFieldset>
+
+    <RadzenFlexRow Class="justify-end mt-6 space-x-4">
+        <RadzenButton Text="Cancel" Click="ResetFields" Class="bg-gray-400 text-white px-4 py-2 rounded-lg" ButtonStyle="ButtonStyle.Danger"/>
+                        <RadzenButton Text="@buttonText" Icon="credit_card" Click="HandleButtonClick" ButtonStyle="ButtonStyle.Light"
+                                      Class="mt-4 bg-gradient-to-r from-red-500 to-pink-600 text-white font-bold py-2 px-4 rounded-lg w-full" />
+    </RadzenFlexRow>
+</RadzenCard>             
+
+                <RadzenDivider Class="my-6" />
 
                 <!-- Payment History -->
-                <h4 class="text-lg font-bold text-blue-600">Payment History</h4>
-                <RadzenGrid Data="paymentHistory" TItem="PaymentRecord">
+                <h4 class="text-2xl font-bold text-indigo-600">Payment History</h4>
+                <RadzenGrid Data="paymentHistory" TItem="PaymentRecord" Class="rounded-lg shadow-lg border border-gray-200">
                     <Columns>
                         <RadzenGridColumn TItem="PaymentRecord" Property="PayedOn" Title="Date" />
                         <RadzenGridColumn TItem="PaymentRecord" Property="SalaryFor" Title="Month" />
@@ -122,16 +119,15 @@
             }
             else
             {
-                <p class="text-center text-gray-500">Select a staff member to view details.</p>
+                <p class="text-center text-gray-500 font-medium">Select a staff member to view details.</p>
             }
         </RadzenCard>
     </RadzenColumn>
 </RadzenRow>
 
 
+
 @code {
-
-
 
     private List<Staff> staffList = new();
     private List<Staff> filteredStaffList = new();
@@ -183,6 +179,14 @@
         {
             await DialogService.Alert("Payment failed. Please try again.", "Error");
         }
+    }
+
+    private void ResetFields()
+    {
+        selectedStaff = null;
+        selectedCategoryId = 0;
+        selectedMonth = DateTime.Now.Month;
+        selectedYear = DateTime.Now.Year;
     }
 
 
