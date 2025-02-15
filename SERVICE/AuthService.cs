@@ -2958,77 +2958,113 @@ namespace CORE.SERVICE
 
         public async Task<List<Staff>> GetStaffByCategoryAsync(int categoryId)
         {
-            using var connection = new SqlConnection(connectionString);
-            string query = "SELECT * FROM SchoolManagement.Staff WHERE CategoryID = @CategoryID";
-            return (await connection.QueryAsync<Staff>(query, new { CategoryID = categoryId })).ToList();
+            try
+            {
+
+                using var connection = new SqlConnection(connectionString);
+                string query = "SELECT * FROM SchoolManagement.Staff WHERE CategoryID = @CategoryID";
+                return (await connection.QueryAsync<Staff>(query, new { CategoryID = categoryId })).ToList();
+            }
+            catch(Exception ex)
+            {
+                // Log the error (consider using a logging framework like Serilog)
+                Console.WriteLine($"Error fetching staff by category: {ex.Message}");
+                return new List<Staff>();
+            }
         }
 
         public async Task<bool> ProcessAutomaticPaymentAsync(int categoryId, string bankName, string accountName, string accountNumber)
         {
-            using var connection = new SqlConnection(connectionString);
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
 
-            // Get staff under the selected category
-            string staffQuery = "SELECT StaffID, CategoryID FROM SchoolManagement.Staff WHERE CategoryID = @CategoryID";
-            var staffList = await connection.QueryAsync<Staff>(staffQuery, new { CategoryID = categoryId });
+                // Get staff under the selected category
+                string staffQuery = "SELECT StaffID, CategoryID FROM SchoolManagement.Staff WHERE CategoryID = @CategoryID";
+                var staffList = await connection.QueryAsync<Staff>(staffQuery, new { CategoryID = categoryId });
 
-            // Get payment amount for this category
-            string salaryQuery = "SELECT Amount FROM SchoolManagement.PaymentCategory WHERE CategoryID = @CategoryID";
-            decimal salaryAmount = await connection.ExecuteScalarAsync<decimal>(salaryQuery, new { CategoryID = categoryId });
+                // Get payment amount for this category
+                string salaryQuery = "SELECT Amount FROM SchoolManagement.PaymentCategory WHERE CategoryID = @CategoryID";
+                decimal salaryAmount = await connection.ExecuteScalarAsync<decimal>(salaryQuery, new { CategoryID = categoryId });
 
-            // Insert payment for each staff member
-            string insertQuery = @"
+                // Insert payment for each staff member
+                string insertQuery = @"
         INSERT INTO SchoolManagement.SalaryPayments (StaffID, CategoryID, PayedOn, SalaryFor, PaymentYear, Amount)
         VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount)";
 
-            int rowsAffected = 0;
-            foreach (var staff in staffList)
-            {
-                rowsAffected += await connection.ExecuteAsync(insertQuery, new
+                int rowsAffected = 0;
+                foreach (var staff in staffList)
                 {
-                    StaffID = staff.StaffID,
-                    CategoryID = categoryId,
-                    SalaryFor = DateTime.Now.Month,
-                    PaymentYear = DateTime.Now.Year,
-                    Amount = salaryAmount
-                });
-            }
+                    rowsAffected += await connection.ExecuteAsync(insertQuery, new
+                    {
+                        StaffID = staff.StaffID,
+                        CategoryID = categoryId,
+                        SalaryFor = DateTime.Now.Month,
+                        PaymentYear = DateTime.Now.Year,
+                        Amount = salaryAmount
+                    });
+                }
 
-            return rowsAffected > 0;
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                // Log the error (consider using a logging framework like Serilog)
+                Console.WriteLine($"Error processing automatic payment: {ex.Message}");
+                return false;
+            }
         }
 
         public async Task<bool> ProcessManualPaymentAsync(int staffId, decimal amount, DateTime payDate, int month, int year)
         {
-            using var connection = new SqlConnection(connectionString);
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
 
-            string query = @"
+                string query = @"
         INSERT INTO SchoolManagement.SalaryPayments (StaffID, PayedOn, SalaryFor, PaymentYear, Amount)
         VALUES (@StaffID, @PayedOn, @SalaryFor, @PaymentYear, @Amount)";
 
-            int rowsAffected = await connection.ExecuteAsync(query, new
-            {
-                StaffID = staffId,
-                PayedOn = payDate,
-                SalaryFor = month,
-                PaymentYear = year,
-                Amount = amount
-            });
+                int rowsAffected = await connection.ExecuteAsync(query, new
+                {
+                    StaffID = staffId,
+                    PayedOn = payDate,
+                    SalaryFor = month,
+                    PaymentYear = year,
+                    Amount = amount
+                });
 
-            return rowsAffected > 0;
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                // Log the error (consider using a logging framework like Serilog)
+                Console.WriteLine($"Error processing manual payment: {ex.Message}");
+                return false;
+            }
         }
         public async Task<bool> InsertSalaryPaymentAsync(object paymentData)
         {
-            var query = @"
-        INSERT INTO SchoolManagement.SalaryPayments 
-        (StaffID, CategoryID, SalaryFor, PaymentYear, Amount, OverTime, TaxDeduction, BankName, AccountName, AccountNumber) 
-        VALUES 
-        (@StaffID, @CategoryID, @SalaryFor, @PaymentYear, @Amount, @OverTime, @TaxDeduction, @BankName, @AccountName, @AccountNumber)";
-
-            using (var connection = new SqlConnection(connectionString))
+            try
             {
-                var result = await connection.ExecuteAsync(query, paymentData);
-                return result > 0;
+                var query = @"
+               INSERT INTO SchoolManagement.SalaryPayments 
+                (StaffID, CategoryID, SalaryFor, PaymentYear, Amount, OverTime, TaxDeduction, BankName, AccountName, AccountNumber) 
+                      VALUES 
+                       (@StaffID, @CategoryID, @SalaryFor, @PaymentYear, @Amount, @OverTime, @TaxDeduction, @BankName, @AccountName, @AccountNumber)";
+
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    var result = await connection.ExecuteAsync(query, paymentData);
+                    return result > 0;
+                }
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error inserting salary payment: {ex.Message}");
+                return false;
             }
         }
-
     }
 }
