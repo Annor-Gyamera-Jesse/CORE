@@ -8,6 +8,7 @@ using static CORE.MODEL.Teachers_Time_Table;
 using static CORE.Pages.COURSES.View_Teacher_Subject_Assign_ByID;
 using System.Data;
 using System.Data.Common;
+using CORE.MODEL.Expenses;
 
 namespace CORE.SERVICE
 {
@@ -3064,6 +3065,230 @@ namespace CORE.SERVICE
             {
                 Console.WriteLine($"Error inserting salary payment: {ex.Message}");
                 return false;
+            }
+        }
+
+        /*EXPENSES*/
+        // Get Expense Categories for the logged-in user
+        public async Task<List<ExpenseCategory>> GetExpenseCategoriesAsync(int userId)
+        {
+            var categories = new List<ExpenseCategory>();
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("SELECT * FROM SchoolManagement.ExpenseCategories WHERE UserID = @UserID", connection);
+                command.Parameters.AddWithValue("@UserID", userId);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        categories.Add(new ExpenseCategory
+                        {
+                            CategoryID = reader.GetInt32(0),
+                            CategoryName = reader.GetString(1),
+                            Description = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            UserID = reader.GetInt32(3)
+                        });
+                    }
+                }
+            }
+
+            return categories;
+        }
+
+        // Add a new Expense Category for the logged-in user
+        public async Task AddExpenseCategoryAsync(ExpenseCategory category)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("INSERT INTO SchoolManagement.ExpenseCategories (CategoryName, Description, UserID) VALUES (@CategoryName, @Description, @UserID)", connection);
+                command.Parameters.AddWithValue("@CategoryName", category.CategoryName);
+                command.Parameters.AddWithValue("@Description", (object)category.Description ?? DBNull.Value);
+                command.Parameters.AddWithValue("@UserID", category.UserID);
+
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        // Get Expenses for the logged-in user
+        public async Task<List<Expense>> GetExpensesAsync(int userId)
+        {
+            var expenses = new List<Expense>();
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("SELECT * FROM SchoolManagement.Expenses WHERE UserID = @UserID", connection);
+                command.Parameters.AddWithValue("@UserID", userId);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        expenses.Add(new Expense
+                        {
+                            ExpenseID = reader.GetInt32(0),
+                            UserID = reader.GetInt32(1),
+                            CategoryID = reader.GetInt32(2),
+                            Amount = reader.GetDecimal(3),
+                            ExpenseDate = reader.GetDateTime(4),
+                            Description = reader.IsDBNull(5) ? null : reader.GetString(5)
+                        });
+                    }
+                }
+            }
+
+            return expenses;
+        }
+
+        // Add a new Expense for the logged-in user
+        public async Task AddExpenseAsync(Expense expense)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("INSERT INTO SchoolManagement.Expenses (UserID, CategoryID, Amount, ExpenseDate, Description) VALUES (@UserID, @CategoryID, @Amount, @ExpenseDate, @Description)", connection);
+                command.Parameters.AddWithValue("@UserID", expense.UserID);
+                command.Parameters.AddWithValue("@CategoryID", expense.CategoryID);
+                command.Parameters.AddWithValue("@Amount", expense.Amount);
+                command.Parameters.AddWithValue("@ExpenseDate", expense.ExpenseDate);
+                command.Parameters.AddWithValue("@Description", (object)expense.Description ?? DBNull.Value);
+
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        // Get Payment Methods for the logged-in user
+        public async Task<List<PaymentMethods>> GetPaymentMethodsAsync(int userId)
+        {
+            var methods = new List<PaymentMethods>();
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("SELECT * FROM SchoolManagement.PaymentMethods WHERE UserID = @UserID", connection);
+                command.Parameters.AddWithValue("@UserID", userId);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        methods.Add(new PaymentMethods
+                        {
+                            PaymentMethodID = reader.GetInt32(0),
+                            MethodName = reader.GetString(1),
+                            Description = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            UserID = reader.GetInt32(3)
+                        });
+                    }
+                }
+            }
+
+            return methods;
+        }
+
+        // Add a new Payment Method for the logged-in user
+        public async Task AddPaymentMethodAsync(PaymentMethods method)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("INSERT INTO SchoolManagement.PaymentMethods (MethodName, Description, UserID) VALUES (@MethodName, @Description, @UserID)", connection);
+                command.Parameters.AddWithValue("@MethodName", method.MethodName);
+                command.Parameters.AddWithValue("@Description", (object)method.Description ?? DBNull.Value);
+                command.Parameters.AddWithValue("@UserID", method.UserID);
+
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        // Add a new Expense Payment for the logged-in user
+        public async Task AddExpensePaymentAsync(ExpensePayment payment)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("INSERT INTO SchoolManagement.ExpensePayments (ExpenseID, PaymentMethodID, PaymentDate, AmountPaid) VALUES (@ExpenseID, @PaymentMethodID, @PaymentDate, @AmountPaid)", connection);
+                command.Parameters.AddWithValue("@ExpenseID", payment.ExpenseID);
+                command.Parameters.AddWithValue("@PaymentMethodID", payment.PaymentMethodID);
+                command.Parameters.AddWithValue("@PaymentDate", payment.PaymentDate);
+                command.Parameters.AddWithValue("@AmountPaid", payment.AmountPaid);
+
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+        // Get all categories for the logged-in user
+        public async Task<List<ExpenseCategory>> GetExpensesCategoriesAsync(int userId)
+        {
+            var categories = new List<ExpenseCategory>();
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("SELECT * FROM SchoolManagement.ExpenseCategories WHERE UserID = @UserID", connection);
+                command.Parameters.AddWithValue("@UserID", userId);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        categories.Add(new ExpenseCategory
+                        {
+                            CategoryID = reader.GetInt32(0),
+                            CategoryName = reader.GetString(1),
+                            Description = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            UserID = reader.GetInt32(3)
+                        });
+                    }
+                }
+            }
+
+            return categories;
+        }
+
+        // Add a new category
+        public async Task AddExpensesCategoryAsync(ExpenseCategory category)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("INSERT INTO SchoolManagement.ExpenseCategories (CategoryName, Description, UserID) VALUES (@CategoryName, @Description, @UserID)", connection);
+                command.Parameters.AddWithValue("@CategoryName", category.CategoryName);
+                command.Parameters.AddWithValue("@Description", (object)category.Description ?? DBNull.Value);
+                command.Parameters.AddWithValue("@UserID", category.UserID);
+
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        // Update an existing category
+        public async Task UpdateExpenseCategoryAsync(ExpenseCategory category)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("UPDATE SchoolManagement.ExpenseCategories SET CategoryName = @CategoryName, Description = @Description WHERE CategoryID = @CategoryID", connection);
+                command.Parameters.AddWithValue("@CategoryName", category.CategoryName);
+                command.Parameters.AddWithValue("@Description", (object)category.Description ?? DBNull.Value);
+                command.Parameters.AddWithValue("@CategoryID", category.CategoryID);
+
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        // Delete a category
+        public async Task DeleteExpenseCategoryAsync(int categoryId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("DELETE FROM SchoolManagement.ExpenseCategories WHERE CategoryID = @CategoryID", connection);
+                command.Parameters.AddWithValue("@CategoryID", categoryId);
+
+                await command.ExecuteNonQueryAsync();
             }
         }
     }
