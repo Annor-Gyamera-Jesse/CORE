@@ -1,0 +1,168 @@
+﻿@page "/manage-payment-methods"
+@using CORE.MODEL
+@using CORE.MODEL.Expenses
+@using CORE.SERVICE
+@inject AuthService PaymentMethodService
+@inject IJSRuntime JSRuntime
+@inject NotificationMessageService Notify
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using Radzen.Blazor
+
+<RadzenNotification />
+
+<style>
+    .header {
+        margin-bottom: 20px;
+        text-align: center;
+        background-color: #4A90E2;
+        color: white;
+        padding: 20px 0;
+        border-radius: 8px;
+    }
+
+    .form-container {
+        margin: 20px 0;
+    }
+
+    .card {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .table-container {
+        margin-top: 20px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+    }
+</style>
+
+<div class="container">
+    <div class="row header">
+        <div class="col-md-12">
+            <h1>Manage Payment Methods</h1>
+        </div>
+    </div>
+
+    <div class="row form-container">
+        <div class="col-md-6">
+            <div class="card">
+                <h4>Add/Edit Payment Method</h4>
+                <RadzenFieldset>
+                    <RadzenTextBox @bind-Value="currentPaymentMethod.MethodName" Placeholder="Method Name" Style="width: 100%;" />
+                    <RadzenTextBox @bind-Value="currentPaymentMethod.Description" Placeholder="Description" Style="width: 100%;" />
+                    <RadzenButton Text="Save Payment Method" Click="@OnSavePaymentMethod" Style="margin-top: 10px;" />
+                </RadzenFieldset>
+            </div>
+        </div>
+    </div>
+
+    <div class="row table-container">
+        <div class="col-md-12">
+            <div class="card">
+                <RadzenGrid Data="@paymentMethods" TItem="PaymentMethods" AllowPaging="true" PageSize="10">
+                    <Columns>
+                        <RadzenGridColumn TItem="PaymentMethods" Property="MethodName" Title="Method Name" />
+                        <RadzenGridColumn TItem="PaymentMethods" Property="Description" Title="Description" />
+                        <RadzenGridColumn TItem="PaymentMethods" Title="Actions">
+                            <Template Context="method">
+                                <div class="action-buttons">
+                                    <RadzenButton Icon="edit" IconOnly="true" Click="@(args => OnEditPaymentMethod(method))" Style="margin-right: 5px;" />
+                                    <RadzenButton Icon="delete" IconOnly="true" Click="@(args => OnDeletePaymentMethod(method))" />
+                                </div>
+                            </Template>
+                        </RadzenGridColumn>
+                    </Columns>
+                </RadzenGrid>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<PaymentMethods> paymentMethods = new List<PaymentMethods>();
+    private PaymentMethods currentPaymentMethod = new PaymentMethods();
+    private int userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var user = await PaymentMethodService.GetUserByUsernameAsync(username);
+        if (user != null)
+        {
+            userId = user.UserID;
+        }
+
+        await LoadPaymentMethods();
+    }
+
+    private async Task LoadPaymentMethods()
+    {
+        paymentMethods = await PaymentMethodService.GetPaymentMethodsAsync(userId);
+        StateHasChanged();
+    }
+
+    private async Task OnSavePaymentMethod()
+    {
+        if (string.IsNullOrWhiteSpace(currentPaymentMethod.MethodName))
+        {
+            Notify.ShowNotification("Error", "Method Name is required.", NotificationSeverity.Error);
+            return;
+        }
+
+        // Ensure the UserID is set
+        var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var user = await PaymentMethodService.GetUserByUsernameAsync(username);
+        if (user != null)
+        {
+            currentPaymentMethod.UserID = user.UserID;
+            Console.WriteLine($"UserID: {currentPaymentMethod.UserID}"); // Debugging
+        }
+        else
+        {
+            Notify.ShowNotification("Error", "User not found.", NotificationSeverity.Error);
+            return;
+        }
+
+        if (currentPaymentMethod.PaymentMethodID == 0)
+        {
+            await PaymentMethodService.AddsPaymentMethodAsync(currentPaymentMethod);
+            Notify.ShowNotification("Success", "Payment Method added successfully.", NotificationSeverity.Success);
+        }
+        else
+        {
+            await PaymentMethodService.UpdatePaymentMethodAsync(currentPaymentMethod);
+            Notify.ShowNotification("Success", "Payment Method updated successfully.", NotificationSeverity.Success);
+        }
+
+        await LoadPaymentMethods();
+        currentPaymentMethod = new PaymentMethods();
+    }
+
+    private void OnEditPaymentMethod(PaymentMethods method)
+    {
+        currentPaymentMethod = new PaymentMethods
+            {
+                PaymentMethodID = method.PaymentMethodID,
+                MethodName = method.MethodName,
+                Description = method.Description,
+                UserID = method.UserID
+            };
+        StateHasChanged();
+    }
+
+    private async Task OnDeletePaymentMethod(PaymentMethods method)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this payment method?");
+        if (confirmed)
+        {
+            await PaymentMethodService.DeletePaymentMethodAsync(method.PaymentMethodID);
+            Notify.ShowNotification("Success", "Payment Method deleted successfully.", NotificationSeverity.Success);
+            await LoadPaymentMethods();
+        }
+    }
+}

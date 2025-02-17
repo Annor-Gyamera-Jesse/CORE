@@ -3211,15 +3211,20 @@ namespace CORE.SERVICE
             using (var connection = new SqlConnection(connectionString))
             {
                 await connection.OpenAsync();
-                var command = new SqlCommand("INSERT INTO SchoolManagement.ExpensePayments (ExpenseID, PaymentMethodID, PaymentDate, AmountPaid) VALUES (@ExpenseID, @PaymentMethodID, @PaymentDate, @AmountPaid)", connection);
+                var command = new SqlCommand("INSERT INTO SchoolManagement.ExpensePayments (ExpenseID, PaymentMethodID, PaymentDate, AmountPaid, UserID) VALUES (@ExpenseID, @PaymentMethodID, @PaymentDate, @AmountPaid, @UserID)", connection);
                 command.Parameters.AddWithValue("@ExpenseID", payment.ExpenseID);
                 command.Parameters.AddWithValue("@PaymentMethodID", payment.PaymentMethodID);
                 command.Parameters.AddWithValue("@PaymentDate", payment.PaymentDate);
                 command.Parameters.AddWithValue("@AmountPaid", payment.AmountPaid);
+                command.Parameters.AddWithValue("@UserID", payment.UserID);
+
+                Console.WriteLine($"Executing SQL: {command.CommandText}"); // Debugging
+                Console.WriteLine($"Parameters: ExpenseID={payment.ExpenseID}, PaymentMethodID={payment.PaymentMethodID}, PaymentDate={payment.PaymentDate}, AmountPaid={payment.AmountPaid}, UserID={payment.UserID}"); // Debugging
 
                 await command.ExecuteNonQueryAsync();
             }
         }
+
         // Get all categories for the logged-in user
         public async Task<List<ExpenseCategory>> GetExpensesCategoriesAsync(int userId)
         {
@@ -3287,6 +3292,77 @@ namespace CORE.SERVICE
                 await connection.OpenAsync();
                 var command = new SqlCommand("DELETE FROM SchoolManagement.ExpenseCategories WHERE CategoryID = @CategoryID", connection);
                 command.Parameters.AddWithValue("@CategoryID", categoryId);
+
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        public async Task<List<PaymentMethods>> GetsPaymentMethodsAsync(int userId)
+        {
+            var methods = new List<PaymentMethods>();
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("SELECT * FROM SchoolManagement.PaymentMethods WHERE UserID = @UserID", connection);
+                command.Parameters.AddWithValue("@UserID", userId);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        methods.Add(new PaymentMethods
+                        {
+                            PaymentMethodID = reader.GetInt32(0),
+                            MethodName = reader.GetString(1),
+                            Description = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            UserID = reader.GetInt32(3)
+                        });
+                    }
+                }
+            }
+
+            return methods;
+        }
+
+        // Add a new payment method
+        public async Task AddsPaymentMethodAsync(PaymentMethods method)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("INSERT INTO SchoolManagement.PaymentMethods (MethodName, Description, UserID) VALUES (@MethodName, @Description, @UserID)", connection);
+                command.Parameters.AddWithValue("@MethodName", method.MethodName);
+                command.Parameters.AddWithValue("@Description", (object)method.Description ?? DBNull.Value);
+                command.Parameters.AddWithValue("@UserID", method.UserID);
+
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        // Update an existing payment method
+        public async Task UpdatePaymentMethodAsync(PaymentMethods method)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("UPDATE SchoolManagement.PaymentMethods SET MethodName = @MethodName, Description = @Description WHERE PaymentMethodID = @PaymentMethodID", connection);
+                command.Parameters.AddWithValue("@MethodName", method.MethodName);
+                command.Parameters.AddWithValue("@Description", (object)method.Description ?? DBNull.Value);
+                command.Parameters.AddWithValue("@PaymentMethodID", method.PaymentMethodID);
+
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        // Delete a payment method
+        public async Task DeletePaymentMethodAsync(int paymentMethodId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var command = new SqlCommand("DELETE FROM SchoolManagement.PaymentMethods WHERE PaymentMethodID = @PaymentMethodID", connection);
+                command.Parameters.AddWithValue("@PaymentMethodID", paymentMethodId);
 
                 await command.ExecuteNonQueryAsync();
             }

@@ -55,7 +55,7 @@
 
 <RadzenHeader title="Process Expenses" class="header-container compact-header">
     <RadzenFieldset Text="Manage Category" class="right-align">
-        <Expenses_Tool_Componet OnEditCategoriesDialog="OnOnEditCategoriesDialogClick" />
+        <Expenses_Tool_Componet OnEditCategoriesDialog="OnEditCategoriesDialogClick" OnManagePaymentMethodsDialog="OnManagePaymentMethodsDialogCLick" />
     </RadzenFieldset>
 </RadzenHeader>
 
@@ -146,11 +146,26 @@
             return;
         }
 
+        // Ensure the UserID is set
+        var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var user = await ExpenseService.GetUserByUsernameAsync(username);
+        if (user != null)
+        {
+            newPayment.UserID = user.UserID;
+            Console.WriteLine($"UserID set to: {newPayment.UserID}"); // Debugging
+        }
+        else
+        {
+            Notify.ShowNotification("Error", "User not found.", NotificationSeverity.Error);
+            return;
+        }
+
         await ExpenseService.AddExpensePaymentAsync(newPayment);
         newPayment = new ExpensePayment { PaymentDate = DateTime.Now };
         newPaymentAmountPaid = string.Empty;
         Notify.ShowNotification("Success", "Payment recorded successfully.", NotificationSeverity.Success);
     }
 
-    async void OnOnEditCategoriesDialogClick() => await OpenPaymentDialog();
+    async void OnEditCategoriesDialogClick() => await OnEditCategories();
+    async void OnManagePaymentMethodsDialogCLick() => await OnManagePaymentMethods();
 }

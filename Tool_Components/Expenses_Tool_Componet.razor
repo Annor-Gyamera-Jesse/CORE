@@ -14,11 +14,15 @@
 @if (!isLoading)
 {
     <div class="row mt-2">
-        <RadzenButton Text="Edit Categories" Icon="edit" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnEditCategoriesDialog />
+        <RadzenButton Text="Edit Categories" Icon="edit" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnEditCategoriesDialog />        
+    </div>
+    <div class="row mt-2">        
+        <RadzenButton Text="Edit PaymentMethod" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnManagePaymentMethodsDialog />
     </div>
 }
 @code {
     private bool isLoading = false;
-    [Parameter] public Action OnEditCategoriesDialog { get; set; }
+    [Parameter] public Action OnEditCategoriesDialog { get; set; } 
+    [Parameter] public Action OnManagePaymentMethodsDialog { get; set; }
 
 }
