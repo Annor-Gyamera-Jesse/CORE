@@ -211,7 +211,7 @@
     private List<Student> Students = new List<Student>();
     private List<Student> FilteredStudents = new List<Student>();
     private List<FeeType> FeeTypes = new List<FeeType>();
-    private List<string> PaymentMethods = new List<string> { "CASH", "BANK", "ONLINE", "MOMO" };
+    private List<string> PaymentMethods = new List<string>();
     private decimal TotalAmount { get; set; }
     private decimal OutstandingBalance { get; set; }
 
@@ -226,6 +226,8 @@
         {
             // Fetch classes
             Classes = await StudentService.GetsAllClassesAsync();
+
+            PaymentMethods = await StudentService.GetPaymentMethodsAsync();
 
             // Existing initialization logic
             var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
@@ -340,6 +342,7 @@
                     AmountPaid = AmountPaid,
                     AmountLeft = TotalAmountLeft - AmountPaid,
                     PaymentDate = PaymentDate,
+                    PaymentMethod = PaymentMethod,
                     Note = Note,
                     UserID = userId
                 };

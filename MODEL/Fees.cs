@@ -30,6 +30,7 @@
         public DateTime DueDate { get; set; }
         public string Note { get; set; }
         public int UserID { get; set; }
+        public string PaymentMethod { get; set; }
     }
 
     public class FeePayment

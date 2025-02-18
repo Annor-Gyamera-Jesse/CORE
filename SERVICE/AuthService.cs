@@ -2666,8 +2666,8 @@ namespace CORE.SERVICE
                 Console.WriteLine("Executing query...");
                 const string query = @"
         INSERT INTO SchoolManagement.StudentFees 
-        (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID)
-        VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID)";
+        (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod)
+        VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod)";
 
                 Console.WriteLine($"Query: {query}");
                 var result = await connection.ExecuteAsync(query, studentFee);
@@ -2701,6 +2701,15 @@ namespace CORE.SERVICE
                 Console.WriteLine($"Error fetching student fee: {ex.Message}");
                 throw;
             }
+        }
+
+        public async Task<List<string>> GetPaymentMethodsAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = "SELECT MethodName FROM SchoolManagement.PaymentMethods";
+
+            var paymentMethods = await connection.QueryAsync<string>(query);
+            return paymentMethods.AsList();
         }
 
         // Method to fetch all classes
