@@ -30,6 +30,9 @@
                 <RadzenButton Text="Manual Payment" Icon="money"
                 Click="HandleManualPayment"
                 Class="bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold py-2 px-4 rounded-lg w-1/2" />
+                <RadzenDropDown @bind-Value="selectedPaymentMethod" Data="@paymentMethods"
+                                Placeholder="Select Payment Method"
+                                Class="w-1/3 border-gray-300 rounded-lg p-2" />
             </RadzenFlexRow>
 
             @if (selectedStaff != null)
@@ -144,6 +147,8 @@
     private List<PaymentCategory> paymentCategories = new();    
     private int selectedCategoryId;
     private Dictionary<int, decimal> manualPaymentAmounts = new();
+    private List<string> paymentMethods = new();
+    private string selectedPaymentMethod;
 
     private async Task HandleManualPayment()
     {
@@ -196,6 +201,7 @@
         {
             paymentCategories = await HrService.GetPaymentCategoriesAsync();
             staffList = (await HrService.GetAllStaffAsync()).ToList();
+            paymentMethods = await HrService.GetPaymentMethodsAsync();
             filteredStaffList = staffList;
         }
         catch (Exception ex)
@@ -330,7 +336,7 @@
 
     private async Task ProcessAutomaticPayment()
     {
-        bool success = await HrService.ProcessAutomaticPaymentAsync(selectedCategoryId, "Bank Name", "Account Name", "12345678");
+        bool success = await HrService.ProcessAutomaticPaymentAsync(selectedCategoryId, "Bank Name", "Account Name", "12345678", selectedPaymentMethod);
         if (success)
         {
             Notify.ShowNotification("Success", "Automatic payment completed successfully!", NotificationSeverity.Success);
@@ -346,7 +352,7 @@
         if (!manualPaymentAmounts.ContainsKey(staffId)) return;
 
         decimal amount = manualPaymentAmounts[staffId];
-        bool success = await HrService.ProcessManualPaymentAsync(staffId, amount, DateTime.Now, DateTime.Now.Month, DateTime.Now.Year);
+        bool success = await HrService.ProcessManualPaymentAsync(staffId, amount, DateTime.Now, DateTime.Now.Month, DateTime.Now.Year, selectedPaymentMethod);
 
         if (success)
         {
