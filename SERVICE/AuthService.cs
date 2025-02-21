@@ -2983,7 +2983,7 @@ namespace CORE.SERVICE
             }
         }
 
-        public async Task<bool> ProcessAutomaticPaymentAsync(int categoryId, string bankName, string accountName, string accountNumber)
+        public async Task<bool> ProcessAutomaticPaymentAsync(int categoryId, string bankName, string accountName, string accountNumber, string paymentmethod)
         {
             try
             {
@@ -2999,8 +2999,8 @@ namespace CORE.SERVICE
 
                 // Insert payment for each staff member
                 string insertQuery = @"
-        INSERT INTO SchoolManagement.SalaryPayments (StaffID, CategoryID, PayedOn, SalaryFor, PaymentYear, Amount)
-        VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount)";
+INSERT INTO SchoolManagement.SalaryPayments (StaffID, CategoryID, PayedOn, SalaryFor, PaymentYear, Amount, PaymentMethod)
+VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @PaymentMethod)";
 
                 int rowsAffected = 0;
                 foreach (var staff in staffList)
@@ -3011,7 +3011,8 @@ namespace CORE.SERVICE
                         CategoryID = categoryId,
                         SalaryFor = DateTime.Now.Month,
                         PaymentYear = DateTime.Now.Year,
-                        Amount = salaryAmount
+                        Amount = salaryAmount,
+                        PaymentMethod = paymentmethod  // Include Payment Method here
                     });
                 }
 
@@ -3025,15 +3026,15 @@ namespace CORE.SERVICE
             }
         }
 
-        public async Task<bool> ProcessManualPaymentAsync(int staffId, decimal amount, DateTime payDate, int month, int year)
+        public async Task<bool> ProcessManualPaymentAsync(int staffId, decimal amount, DateTime payDate, int month, int year, string paymentmethods)
         {
             try
             {
                 using var connection = new SqlConnection(connectionString);
 
                 string query = @"
-        INSERT INTO SchoolManagement.SalaryPayments (StaffID, PayedOn, SalaryFor, PaymentYear, Amount)
-        VALUES (@StaffID, @PayedOn, @SalaryFor, @PaymentYear, @Amount)";
+        INSERT INTO SchoolManagement.SalaryPayments (StaffID, PayedOn, SalaryFor, PaymentYear, Amount, PaymentMethod)
+        VALUES (@StaffID, @PayedOn, @SalaryFor, @PaymentYear, @Amount, @PaymentMethod)";
 
                 int rowsAffected = await connection.ExecuteAsync(query, new
                 {
@@ -3041,7 +3042,8 @@ namespace CORE.SERVICE
                     PayedOn = payDate,
                     SalaryFor = month,
                     PaymentYear = year,
-                    Amount = amount
+                    Amount = amount,
+                    PaymentMethod = paymentmethods,
                 });
 
                 return rowsAffected > 0;
