@@ -9,6 +9,7 @@ using static CORE.Pages.COURSES.View_Teacher_Subject_Assign_ByID;
 using System.Data;
 using System.Data.Common;
 using CORE.MODEL.Expenses;
+using CORE.MODEL.Bank;
 
 namespace CORE.SERVICE
 {
@@ -16,10 +17,11 @@ namespace CORE.SERVICE
     public class AuthService
     {
         private readonly string connectionString;
-
+        private Timer _timer;
         public AuthService(string connectionString)
         {
             this.connectionString = connectionString;
+            StartAutoTransfer();
         }
 
         public async Task<User> GetUserByUsernameAsync(string username)
@@ -3379,6 +3381,70 @@ VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @Pa
                 command.Parameters.AddWithValue("@PaymentMethodID", paymentMethodId);
 
                 await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        //Bank
+        // Method to transfer student fees to bank
+        public async Task<bool> TransferStudentFeesToBank()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    await connection.ExecuteAsync("EXEC SchoolManagement.TransferStudentFeesToBank", commandType: CommandType.StoredProcedure);
+                    return true; // Success
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error in TransferStudentFeesToBank: " + ex.Message);
+                    return false; // Failure
+                }
+            }
+        }
+
+        // Method to fetch all bank transfers
+        public async Task<IEnumerable<BankTransfer>> GetBankTransfers()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = @"
+            SELECT 
+                MIN(BankID) AS BankID,  -- Take the first BankID
+                PaymentMethodID, 
+                BankNumber, 
+                MethodName, 
+                SUM(AmountTransferred) AS AmountTransferred,  -- Sum up amounts
+                MAX(TransferDate) AS TransferDate,  -- Keep the latest transfer date
+                MIN(SystemTransferID) AS SystemTransferID  -- Use the first SystemTransferID
+            FROM SchoolManagement.Bank
+            GROUP BY PaymentMethodID, BankNumber, MethodName";
+
+                return await connection.QueryAsync<BankTransfer>(query);
+            }
+        }
+
+        private void StartAutoTransfer()
+        {
+            _timer = new Timer(async (state) =>
+            {
+                await TransferPaymentsToBankAsync();
+            }, null, TimeSpan.Zero, TimeSpan.FromSeconds(2));
+        }
+
+        private async Task TransferPaymentsToBankAsync()
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.ExecuteAsync("EXEC SchoolManagement.TransferStudentFeesToBank");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during transfer: {ex.Message}");
             }
         }
     }
