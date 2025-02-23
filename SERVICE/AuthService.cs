@@ -3327,7 +3327,8 @@ VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @Pa
                             PaymentMethodID = reader.GetInt32(0),
                             MethodName = reader.GetString(1),
                             Description = reader.IsDBNull(2) ? null : reader.GetString(2),
-                            UserID = reader.GetInt32(3)
+                            UserID = reader.GetInt32(3),
+                            BankNumber = reader.GetString(4)
                         });
                     }
                 }
@@ -3342,10 +3343,11 @@ VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @Pa
             using (var connection = new SqlConnection(connectionString))
             {
                 await connection.OpenAsync();
-                var command = new SqlCommand("INSERT INTO SchoolManagement.PaymentMethods (MethodName, Description, UserID) VALUES (@MethodName, @Description, @UserID)", connection);
+                var command = new SqlCommand("INSERT INTO SchoolManagement.PaymentMethods (MethodName, Description, UserID, BankNumber) VALUES (@MethodName, @Description, @UserID, @BankNumber)", connection);
                 command.Parameters.AddWithValue("@MethodName", method.MethodName);
                 command.Parameters.AddWithValue("@Description", (object)method.Description ?? DBNull.Value);
                 command.Parameters.AddWithValue("@UserID", method.UserID);
+                command.Parameters.AddWithValue("@BankNumber", (object)method.BankNumber ?? DBNull.Value);
 
                 await command.ExecuteNonQueryAsync();
             }
@@ -3357,10 +3359,11 @@ VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @Pa
             using (var connection = new SqlConnection(connectionString))
             {
                 await connection.OpenAsync();
-                var command = new SqlCommand("UPDATE SchoolManagement.PaymentMethods SET MethodName = @MethodName, Description = @Description WHERE PaymentMethodID = @PaymentMethodID", connection);
+                var command = new SqlCommand("UPDATE SchoolManagement.PaymentMethods SET MethodName = @MethodName, Description = @Description, BankNumber = @BankNumber WHERE PaymentMethodID = @PaymentMethodID", connection);
                 command.Parameters.AddWithValue("@MethodName", method.MethodName);
                 command.Parameters.AddWithValue("@Description", (object)method.Description ?? DBNull.Value);
                 command.Parameters.AddWithValue("@PaymentMethodID", method.PaymentMethodID);
+                command.Parameters.AddWithValue("@BankNumber", method.BankNumber);
 
                 await command.ExecuteNonQueryAsync();
             }
