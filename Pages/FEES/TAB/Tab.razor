@@ -1,0 +1,64 @@
+﻿@page "/core/pages/fees/tab"
+@using CORE.Pages.ADMIN.Administration_Security
+@using CORE.Pages.BANK
+@using CORE.Pages.FEES.ACCOUNT_RECONCILIATION
+@using CORE.SECURITY
+@using CORE.SECURITY.LOADER
+@inject ContentLoaderTemplate LoaderTemplate
+
+<style>
+    form .row {
+        /*margin-bottom: 16px;*/
+        /* margin-top: 10px;*/
+    }
+
+    .rz-fieldset-content {
+        padding: 0;
+        /*margin-left:2em;*/
+    }
+</style>
+
+
+<div class="row">
+    <div class="col-md-10">
+        <RadzenTabs SelectedIndex="@SelectedTabPage" Change="@OnTabChange">
+            <Tabs>
+                <RadzenTabsItem Text="FEES RECONCILIATION" Icon="person" >
+                    <Account_Reconciliation_Page />
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="MY VAULT" Icon="account_balance">
+                    <Bank_Transfer />
+                </RadzenTabsItem>
+
+                @*  <RadzenTabsItem Text="ASSIGN PERMISSIONS">
+                    <CORE.Pages.ADMIN.Administration_Security.AssignPermissions />
+                </RadzenTabsItem> *@
+            </Tabs>
+        </RadzenTabs>
+
+    </div>
+</div>
+
+@code {
+    LoadTypeTrigger _loader;
+    protected LoadTypeTrigger Loader
+    {
+        get => _loader;
+        set
+        {
+            _loader = value;
+            StateHasChanged();
+        }
+    }
+
+    int SelectedTabPage = 0;
+
+    void OnTabChange(int newIndex)
+    {
+        SelectedTabPage = newIndex;
+    }
+}
+
+
+
