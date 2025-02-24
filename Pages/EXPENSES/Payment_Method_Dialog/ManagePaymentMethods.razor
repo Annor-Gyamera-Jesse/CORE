@@ -55,6 +55,7 @@
                 <RadzenFieldset>
                     <RadzenTextBox @bind-Value="currentPaymentMethod.MethodName" Placeholder="Method Name" Style="width: 100%;" />
                     <RadzenTextBox @bind-Value="currentPaymentMethod.Description" Placeholder="Description" Style="width: 100%;" />
+                    <RadzenTextBox @bind-Value="currentPaymentMethod.BankNumber" Placeholder="BANK NUMBER" Style="width: 100%;" />
                     <RadzenButton Text="Save Payment Method" Click="@OnSavePaymentMethod" Style="margin-top: 10px;" />
                 </RadzenFieldset>
             </div>
@@ -68,6 +69,7 @@
                     <Columns>
                         <RadzenGridColumn TItem="PaymentMethods" Property="MethodName" Title="Method Name" />
                         <RadzenGridColumn TItem="PaymentMethods" Property="Description" Title="Description" />
+                        <RadzenGridColumn TItem="PaymentMethods" Property="Bank Number" Title="Bank Number" />
                         <RadzenGridColumn TItem="PaymentMethods" Title="Actions">
                             <Template Context="method">
                                 <div class="action-buttons">
@@ -150,6 +152,7 @@
                 PaymentMethodID = method.PaymentMethodID,
                 MethodName = method.MethodName,
                 Description = method.Description,
+                BankNumber = method.BankNumber,
                 UserID = method.UserID
             };
         StateHasChanged();

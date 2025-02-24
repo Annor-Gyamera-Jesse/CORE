@@ -1,0 +1,130 @@
+﻿@page "/core/pages/bank/bank-transfers"
+@using CORE.MODEL.Bank
+@using CORE.SERVICE
+@inject AuthService bankService
+@inject NotificationService NotificationService
+
+<RadzenNotification />
+
+<!-- Custom Styling -->
+<style>
+    .bank-transfers-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .transfer-btn {
+        padding: 12px 20px !important;
+        font-size: 16px !important;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease-in-out;
+    }
+
+        .transfer-btn:hover {
+            transform: scale(1.05);
+            background-color: #1E8449 !important;
+        }
+
+    .amount {
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    .high-amount {
+        color: #28A745;
+    }
+
+    .low-amount {
+        color: #E74C3C;
+    }
+
+    .date-badge {
+        background-color: #2980B9;
+        color: white;
+        font-size: 13px;
+        padding: 6px 12px;
+        border-radius: 6px;
+    }
+</style>
+
+
+<!-- Stylish Card Layout -->
+<div class="bank-transfers-container">
+    <h2 class="title">
+        <RadzenIcon Icon="account_balance" Style="font-size: 32px; color: #2E86C1;" />
+        <span style="font-weight: 600; margin-left: 10px; color: #34495E;">Vault Transfers</span>
+    </h2>
+
+    <!-- Animated Transfer Button -->
+@*     <RadzenButton Text="Transfer Student Fees to Bank"
+                  Click="@TransferToBank"
+                  Icon="money"
+                  ButtonStyle="ButtonStyle.Primary"
+                  Class="transfer-btn" /> *@
+</div>
+
+<!-- Premium UI for DataGrid -->
+<RadzenCard Style="box-shadow: 0 5px 15px rgba(0,0,0,0.15); padding: 20px; border-radius: 12px;">
+    <RadzenDataGrid TItem="BankTransfer" Data="@transfers" ColumnWidth="180px"
+                    RowStyle="background-color: #fff; border-radius: 8px;"
+                    Style="border-radius: 12px;">
+
+        <Columns>
+            <RadzenDataGridColumn TItem="BankTransfer" Property="BankID" Title="ID" />
+            <RadzenDataGridColumn TItem="BankTransfer" Property="MethodName" Title="Bank Name" />
+            <RadzenDataGridColumn TItem="BankTransfer" Property="BankNumber" Title="Bank Number" />
+
+            <!-- Amount Column - Color-Coded -->
+            <RadzenDataGridColumn TItem="BankTransfer" Title="Amount">
+                <Template Context="data">
+                    <span class="amount @(data.AmountTransferred >= 50 ? "high-amount" : "low-amount")">
+                        ₵@($"{data.AmountTransferred:N2}")
+                    </span>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <!-- Date Column with Modern Badge -->
+            <RadzenDataGridColumn TItem="BankTransfer" Title="Transfer Date">
+                <Template Context="data">
+                    <RadzenBadge Text="@data.TransferDate.ToString("MMM dd, yyyy hh:mm tt")"
+                                 Class="date-badge" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="BankTransfer" Property="SystemTransferID" Title="Transfer ID" />
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+
+
+@code {
+    private List<BankTransfer> transfers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTransfers();
+    }
+
+    private async Task LoadTransfers()
+    {
+        transfers = (await bankService.GetBankTransfers()).ToList();
+    }
+
+    private async Task TransferToBank()
+    {
+        bool success = await bankService.TransferStudentFeesToBank();
+        if (success)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Success", "Student Fees Transferred to Bank!");
+            await LoadTransfers();
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Transfer Failed! Check logs.");
+        }
+    }
+}
