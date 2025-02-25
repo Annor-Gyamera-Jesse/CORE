@@ -1,5 +1,6 @@
 ﻿@page "/core/pages/fees/schoolfees"
 @using CORE.MODEL
+@using CORE.MODEL.Term
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
@@ -108,11 +109,20 @@
         <!-- Date and FeeID -->
         <RadzenFieldset Text="FEES PAYMENT" Icon="money">
             <div class="row input-group">
+                <div class="col-md-5">
+                    <RadzenLabel Text="School Term" />
+                    <RadzenDropDown @bind-Value="SelectedTermID"
+                                    Data="@Terms"
+                                    TextProperty="Term"
+                                    ValueProperty="TermID"
+                                    Style="width: 100%;"
+                                    Placeholder="Select Term" />
+                </div>
                 <div class="col-md-6">
                     <RadzenLabel Text="Payment Date" />
                     <RadzenDatePicker @bind-Value="PaymentDate" Style="width: 100%;" />
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-8">
                     <RadzenLabel Text="Outstanding Balance" />
                     <RadzenTextBox Value="@OutstandingBalance.ToString("F2")"
                                    Style="width: 100%; background-color: #ffe2e6;"
@@ -216,7 +226,8 @@
     private List<string> PaymentMethods = new List<string>();
     private decimal TotalAmount { get; set; }
     private decimal OutstandingBalance { get; set; }
-
+    private int SelectedTermID;
+    private List<SchoolTerm> Terms = new List<SchoolTerm>();
     private string SearchTerm = string.Empty;
     private string SelectedClassID; // Holds the selected class
     private List<Class> Classes = new List<Class>(); // Stores the list of classes
@@ -226,6 +237,7 @@
         isLoading = true;
         try
         {
+            Terms = await StudentService.GetAllSchoolTermsAsync();
             // Fetch classes
             Classes = await StudentService.GetsAllClassesAsync();
 
@@ -386,6 +398,7 @@
                     AmountLeft = TotalAmountLeft - AmountPaid,
                     PaymentDate = PaymentDate,
                     PaymentMethod = PaymentMethod,
+                    TermID = SelectedTermID,
                     Note = Note,
                     UserID = userId
                 };

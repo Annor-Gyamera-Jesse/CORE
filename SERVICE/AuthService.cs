@@ -10,6 +10,7 @@ using System.Data;
 using System.Data.Common;
 using CORE.MODEL.Expenses;
 using CORE.MODEL.Bank;
+using CORE.MODEL.Term;
 
 namespace CORE.SERVICE
 {
@@ -2668,8 +2669,8 @@ namespace CORE.SERVICE
                 Console.WriteLine("Executing query...");
                 const string query = @"
         INSERT INTO SchoolManagement.StudentFees 
-        (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod)
-        VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod)";
+        (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod, TermID)
+        VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod, @TermID)";
 
                 Console.WriteLine($"Query: {query}");
                 var result = await connection.ExecuteAsync(query, studentFee);
@@ -2721,6 +2722,16 @@ namespace CORE.SERVICE
             string query = "SELECT DISTINCT ClassID FROM SchoolManagement.Class";
             var classes = await connection.QueryAsync<Class>(query);
             return classes.AsList();
+        }
+
+        public async Task<List<SchoolTerm>> GetAllSchoolTermsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT TermID, Term FROM SchoolManagement.SchoolTerm";
+                var terms = await connection.QueryAsync<SchoolTerm>(query);
+                return terms.AsList();
+            }
         }
 
         /**/
