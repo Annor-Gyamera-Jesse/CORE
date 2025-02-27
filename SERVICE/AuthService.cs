@@ -2924,7 +2924,6 @@ namespace CORE.SERVICE
             }
             catch (Exception ex)
             {
-                // Handle exceptions
                 throw new Exception("Error retrieving student exam data by class.", ex);
             }
         }

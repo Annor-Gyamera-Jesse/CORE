@@ -82,17 +82,18 @@
             }
 
             var csvBuilder = new StringBuilder();
-            csvBuilder.AppendLine("Student Name, Class, Academic Year, Term, Score, Grade, Teachers Remarks");
+            csvBuilder.AppendLine("Student Name, Class, Academic Year, Vacation Date, Promoted To, Number on Roll, Term, Position, Next Term Begins, School Course, Class Score, Exams Score, Total Score, Subjects Position, Grade, Teachers Remarks, Conduct, Headmaster Remark, School Information, Teachers Signature, Headmaster Signature");
+
             foreach (var student in studentExamData)
             {
-                csvBuilder.AppendLine($"{student.StudentName}, {student.ClassName}, {student.AcademicYear}, {student.Term}, {student.TotalScore}, {student.Grade}, {student.TeachersRemarks}");
+                csvBuilder.AppendLine($"{student.StudentName}, {student.ClassName}, {student.AcademicYear}, {student.VacationDate}, {student.PromotedTo}, {student.NumberOnRoll}, {student.Term}, {student.Position}, {student.NextTermsBegins}, {student.SchoolCourse}, {student.ClassScore}, {student.ExamsScore}, {student.TotalScore}, {student.SubjectsPositions}, {student.Grade}, {student.TeachersRemarks}, {student.Conduct}, {student.HeadmasterRemark}, {student.SchoolInformation}, {student.TeachersSignature}, {student.HeadMasterSignature}");
             }
 
             var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
             var base64Csv = Convert.ToBase64String(csvData);
 
             var fileName = $"{selectedClassName}_Exam_Report.pdf";
-            await JSRuntime.InvokeVoidAsync("downloadExamsPdfPerClass", fileName, base64Csv);
+            await JSRuntime.InvokeVoidAsync("downloadExcel_Export_Exams_Report_Per_StudentPdf", fileName, base64Csv);
 
             Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
         }

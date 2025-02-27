@@ -1,65 +1,94 @@
 ﻿function downloadExcel_Export_Exams_Report_Per_StudentPdf(fileName, base64Csv) {
-    const { jsPDF } = window.jspdf; // Access jsPDF from the window object
+    const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // Decode base64 CSV data and split it into lines
+    // Decode base64 CSV data
     const decodedCsv = atob(base64Csv);
-    const lines = decodedCsv.split('\n');
+    const lines = decodedCsv.split('\n').map(line => line.trim()).filter(line => line);
+
+    // Validate CSV structure
+    if (lines.length < 2) {
+        alert("Error: CSV file is empty or incorrectly formatted.");
+        return;
+    }
 
     // Extract headers and rows
-    const csvHeaders = lines[0].split(','); // Extract the first line as headers
-    const tableData = lines.slice(1) // Skip the headers for data rows
-        .filter(line => line.trim() !== '') // Exclude any empty lines
-        .map(line => line.split(',')); // Split rows into cells
+    const csvHeaders = lines[0].split(',').map(h => h.trim() || '_');
+    const tableData = lines.slice(1).map(line => line.split(',').map(cell => cell.trim() || '_'));
 
-    // Set document font and title
+    // Set document title
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(20);
-    doc.text('Student Exam Report', 105, 20, { align: 'center' });
+    doc.text('STUDENT EXAM REPORT', 105, 20, { align: 'center' });
 
-    // Add space after the title
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text('Generated on: ' + new Date().toLocaleString(), 20, 30);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 30);
 
-    // Add a line separator
-    doc.setLineWidth(0.5);
-    doc.line(20, 35, 190, 35); // Horizontal line below the title
+    // Extract first row as student details
+    const studentDetails = tableData[0] || Array(21).fill('_');
 
-    // Define table headers and column widths (customized for exam data)
-    const headers = ['Student Name', 'Class', 'Term', 'Score', 'Grade']; // Correct headers for student exam report
-    const columnWidths = [60, 40, 30, 30, 30]; // Adjust column widths for better fit
+    // Student Information
+    let yPos = 40;
+    const details = [
+        `Student Name: ${studentDetails[0]}`,
+        `Class: ${studentDetails[1]}`,
+        `Academic Year: ${studentDetails[2]}`,
+        `Vacation Date: ${studentDetails[3]}`,
+        `Promoted To: ${studentDetails[4]}`,
+        `Number on Roll: ${studentDetails[5]}`,
+        `Term: ${studentDetails[6]}`,
+        `Position: ${studentDetails[7]}`,
+        `Next Term Begins: ${studentDetails[8]}`
+    ];
 
-    // Table positioning
-    const tableX = 20;
-    const tableY = 40;
+    details.forEach(detail => {
+        doc.text(detail, 20, yPos);
+        yPos += 7;
+    });
 
-    // Draw the table header
+    yPos += 5;
+
+    // Draw table headers
+    const headers = ['School Course', 'Class Score', 'Exams Score', 'Total Score', 'Subjects Position', 'Grade'];
+    const columnWidths = [50, 30, 30, 30, 30, 20];
+
+    let currentX = 20;
     doc.setFont('helvetica', 'bold');
-    let currentX = tableX;
     headers.forEach((header, index) => {
-        doc.text(header, currentX + columnWidths[index] / 2, tableY, { align: 'center' });
+        doc.text(header, currentX + columnWidths[index] / 2, yPos, { align: 'center' });
         currentX += columnWidths[index];
     });
 
-    // Add a line below the header
-    doc.line(tableX, tableY + 2, tableX + columnWidths.reduce((a, b) => a + b), tableY + 2);
-
-    // Draw the table rows
+    // Draw table rows
     doc.setFont('helvetica', 'normal');
-    let rowY = tableY + 10; // Start from the next line after the header
-    tableData.forEach(row => {
-        let rowX = tableX;
-        row.forEach((cell, index) => {
-            doc.text(cell, rowX + columnWidths[index] / 2, rowY, { align: 'center' });
-            rowX += columnWidths[index];
-        });
-        rowY += 10; // Space between rows
+    let rowY = yPos + 10;
+    tableData.slice(1).forEach(row => {
+        let rowX = 20;
+        for (let i = 9; i < Math.min(row.length, headers.length + 9); i++) {
+            doc.text(row[i], rowX + columnWidths[i - 9] / 2, rowY, { align: 'center' });
+            rowX += columnWidths[i - 9];
+        }
+        rowY += 10;
     });
 
-    // Add a footer line
-    doc.setLineWidth(0.5);
-    doc.line(20, rowY + 10, 190, rowY + 10); // Horizontal line at the bottom
+    // Footer Section
+    rowY += 10;
+    doc.setFont('helvetica', 'bold');
+    const footerDetails = [
+        'Teacher’s Remarks:', studentDetails[15] || '_',
+        'Conduct:', studentDetails[16] || '_',
+        'Headmaster’s Remark:', studentDetails[17] || '_',
+        'School Information:', studentDetails[18] || '_',
+        'Teacher’s Signature:', studentDetails[19] || '_',
+        'Headmaster’s Signature:', studentDetails[20] || '_'
+    ];
+
+    for (let i = 0; i < footerDetails.length; i += 2) {
+        doc.text(footerDetails[i], 20, rowY);
+        doc.text(footerDetails[i + 1], 80, rowY);
+        rowY += 7;
+    }
 
     // Save the PDF
     doc.save(fileName);
