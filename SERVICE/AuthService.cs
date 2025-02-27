@@ -3447,5 +3447,51 @@ VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @Pa
                 Console.WriteLine($"Error during transfer: {ex.Message}");
             }
         }
+
+        /*for generating pdf exams export per student*/
+        public async Task<IEnumerable<Exam>> GetStudentExamsByStudentNameAsync(string studentName)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var result = await connection.QueryAsync<Exam>(
+                "GetStudentExams",
+                new { StudentName = studentName },
+                commandType: CommandType.StoredProcedure);
+
+            return result.ToList();
+        }
+
+        /*exams report per class*/
+        public async Task<List<Exam>> GetStudentExamDataByClassAsync(string className)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var result = await connection.QueryAsync<Exam>(
+                        "GetStudentExamDataByClass",
+                        new { ClassName = className },
+                        commandType: CommandType.StoredProcedure
+                    );
+
+                    return result.ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error retrieving student exam data by class.", ex);
+            }
+        }
+
+        public async Task<IEnumerable<string>> GetExamsAllClassesAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                string query = "SELECT ClassID FROM SchoolManagement.Class ORDER BY ClassID";
+                return await connection.QueryAsync<string>(query);
+            }
+        }
     }
 }

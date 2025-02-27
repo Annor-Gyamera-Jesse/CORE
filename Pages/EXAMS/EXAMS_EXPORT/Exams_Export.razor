@@ -1,0 +1,100 @@
+﻿@inject AuthService authService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using System.Text
+
+<RadzenNotification />
+
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <div class="card" style="padding: 20px; max-width: 600px; margin: auto;">
+        <RadzenTextBox Placeholder="🔍 Search student by name..." Value="@searchText"
+                       Style="width: 100%; margin-bottom: 20px;"
+                       Change="@(args => SearchStudents(args))" />
+
+        <RadzenDropDown Data="@students" TextProperty="FullName" ValueProperty="FullName"
+                        @bind-Value="selectedStudentName" Placeholder="Select a student"
+                        Style="width: 100%; margin-bottom: 20px;" />
+
+        <RadzenButton Text="Generate Report" Icon="save_alt" Click="@GenerateStudentReport"
+                      Disabled="@isLoading" Style="width: 100%; margin-bottom: 10px;" />
+    </div>
+}
+
+@code {
+    private string searchText;
+    private string selectedStudentName;
+    private List<Student> students = new();
+    private bool isLoading;
+
+    private async Task SearchStudents(object args)
+    {
+        if (args is string searchText && !string.IsNullOrWhiteSpace(searchText))
+        {
+            this.searchText = searchText;
+            try
+            {
+                isLoading = true;
+                students = (await authService.SearchStudentsAsync(searchText)).ToList();
+            }
+            catch (Exception ex)
+            {
+                Notify.ShowNotification($"Error searching students: {ex.Message}", "", NotificationSeverity.Error);
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+    }
+
+    private async Task GenerateStudentReport()
+    {
+        if (string.IsNullOrEmpty(selectedStudentName))
+        {
+            Notify.ShowNotification("Please select a student.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            var studentExamData = await authService.GetStudentExamsByStudentNameAsync(selectedStudentName);
+            if (studentExamData == null || !studentExamData.Any())
+            {
+                Notify.ShowNotification("No exam data found for the selected student.", "", NotificationSeverity.Warning);
+                return;
+            }
+
+            var csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine("Student Name, Class, Term, Score, Grade");
+            foreach (var exam in studentExamData)
+            {
+                csvBuilder.AppendLine($"{exam.StudentName}, {exam.ClassName}, {exam.Term}, {exam.TotalScore}, {exam.Grade}");
+            }
+
+            var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+            var base64Csv = Convert.ToBase64String(csvData);
+
+            var fileName = $"{selectedStudentName}_Exam_Report.pdf";
+            await JSRuntime.InvokeVoidAsync("downloadExcel_Export_Exams_Report_Per_StudentPdf", fileName, base64Csv);
+
+            Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error generating report: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

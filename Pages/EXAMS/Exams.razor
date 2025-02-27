@@ -3,12 +3,44 @@
 @using CORE.SERVICE
 @inject AuthService authService
 @using CORE.SERVICE.NOTIFICATION
+@using CORE.Tool_Components
 @using Radzen
 @inject NotificationMessageService Notify
 @using System.Globalization
 @inject NotificationMessageService NotificationService
 <RadzenNotification />
+@inherits ExamsCodeBehind
 
+<style>
+    /* PRINT STUDENT REPOR */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
+</style>
+
+
+  <RadzenHeader title="REPORT GENERATING" class="header-container compact-header">
+    <RadzenFieldset Text="EXPORT STUDENT EXAMS REPORT" class="right-align">
+        <ExamsToolComponent OnOpenExamsExportDialog="OnOpenExamsExport" OnOpenClassExamsExportDialog="OnOpenClassExamsExportDialog" />
+</RadzenFieldset>
+            </RadzenHeader>
+            <br/>
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8">
@@ -442,7 +474,8 @@ private List<string> classes = new List<string>();
         }
     }
 
-
+    async void OnOpenExamsExport() => await OpenExamsExportDialog();
+    async void OnOpenClassExamsExportDialog() => await OpenExamsPerClassExportDialog();
 
     protected override async Task OnInitializedAsync()
     {
