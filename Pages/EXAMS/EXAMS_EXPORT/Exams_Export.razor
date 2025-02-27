@@ -84,7 +84,7 @@
             var base64Csv = Convert.ToBase64String(csvData);
 
             var fileName = $"{selectedStudentName}_Exam_Report.pdf";
-            await JSRuntime.InvokeVoidAsync("downloadExcel_Export_Exams_Report_Per_StudentPdf", fileName, base64Csv);
+            await JSRuntime.InvokeVoidAsync("downloadExamsPdfPerClass", fileName, base64Csv);
 
             Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
         }
