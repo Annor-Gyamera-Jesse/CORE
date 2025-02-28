@@ -1,95 +1,107 @@
 ﻿function downloadExamsPdfPerClass(fileName, base64Csv) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
 
+    // Decode base64 CSV data
     const decodedCsv = atob(base64Csv);
-    const lines = decodedCsv.split('\n');
+    const lines = decodedCsv.split('\n').map(line => line.trim()).filter(line => line.length > 0); // Remove empty lines
 
-    const headers = lines[0].split(',');
-    const tableData = lines.slice(1).filter(line => line.trim() !== '').map(line => line.split(','));
+    if (lines.length < 2) {
+        alert("No valid data found!");
+        return;
+    }
 
-    const columnWidths = [40, 25, 25, 25, 30, 30]; // Column widths for the table
-    const tableX = 20; // X position for the table
+    const csvHeaders = lines[0]?.split(',').map(h => h.trim()) || []; // Extract column headers
+    const tableData = lines.slice(1).map(line => line.split(',').map(value => (value && value.trim()) || '-'));
 
-    let tableY = 45; // Starting Y position
+    // **Grouping students by name**
+    const students = {};
+    tableData.forEach(row => {
+        const studentName = row[0] || 'Unknown Student';
+        if (!students[studentName]) {
+            students[studentName] = [];
+        }
+        students[studentName].push(row);
+    });
 
-    // Function to generate individual student reports
-    function generateStudentReport(studentData) {
-        // Student details header
+    // **Generate PDF for each student**
+    Object.keys(students).forEach(studentName => {
+        const doc = new jsPDF();
+        const studentRecords = students[studentName]; // Get all rows for this student
+        const studentDetails = studentRecords[0] || Array(21).fill('-'); // Default values
+
+        // **Document Title**
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.text('Student Report', 105, tableY, { align: 'center' });
+        doc.setFontSize(20);
+        doc.text('STUDENT EXAM REPORT', 105, 20, { align: 'center' });
 
         doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 30);
 
-        // Assuming studentData contains Name, Class, etc.
-        doc.text('Name: ' + studentData.name, 20, tableY + 15);
-        doc.text('Class: ' + studentData.class, 20, tableY + 25);
-        doc.text('Exam: ' + studentData.exam, 20, tableY + 35);
+        // **Header Information**
+        let yPos = 40;
+        const details = [
+            `Student Name: ${studentDetails[0]}`,
+            `Class: ${studentDetails[1]}`,
+            `Academic Year: ${studentDetails[2]}`,
+            `Vacation Date: ${studentDetails[3]}`,
+            `Promoted To: ${studentDetails[4]}`,
+            `Number on Roll: ${studentDetails[5]}`,
+            `Term: ${studentDetails[6]}`,
+            `Position: ${studentDetails[7]}`,
+            `Next Term Begins: ${studentDetails[8]}`
+        ];
 
-        // Add a horizontal line after the header
-        doc.setLineWidth(0.5);
-        doc.line(tableX, tableY + 40, tableX + columnWidths.reduce((a, b) => a + b), tableY + 40);
+        details.forEach(detail => {
+            doc.text(detail.toString(), 20, yPos); // Ensure it's a string
+            yPos += 7;
+        });
 
-        // Draw the table headers
-        let currentX = tableX;
+        yPos += 5;
+
+        // **Draw Table Headers**
+        const headers = ['School Course', 'Class Score', 'Exams Score', 'Total Score', 'Subjects Position', 'Grade'];
+        const columnWidths = [50, 30, 30, 30, 30, 20];
+
+        let currentX = 20;
+        doc.setFont('helvetica', 'bold');
         headers.forEach((header, index) => {
-            doc.text(header, currentX, tableY + 50);
+            doc.text(header, currentX + columnWidths[index] / 2, yPos, { align: 'center' });
             currentX += columnWidths[index];
         });
 
-        // Draw the header separator line
-        doc.line(tableX, tableY + 52, tableX + columnWidths.reduce((a, b) => a + b), tableY + 52);
-
-        // Start rendering student exam results rows
-        tableY = tableY + 60;
+        // **Draw Rows**
         doc.setFont('helvetica', 'normal');
-        studentData.results.forEach((row, rowIndex) => {
-            let rowX = tableX;
-            row.forEach((cell, index) => {
-                doc.text(cell, rowX, tableY);
-                rowX += columnWidths[index];
-            });
-            tableY += 10;
-
-            // Check if the page overflows, if so, add a new page
-            if (tableY > 250) {
-                doc.addPage();
-                tableY = 20; // Reset table Y position on new page
-                generateStudentReport(studentData); // Re-generate student report for the new page
+        let rowY = yPos + 10;
+        studentRecords.forEach(row => {
+            let rowX = 20;
+            for (let i = 9; i < Math.min(row.length, headers.length + 9); i++) {
+                const cellValue = row[i] ? row[i].toString() : '-'; // Ensure text is always a string
+                doc.text(cellValue, rowX + columnWidths[i - 9] / 2, rowY, { align: 'center' });
+                rowX += columnWidths[i - 9];
             }
+            rowY += 10;
         });
 
-        // Footer message
-        doc.setFont('helvetica', 'italic');
-        doc.text('End of Report for ' + studentData.name, 105, tableY + 20, { align: 'center' });
-    }
+        // **Footer Section**
+        rowY += 10;
+        doc.setFont('helvetica', 'bold');
+        const footerDetails = [
+            'Teacher’s Remarks:', studentDetails[15] || '-',
+            'Conduct:', studentDetails[16] || '-',
+            'Headmaster’s Remark:', studentDetails[17] || '-',
+            'School Information:', studentDetails[18] || '-',
+            'Teacher’s Signature:', studentDetails[19] || '-',
+            'Headmaster’s Signature:', studentDetails[20] || '-'
+        ];
 
-    // Loop through each student and generate their report
-    let currentStudentIndex = 0;
-    while (currentStudentIndex < tableData.length) {
-        const studentData = {
-            name: tableData[currentStudentIndex][0], // Assuming the first column is the student's name
-            class: tableData[currentStudentIndex][1], // Assuming the second column is the class
-            exam: tableData[currentStudentIndex][2], // Assuming the third column is the exam name
-            results: [] // This will store the student's exam results
-        };
-
-        // Gather the results for the current student (from the same row)
-        studentData.results.push(tableData[currentStudentIndex].slice(3)); // Assuming the rest is exam data
-
-        // Add a new page for each student
-        if (currentStudentIndex > 0) {
-            doc.addPage(); // Add new page for the next student
+        for (let i = 0; i < footerDetails.length; i += 2) {
+            doc.text(footerDetails[i], 20, rowY);
+            doc.text(footerDetails[i + 1].toString(), 80, rowY); // Ensure text is always a string
+            rowY += 7;
         }
 
-        // Generate the report for the current student
-        generateStudentReport(studentData);
-
-        currentStudentIndex++; // Move to the next student
-    }
-
-    // Save the final PDF
-    doc.save(fileName);
+        // **Save the PDF**
+        doc.save(`${studentName}_${fileName}`);
+    });
 }
