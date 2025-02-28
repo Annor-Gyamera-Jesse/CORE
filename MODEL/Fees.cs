@@ -29,6 +29,7 @@
         public DateTime PaymentDate { get; set; }
         public DateTime DueDate { get; set; }
         public string Note { get; set; }
+        public int TermID { get; set; }
         public int UserID { get; set; }
         public string PaymentMethod { get; set; }
     }
