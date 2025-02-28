@@ -1,0 +1,109 @@
+﻿@inject AuthService authService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using System.Text
+
+<RadzenNotification />
+
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <div class="card" style="padding: 20px; max-width: 600px; margin: auto;">
+        <RadzenDropDown Data="@classList" Placeholder="Select Class"
+                        @bind-Value="selectedClassName" Style="width: 100%; margin-bottom: 20px;"
+                        Change="@(args => OnClassSelectionChanged())" />
+
+        <RadzenButton Text="Generate Report" Icon="save_alt" Click="@GenerateClassReport"
+                      Disabled="@IsButtonDisabled"
+                      Style="width: 100%; margin-bottom: 10px;" />
+    </div>
+}
+
+@code {
+    private string selectedClassName;
+    private List<string> classList = new();
+    private bool isLoading = true;
+
+    private bool IsButtonDisabled => isLoading || string.IsNullOrEmpty(selectedClassName);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadClasses();
+    }
+
+    private async Task LoadClasses()
+    {
+        try
+        {
+            isLoading = true;
+            var classes = await authService.GetExamsAllClassesAsync();
+            classList = classes.ToList();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error loading classes: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnClassSelectionChanged()
+    {
+        if (!string.IsNullOrEmpty(selectedClassName))
+        {
+            await GenerateClassReport();
+        }
+    }
+
+    private async Task GenerateClassReport()
+    {
+        if (string.IsNullOrEmpty(selectedClassName))
+        {
+            Notify.ShowNotification("Please select a class.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        isLoading = true;
+        try
+        {
+            var studentExamData = await authService.GetStudentExamDataByClassAsync(selectedClassName);
+            if (studentExamData == null || !studentExamData.Any())
+            {
+                Notify.ShowNotification("No exam data found for the selected class.", "", NotificationSeverity.Warning);
+                return;
+            }
+
+            var csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine("Student Name, Class, Academic Year, Vacation Date, Promoted To, Number on Roll, Term, Position, Next Term Begins, School Course, Class Score, Exams Score, Total Score, Subjects Position, Grade, Teachers Remarks, Conduct, Headmaster Remark, School Information, Teachers Signature, Headmaster Signature");
+
+            foreach (var student in studentExamData)
+            {
+                csvBuilder.AppendLine($"{student.StudentName}, {student.ClassName}, {student.AcademicYear}, {student.VacationDate}, {student.PromotedTo}, {student.NumberOnRoll}, {student.Term}, {student.Position}, {student.NextTermsBegins}, {student.SchoolCourse}, {student.ClassScore}, {student.ExamsScore}, {student.TotalScore}, {student.SubjectsPositions}, {student.Grade}, {student.TeachersRemarks}, {student.Conduct}, {student.HeadmasterRemark}, {student.SchoolInformation}, {student.TeachersSignature}, {student.HeadMasterSignature}");
+            }
+
+            var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+            var base64Csv = Convert.ToBase64String(csvData);
+
+            var fileName = $"{selectedClassName}_Exam_Report.pdf";
+            await JSRuntime.InvokeVoidAsync("downloadExcel_Export_Exams_Report_Per_StudentPdf", fileName, base64Csv);
+
+            Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error generating report: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

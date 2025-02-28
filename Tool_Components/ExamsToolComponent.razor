@@ -1,0 +1,25 @@
+﻿
+@* ToolComponent Page *@
+
+<style>
+    .toolset-container {
+        display: flex;
+        gap: 10px; /* Adjust the spacing between buttons */
+    }
+
+    .toolset-btn {
+        font-size: 14px;
+        flex: 1; /* Makes both buttons take equal space */
+    }
+</style>
+
+<div class="toolset-container mt-2">
+    <RadzenButton Text="PER CLASS" Icon="house" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OnOpenClassExamsExportDialog />
+    <RadzenButton Text="PER STUDENT" Icon="assignment" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnOpenExamsExportDialog />
+</div>
+
+@code {
+    [Parameter] public Action OnOpenClassExamsExportDialog { get; set; }
+
+    [Parameter] public Action OnOpenExamsExportDialog { get; set; }
+}
