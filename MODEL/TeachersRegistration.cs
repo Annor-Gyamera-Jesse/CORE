@@ -28,7 +28,7 @@
         public string AccountNumber { get; set; }
         public string Remarks { get; set; }
         public string SSNITNumber { get; set; }
-        public string CAT { get; set; }
+        public string CategoryName { get; set; }
 
     }
 }

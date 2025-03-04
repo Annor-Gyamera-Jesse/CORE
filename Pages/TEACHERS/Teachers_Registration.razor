@@ -146,11 +146,11 @@
                 <div class="col-md-3 text-md-end form-label">
                     <RadzenLabel Text="SSNIT Number" />
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <RadzenTextBox @bind-Value="@teachersRegistration.SSNITNumber" class="form-control form-control-sm" />
                 </div>
-                <div class="col-md-3 text-md-end form-label">
-                    <RadzenLabel Text="PAYMENT CAT" />
+                <div class="col-md-2 text-md-end form-label">
+                    <RadzenLabel Text="PMT CAT" />
                 </div>
                 <div class="col-md-3">
                     <RadzenDropDown @bind-Value="selectedCategoryId" Data="@paymentCategories"
@@ -272,6 +272,10 @@
 
                 teachersRegistration.ImageData = imageData;
             }
+
+            // Set the CategoryName based on the selectedCategoryId
+            var selectedCategory = paymentCategories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
+            teachersRegistration.CategoryName = selectedCategory?.CategoryName; // This will be null if not found
 
             // Call the service to add the teacher
             newTeacherId = await authService.AddTeachersAsync(teachersRegistration);

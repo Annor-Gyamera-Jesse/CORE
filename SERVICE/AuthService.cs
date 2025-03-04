@@ -440,8 +440,8 @@ namespace CORE.SERVICE
                 {
                     await connection.OpenAsync();
 
-                    var query = "INSERT INTO SchoolManagement.Teacher (TeacherFirstName, TeacherLastName, TeacherDateOfBirth, TeacherGender, TeacherAddress, TeacherPhoneNumber, TeacherEmail, ImageData, DateHired, SSNIT, BasicSalary, PAYE, SSNITTIER2, VotersID, HealthInsurance, GhanaCard, Bank, AccountNumber, Remarks, SSNITNumber, CAT) " +
-                                "VALUES (@FirstName, @LastName, @DateOfBirth, @Gender, @Address, @PhoneNumber, @Email, @ImageData, @DateHired, @SSNIT, @BasicSalary, @PAYE, @SSNITTIER2, @VotersID, @HealthInsurance, @GhanaCard, @Bank, @AccountNumber, @Remarks, @SSNITNumber, @CAT); " +
+                    var query = "INSERT INTO SchoolManagement.Teacher (TeacherFirstName, TeacherLastName, TeacherDateOfBirth, TeacherGender, TeacherAddress, TeacherPhoneNumber, TeacherEmail, ImageData, DateHired, SSNIT, BasicSalary, PAYE, SSNITTIER2, VotersID, HealthInsurance, GhanaCard, Bank, AccountNumber, Remarks, SSNITNumber, CategoryName) " +
+                                "VALUES (@FirstName, @LastName, @DateOfBirth, @Gender, @Address, @PhoneNumber, @Email, @ImageData, @DateHired, @SSNIT, @BasicSalary, @PAYE, @SSNITTIER2, @VotersID, @HealthInsurance, @GhanaCard, @Bank, @AccountNumber, @Remarks, @SSNITNumber, @CategoryName); " +
                                 "SELECT SCOPE_IDENTITY();";
 
                     using (var command = new SqlCommand(query, connection))
@@ -466,7 +466,7 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@AccountNumber", teachersRegistration.AccountNumber);
                         command.Parameters.AddWithValue("@Remarks", teachersRegistration.Remarks);
                         command.Parameters.AddWithValue("@SSNITNumber", teachersRegistration.SSNITNumber);
-                        command.Parameters.AddWithValue("@SSNITNumber", teachersRegistration.CAT);
+                        command.Parameters.AddWithValue("@CategoryName", teachersRegistration.CategoryName);
 
                         var result = await command.ExecuteScalarAsync();
                         return result != null ? Convert.ToInt32(result) : 0;
