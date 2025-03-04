@@ -257,39 +257,47 @@
 
     async Task SubmitForm()
     {
-        if (IsValid(teachersRegistration))
+        try
         {
-            if (selectedFile != null)
+            if (IsValid(teachersRegistration))
             {
-                using (var stream = selectedFile.OpenReadStream())
+                if (selectedFile != null)
                 {
-                    using (var memoryStream = new MemoryStream())
+                    using (var stream = selectedFile.OpenReadStream())
                     {
-                        await stream.CopyToAsync(memoryStream);
-                        imageData = memoryStream.ToArray();
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            await stream.CopyToAsync(memoryStream);
+                            imageData = memoryStream.ToArray();
+                        }
                     }
+
+                    teachersRegistration.ImageData = imageData;
                 }
 
-                teachersRegistration.ImageData = imageData;
-            }
+                // Set the CategoryName based on the selectedCategoryId
+                var selectedCategory = paymentCategories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
+                teachersRegistration.CategoryName = selectedCategory?.CategoryName; // This will be null if not found
 
-            // Set the CategoryName based on the selectedCategoryId
-            var selectedCategory = paymentCategories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
-            teachersRegistration.CategoryName = selectedCategory?.CategoryName; // This will be null if not found
+                // Call the service to add the teacher
+                newTeacherId = await authService.AddTeachersAsync(teachersRegistration);
 
-            // Call the service to add the teacher
-            newTeacherId = await authService.AddTeachersAsync(teachersRegistration);
-
-            if (newTeacherId > 0)
-            {
-                // Reset error message
-                Notify.ShowNotification("", "Teacher successfully registered.", NotificationSeverity.Success);
+                if (newTeacherId > 0)
+                {
+                    // Notify success
+                    Notify.ShowNotification("", "Teacher successfully registered.", NotificationSeverity.Success);
+                }
+                else
+                {
+                    // Notify failure
+                    Notify.ShowNotification("Error", "Failed to register the teacher. Please try again.", NotificationSeverity.Warning);
+                }
             }
-            else
-            {
-                // Handle failure, show error messages, etc.
-                Notify.ShowNotification("Error", "Failed to register the teacher. Please try again.", NotificationSeverity.Warning);
-            }
+        }
+        catch (Exception ex)
+        {
+            // Notify error with exception message
+            Notify.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
         }
     }
 
