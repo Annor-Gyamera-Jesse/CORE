@@ -96,14 +96,137 @@
         <div class="col-md-3">
             <RadzenTextBox class="form-control form-control-sm" Value="@newTeacherId.ToString()" ReadOnly="true" />
         </div>
-    </div>
-
-    <div class="row mt-2">
-        <div class="col-md-3">
-            <RadzenButton Text="Submit" Icon="check" ButtonType="ButtonType.Submit" Click="@SubmitForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
+        <div class="col-md-3 text-md-end form-label">
+            <RadzenLabel Text="Date Hired" Component="textteacherid" />
         </div>
         <div class="col-md-3">
-            <RadzenButton Text="New" Icon="add" ButtonStyle="ButtonStyle.Primary" Click="@ResetForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
+            <RadzenDatePicker class="form-control form-control-sm" @bind-Value="@teachersRegistration.DateHired" />
+        </div>
+    </div>
+
+    <RadzenFieldset Text="SSNIT">
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="SSNIT" />
+            </div>
+            <div class="col-md-3">
+                <RadzenDropDown @bind-Value="@teachersRegistration.SSNIT"
+                                Data="@(new List<string> { "Y", "N" })"
+                                Placeholder="Do You Have SSNIT"
+                                Class="form-control form-control-sm" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Basic Salary" />
+            </div>
+            <div class="col-md-3">
+                <RadzenNumeric @bind-Value="@teachersRegistration.BasicSalary"
+                               Class="form-control form-control-sm"
+                               Change="@((decimal value) => CalculateSSNITTier2(value))" />
+
+            </div>
+
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="PAYE" />
+            </div>
+            <div class="col-md-3">
+                <RadzenNumeric @bind-Value="@teachersRegistration.PAYE"
+                               Class="form-control form-control-sm" />
+            </div>
+
+                <div class="col-md-3 text-md-end form-label">
+                    <RadzenLabel Text="SSNIT Tier 2" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenNumeric @bind-Value="@teachersRegistration.SSNITTIER2"
+                                   Class="form-control form-control-sm"
+                                   ReadOnly="true" />
+                </div>
+                <div class="col-md-3 text-md-end form-label">
+                    <RadzenLabel Text="SSNIT Number" />
+                </div>
+                <div class="col-md-4">
+                    <RadzenTextBox @bind-Value="@teachersRegistration.SSNITNumber" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2 text-md-end form-label">
+                    <RadzenLabel Text="PMT CAT" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenDropDown @bind-Value="selectedCategoryId" Data="@paymentCategories"
+                                    TextProperty="CategoryName" ValueProperty="CategoryID"
+                                    Class="w-full border-gray-300 rounded-lg p-2" Placeholder="Select Payment Category" />
+                </div>
+          </div>
+        </div>
+    </RadzenFieldset>
+
+    <RadzenFieldset Text="Account Details">
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Voters ID" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox @bind-Value="@teachersRegistration.VotersID"                                
+                                Placeholder="Voters ID"
+                                Class="form-control form-control-sm" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Health Insurance" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox @bind-Value="@teachersRegistration.HealthInsurance"                                
+                                Placeholder="Health Insurance"
+                                Class="form-control form-control-sm" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Ghana Card" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox @bind-Value="@teachersRegistration.GhanaCard"                                
+                                Placeholder="Ghana Card Number"
+                                Class="form-control form-control-sm" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Bank" />
+            </div>
+            <div class="col-md-3">
+                <RadzenDropDown @bind-Value="@teachersRegistration.Bank"
+                                Data="@Banks"
+                                Placeholder="Select Bank"
+                                Class="form-control form-control-sm" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Account Number" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm"
+                               @bind-Value="@teachersRegistration.AccountNumber" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Remarks" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm"
+                               @bind-Value="@teachersRegistration.Remarks" />
+            </div>
+        </div>
+    </RadzenFieldset>
+    <div class="row mt-2">
+        <div class="col-md-3">
+            <RadzenButton Text="Submit" Icon="check" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Click="@SubmitForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
+        </div>
+        <div class="col-md-3">
+            <RadzenButton Text="New" Icon="add" ButtonStyle="ButtonStyle.Info" Click="@ResetForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
         </div>
     </div>
 </RadzenFieldset>
@@ -111,42 +234,70 @@
 
 @code {
     TeachersRegistration teachersRegistration = new TeachersRegistration();
+    List<string> Banks = new List<string>();
     byte[] imageData;
     int newTeacherId;
     private IBrowserFile selectedFile;
     private int inputFileKey = 0;
+    private List<PaymentCategory> paymentCategories = new();
+    private int selectedCategoryId;
+    protected override async Task OnInitializedAsync()
+    {
+        Banks = await authService.GetPaymentMethodsAsync();
+        paymentCategories = await authService.GetPaymentCategoriesAsync();
+    }
+
+    private Task CalculateSSNITTier2(decimal newSalary)
+    {
+        teachersRegistration.BasicSalary = newSalary;
+        teachersRegistration.SSNITTIER2 = newSalary * 0.05m;
+        return Task.CompletedTask; // Ensures async compatibility
+    }
+
 
     async Task SubmitForm()
     {
-        if (IsValid(teachersRegistration))
+        try
         {
-            if (selectedFile != null)
+            if (IsValid(teachersRegistration))
             {
-                using (var stream = selectedFile.OpenReadStream())
+                if (selectedFile != null)
                 {
-                    using (var memoryStream = new MemoryStream())
+                    using (var stream = selectedFile.OpenReadStream())
                     {
-                        await stream.CopyToAsync(memoryStream);
-                        imageData = memoryStream.ToArray();
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            await stream.CopyToAsync(memoryStream);
+                            imageData = memoryStream.ToArray();
+                        }
                     }
+
+                    teachersRegistration.ImageData = imageData;
                 }
 
-                teachersRegistration.ImageData = imageData;
-            }
+                // Set the CategoryName based on the selectedCategoryId
+                var selectedCategory = paymentCategories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
+                teachersRegistration.CategoryName = selectedCategory?.CategoryName; // This will be null if not found
 
-            // Call the service to add the teacher
-            newTeacherId = await authService.AddTeachersAsync(teachersRegistration);
+                // Call the service to add the teacher
+                newTeacherId = await authService.AddTeachersAsync(teachersRegistration);
 
-            if (newTeacherId > 0)
-            {
-                // Reset error message
-                Notify.ShowNotification("", "Teacher successfully registered.", NotificationSeverity.Success);
+                if (newTeacherId > 0)
+                {
+                    // Notify success
+                    Notify.ShowNotification("", "Teacher successfully registered.", NotificationSeverity.Success);
+                }
+                else
+                {
+                    // Notify failure
+                    Notify.ShowNotification("Error", "Failed to register the teacher. Please try again.", NotificationSeverity.Warning);
+                }
             }
-            else
-            {
-                // Handle failure, show error messages, etc.
-                Notify.ShowNotification("Error", "Failed to register the teacher. Please try again.", NotificationSeverity.Warning);
-            }
+        }
+        catch (Exception ex)
+        {
+            // Notify error with exception message
+            Notify.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
         }
     }
 

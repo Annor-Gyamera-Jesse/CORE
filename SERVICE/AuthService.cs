@@ -440,8 +440,8 @@ namespace CORE.SERVICE
                 {
                     await connection.OpenAsync();
 
-                    var query = "INSERT INTO SchoolManagement.Teacher (TeacherFirstName, TeacherLastName, TeacherDateOfBirth, TeacherGender, TeacherAddress, TeacherPhoneNumber, TeacherEmail, ImageData) " +
-                                "VALUES (@FirstName, @LastName, @DateOfBirth, @Gender, @Address, @PhoneNumber, @Email, @ImageData); " +
+                    var query = "INSERT INTO SchoolManagement.Teacher (TeacherFirstName, TeacherLastName, TeacherDateOfBirth, TeacherGender, TeacherAddress, TeacherPhoneNumber, TeacherEmail, ImageData, DateHired, SSNIT, BasicSalary, PAYE, SSNITTIER2, VotersID, HealthInsurance, GhanaCard, Bank, AccountNumber, Remarks, SSNITNumber, CategoryName) " +
+                                "VALUES (@FirstName, @LastName, @DateOfBirth, @Gender, @Address, @PhoneNumber, @Email, @ImageData, @DateHired, @SSNIT, @BasicSalary, @PAYE, @SSNITTIER2, @VotersID, @HealthInsurance, @GhanaCard, @Bank, @AccountNumber, @Remarks, @SSNITNumber, @CategoryName); " +
                                 "SELECT SCOPE_IDENTITY();";
 
                     using (var command = new SqlCommand(query, connection))
@@ -453,14 +453,22 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@Address", teachersRegistration.TeacherAddress);
                         command.Parameters.AddWithValue("@PhoneNumber", teachersRegistration.TeacherPhoneNumber);
                         command.Parameters.AddWithValue("@Email", teachersRegistration.TeacherEmail);
-
-                        // Add parameter for ImageData
                         command.Parameters.AddWithValue("@ImageData", teachersRegistration.ImageData ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@DateHired", teachersRegistration.DateHired);
+                        command.Parameters.AddWithValue("@SSNIT", teachersRegistration.SSNIT);
+                        command.Parameters.AddWithValue("@BasicSalary", teachersRegistration.BasicSalary);
+                        command.Parameters.AddWithValue("@PAYE", teachersRegistration.PAYE);
+                        command.Parameters.AddWithValue("@SSNITTIER2", teachersRegistration.SSNITTIER2);
+                        command.Parameters.AddWithValue("@VotersID", teachersRegistration.VotersID);
+                        command.Parameters.AddWithValue("@HealthInsurance", teachersRegistration.HealthInsurance);
+                        command.Parameters.AddWithValue("@GhanaCard", teachersRegistration.GhanaCard);
+                        command.Parameters.AddWithValue("@Bank", teachersRegistration.Bank);
+                        command.Parameters.AddWithValue("@AccountNumber", teachersRegistration.AccountNumber);
+                        command.Parameters.AddWithValue("@Remarks", teachersRegistration.Remarks);
+                        command.Parameters.AddWithValue("@SSNITNumber", teachersRegistration.SSNITNumber);
+                        command.Parameters.AddWithValue("@CategoryName", teachersRegistration.CategoryName);
 
-                        // ExecuteScalarAsync returns the identity of the new record (StudentID)
                         var result = await command.ExecuteScalarAsync();
-
-                        // Check if the insertion was successful
                         return result != null ? Convert.ToInt32(result) : 0;
                     }
                 }
@@ -468,11 +476,9 @@ namespace CORE.SERVICE
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in AddTeacherAsync: {ex.Message}");
-                // Handle the exception as needed (log, throw, etc.)
                 throw; // Rethrow the exception after logging/handling if needed
             }
         }
-
         //Service that connect to the database to add NonTeachingStaffsRegistration
         public async Task<int> AddNonTeachingStaffsAsync(NonTeachingStaffsRegistration nonteachingRegistration)
         {
