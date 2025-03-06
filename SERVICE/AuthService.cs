@@ -3533,12 +3533,12 @@ VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @Pa
             (StaffFirstName, StaffLastName, StaffDateOfBirth, StaffGender, StaffAddress, StaffPhoneNumber, 
              StaffEmail, Position, Department, EmploymentStatus, BankName, AccountNumber, AccountName, 
              EmergencyContactName, EmergencyContactRelationship, EmergencyContactPhone, 
-             DateHired, SSNIT, BasicSalary, PAYE, SSNITTIER2, CategoryName, ImageData)
+             DateHired, SSNIT, BasicSalary, PAYE, SSNITTIER2, CategoryName, ImageData, VotersID, HealthInsurance, GhanaCard, Remarks)
             VALUES 
             (@StaffFirstName, @StaffLastName, @StaffDateOfBirth, @StaffGender, @StaffAddress, @StaffPhoneNumber, 
              @StaffEmail, @Position, @Department, @EmploymentStatus, @BankName, @AccountNumber, @AccountName, 
              @EmergencyContactName, @EmergencyContactRelationship, @EmergencyContactPhone, 
-             @DateHired, @SSNIT, @BasicSalary, @PAYE, @SSNITTIER2, @CategoryName, @ImageData)";
+             @DateHired, @SSNIT, @BasicSalary, @PAYE, @SSNITTIER2, @CategoryName, @ImageData, @VotersID, @HealthInsurance, @GhanaCard, @Remarks)";
 
                 int rowsAffected = await connection.ExecuteAsync(query, staff);
                 return rowsAffected > 0;
