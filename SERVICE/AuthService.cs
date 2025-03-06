@@ -11,6 +11,7 @@ using System.Data.Common;
 using CORE.MODEL.Expenses;
 using CORE.MODEL.Bank;
 using CORE.MODEL.Term;
+using CORE.MODEL.Department;
 
 namespace CORE.SERVICE
 {
@@ -3510,5 +3511,39 @@ VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @Pa
                 return await connection.QueryAsync<string>(query);
             }
         }
+
+        /*Register Staff*/
+        // Method to get departments for dropdown
+        public async Task<List<Department>> GetDepartmentsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT DepartmentID, DepartmentName FROM SchoolManagement.SchoolDepartMent";
+                return (await connection.QueryAsync<Department>(query)).ToList();
+            }
+        }
+
+        // Method to register a new staff
+        public async Task<bool> RegisterStaff(Staff staff)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = @"
+            INSERT INTO SchoolManagement.Staff 
+            (StaffFirstName, StaffLastName, StaffDateOfBirth, StaffGender, StaffAddress, StaffPhoneNumber, 
+             StaffEmail, Position, Department, EmploymentStatus, BankName, AccountNumber, AccountName, 
+             EmergencyContactName, EmergencyContactRelationship, EmergencyContactPhone, 
+             DateHired, SSNIT, BasicSalary, PAYE, SSNITTIER2, CategoryName, ImageData, VotersID, HealthInsurance, GhanaCard, Remarks)
+            VALUES 
+            (@StaffFirstName, @StaffLastName, @StaffDateOfBirth, @StaffGender, @StaffAddress, @StaffPhoneNumber, 
+             @StaffEmail, @Position, @Department, @EmploymentStatus, @BankName, @AccountNumber, @AccountName, 
+             @EmergencyContactName, @EmergencyContactRelationship, @EmergencyContactPhone, 
+             @DateHired, @SSNIT, @BasicSalary, @PAYE, @SSNITTIER2, @CategoryName, @ImageData, @VotersID, @HealthInsurance, @GhanaCard, @Remarks)";
+
+                int rowsAffected = await connection.ExecuteAsync(query, staff);
+                return rowsAffected > 0;
+            }
+        }
+
     }
 }

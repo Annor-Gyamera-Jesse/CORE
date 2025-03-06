@@ -1,8 +1,9 @@
 ﻿@page "/registration"
+@using CORE.Pages.STAFF.STAFF_REGISTRATION
 @using CORE.SECURITY
 @using CORE.SECURITY.LOADER
 @inject ContentLoaderTemplate LoaderTemplate
-
+<RadzenNotification />
 <style>
     form .row {
         /*margin-bottom: 16px;*/
@@ -31,10 +32,10 @@
                 <RadzenTabsItem Text="NON TEACHING STAFFS">
                     <CORE.Pages.NON_STAFFS.Non_Teaching_Staffs_Registration />
                 </RadzenTabsItem>
-@* 
-                <RadzenTabsItem Text="COURSE">
-                    <CORE.Pages.COURSES.Course_Registration />
-                </RadzenTabsItem> *@
+
+                <RadzenTabsItem Text="STAFFS">
+                    <Staff_Registration_Page/>
+                </RadzenTabsItem>
             </Tabs>
         </RadzenTabs>
 
