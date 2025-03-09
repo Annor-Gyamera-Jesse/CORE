@@ -6,173 +6,300 @@
 @inject Radzen.NotificationService Notify
 <RadzenNotification />
 
-<div class="container mt-4">
-    <div class="card shadow-lg p-4 rounded">
-        <div class="card-header bg-primary text-white">
-            <h3 class="mb-0">Staff Registration</h3>
-        </div>
-        <div class="card-body">
-            <RadzenTemplateForm TItem="Staff" Model="@newStaff">
+<style>
+    form .row {
+        margin-bottom: 16px;
+        margin-top: 10px;
+    }
+
+    .rz-fieldset-content {
+        padding: 0;
+    }
+
+    .form-label {
+        padding-top: 8px;
+    }
+
+    .form-control {
+        margin-bottom: 8px;
+    }
+</style>
+
+<RadzenFieldset Text="Staff Registration">
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-md-6">
+            <RadzenFieldset Text="Personal Details">
                 <div class="row">
-                    <!-- Left Column -->
-                    <div class="col-md-6">
-                        <RadzenFieldset class="border p-3 mb-4">
-                            <legend class="w-auto">Personal Details</legend>
-                            <div class="form-group">
-                                <RadzenLabel Text="First Name" />
-                                <RadzenTextBox @bind-Value="newStaff.StaffFirstName" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Last Name" />
-                                <RadzenTextBox @bind-Value="newStaff.StaffLastName" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Date of Birth"/>
-                                <RadzenDatePicker @bind-Value="newStaff.StaffDateOfBirth" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Gender" />
-                                <RadzenDropDown @bind-Value="newStaff.StaffGender" Data="@(new List<string> { "M", "F", "O" })"
-                                                Placeholder="Select Gender" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Address"/>
-                                <RadzenTextBox @bind-Value="newStaff.StaffAddress" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Phone Number" />
-                                <RadzenTextBox @bind-Value="newStaff.StaffPhoneNumber" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Email" />
-                                <RadzenTextBox @bind-Value="newStaff.StaffEmail" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Date Hired" />
-                                <RadzenDatePicker @bind-Value="newStaff.DateHired" Required="true" class="form-control" />
-                            </div>
-                             <div class="form-group mt-3">
-                                <RadzenLabel Text="VotersID" />
-                                <RadzenTextBox @bind-Value="newStaff.VotersID" Required="true" class="form-control" />
-                            </div> 
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Health Insurance" />
-                                <RadzenTextBox @bind-Value="newStaff.HealthInsurance" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="GhanaCard" />
-                                <RadzenTextBox @bind-Value="newStaff.GhanaCard" Required="true" class="form-control" />
-                            </div> 
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Remarks" />
-                                <RadzenTextBox @bind-Value="newStaff.Remarks" Required="true" class="form-control" />
-                            </div>
-                        </RadzenFieldset>
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="First Name" />
                     </div>
-
-                    <!-- Right Column -->
-                    <div class="col-md-6">
-                        <RadzenFieldset class="border p-3 mb-4">
-                            <legend class="w-auto">Job Details</legend>
-                            <div class="form-group">
-                                <RadzenLabel Text="Position" />
-                                <RadzenTextBox @bind-Value="newStaff.Position" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Department" />
-                                <RadzenDropDown @bind-Value="newStaff.Department" Data="@departments"
-                                                TextProperty="DepartmentName" ValueProperty="DepartmentName"
-                                                Placeholder="Select Department" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Employment Status" />
-                                <RadzenDropDown @bind-Value="newStaff.EmploymentStatus" Data="@(new List<string> { "Active", "Suspended", "Terminated" })"
-                                                Placeholder="Select Status" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Basic Salary" />
-                                <RadzenNumeric @bind-Value="newStaff.BasicSalary" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="BANK Name"/>
-                                <RadzenDropDown @bind-Value="newStaff.BankName" Data="@paymentMethods"
-                                                Placeholder="Select BankName" Required="true" class="form-control" />
-                            </div>
-
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Salary Payment Cat"/>
-                                <RadzenDropDown @bind-Value="selectedCategoryId" Data="@paymentCategories"
-                                                TextProperty="CategoryName" ValueProperty="CategoryID"
-                                                Class="w-full border-gray-300 rounded-lg p-2" Placeholder="Select Payment Category" />
-                            </div>
-
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Account Number"/>
-                                <RadzenTextBox @bind-Value="newStaff.AccountNumber" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Account Name" />
-                                <RadzenTextBox @bind-Value="newStaff.AccountName" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                <RadzenLabel Text="Upload Image"/>
-                                <InputFile id="teacherImage" OnChange="HandleFileChange" key="@inputFileKey" />
-                            </div>
-                            <RadzenFieldset Text="SSNIT">
-                            <div class="form-group mt-3">
-                                    <RadzenLabel Text="SSNIT"/>
-                                <RadzenDropDown @bind-Value="newStaff.SSNIT" Data="@(new List<string> { "Y", "N" })"
-                                                Placeholder="Select SSNIT Option" Required="true" class="form-control" />
-                            </div>
-                            <div class="form-group mt-3">
-                                    <RadzenLabel Text="PAYE"/>
-                                <RadzenNumeric @bind-Value="newStaff.PAYE" Required="true" class="form-control" />
-                            </div>
-
-                            <div class="form-group mt-3">
-                                    <RadzenLabel Text="SSNIT Tier 2" />
-                                <RadzenNumeric @bind-Value="newStaff.SSNITTIER2" Required="true" class="form-control" />
-                            </div>
-                          </RadzenFieldset>
-                        </RadzenFieldset>
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.StaffFirstName" Required="true" class="form-control" />
                     </div>
                 </div>
 
-                <RadzenFieldset class="border p-3 mb-4">
-                    <legend class="w-auto">Emergency Contact</legend>
-                    <div class="form-group">
-                        <RadzenLabel>Name</RadzenLabel>
-                        <RadzenTextBox @bind-Value="newStaff.EmergencyContactName" Required="true" class="form-control" />
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Last Name" />
                     </div>
-                    <div class="form-group mt-3">
-                        <RadzenLabel>Relationship</RadzenLabel>
-                        <RadzenTextBox @bind-Value="newStaff.EmergencyContactRelationship" Required="true" class="form-control" />
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.StaffLastName" Required="true" class="form-control" />
                     </div>
-                    <div class="form-group mt-3">
-                        <RadzenLabel>Phone</RadzenLabel>
-                        <RadzenTextBox @bind-Value="newStaff.EmergencyContactPhone" Required="true" class="form-control" />
-                    </div>
-                </RadzenFieldset>        
-                <!-- Button Row -->
-                <div class="text-end mt-3">
-                    <RadzenButton Text="Register Staff" Icon="check" ButtonType="ButtonType.Submit"
-                                  ButtonStyle="ButtonStyle.Success" Click="@SubmitForm"
-                                  Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
                 </div>
 
-            </RadzenTemplateForm>
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Date of Birth" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenDatePicker @bind-Value="newStaff.StaffDateOfBirth" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Gender" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenDropDown @bind-Value="newStaff.StaffGender" Data="@(new List<string> { "M", "F", "O" })"
+                                        Placeholder="Select Gender" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Address" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.StaffAddress" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Phone Number" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.StaffPhoneNumber" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Email" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.StaffEmail" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Date Hired" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenDatePicker @bind-Value="newStaff.DateHired" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Voters ID" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.VotersID" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Health Insurance" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.HealthInsurance" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Ghana Card" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.GhanaCard" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Remarks" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.Remarks" Required="true" class="form-control" />
+                    </div>
+                </div>
+            </RadzenFieldset>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-md-6">
+            <RadzenFieldset Text="Job Details">
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Position" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.Position" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Department" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenDropDown @bind-Value="newStaff.Department" Data="@departments"
+                                        TextProperty="DepartmentName" ValueProperty="DepartmentName"
+                                        Placeholder="Select Department" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Employment Status" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenDropDown @bind-Value="newStaff.EmploymentStatus" Data="@(new List<string> { "Active", "Suspended", "Terminated" })"
+                                        Placeholder="Select Status" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Basic Salary" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenNumeric @bind-Value="newStaff.BasicSalary" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Bank Name" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenDropDown @bind-Value="newStaff.BankName" Data="@paymentMethods"
+                                        Placeholder="Select Bank" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Account Number" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.AccountNumber" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Account Name" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenTextBox @bind-Value="newStaff.AccountName" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="Upload Image" />
+                    </div>
+                    <div class="col-md-9">
+                        <InputFile id="staffImage" OnChange="HandleFileChange" key="@inputFileKey" />
+                    </div>
+                </div>
+            </RadzenFieldset>
+
+            <RadzenFieldset Text="SSNIT Details" class="mt-4">
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="SSNIT" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenDropDown @bind-Value="newStaff.SSNIT" Data="@(new List<string> { "Y", "N" })"
+                                        Placeholder="Select SSNIT Option" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="PAYE" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenNumeric @bind-Value="newStaff.PAYE" Required="true" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="SSNIT Tier 2" />
+                    </div>
+                    <div class="col-md-9">
+                        <RadzenNumeric @bind-Value="newStaff.SSNITTIER2" Required="true" class="form-control" />
+                    </div>
+                </div>
+            </RadzenFieldset>
         </div>
     </div>
-</div>
+
+    <!-- Emergency Contact Section -->
+    <RadzenFieldset Text="Emergency Contact" class="mt-4">
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Name" />
+            </div>
+            <div class="col-md-9">
+                <RadzenTextBox @bind-Value="newStaff.EmergencyContactName" Required="true" class="form-control" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Relationship" />
+            </div>
+            <div class="col-md-9">
+                <RadzenTextBox @bind-Value="newStaff.EmergencyContactRelationship" Required="true" class="form-control" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Phone" />
+            </div>
+            <div class="col-md-9">
+                <RadzenTextBox @bind-Value="newStaff.EmergencyContactPhone" Required="true" class="form-control" />
+            </div>
+        </div>
+    </RadzenFieldset>
+
+    <!-- Buttons -->
+    <div class="row mt-4">
+        <div class="col-md-12 text-end">
+            <RadzenButton Text="Submit" Icon="check" ButtonType="ButtonType.Submit"
+                          ButtonStyle="ButtonStyle.Success" Click="@SubmitForm" Style="margin-right: 10px;" />
+            <RadzenButton Text="Reset" Icon="replay" ButtonStyle="ButtonStyle.Info" Click="@ResetForm" />
+        </div>
+    </div>
+</RadzenFieldset>
 
 @code {
     private Staff newStaff = new Staff();
     private List<Department> departments = new();
-    private IBrowserFile selectedFile;
-    private int inputFileKey = 0;
     private List<string> paymentMethods = new();
     private List<PaymentCategory> paymentCategories = new();
-    private int selectedCategoryId;
+    private IBrowserFile selectedFile;
+    private int inputFileKey = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -185,19 +312,13 @@
     {
         try
         {
-            // Assign the selected payment category
-            var selectedCategory = paymentCategories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
-            newStaff.CategoryName = selectedCategory?.CategoryName ?? string.Empty;
-
-            // Handle file upload if an image is selected
             if (selectedFile != null)
             {
                 using var stream = new MemoryStream();
                 await selectedFile.OpenReadStream().CopyToAsync(stream);
-                newStaff.ImageData = stream.ToArray(); // Ensure Staff model has an ImageData field of type byte[]
+                newStaff.ImageData = stream.ToArray();
             }
 
-            // Call the service to register staff
             bool success = await authService.RegisterStaff(newStaff);
 
             if (success)
@@ -210,10 +331,7 @@
                         Duration = 4000
                     });
 
-                // Reset the form and file input
-                newStaff = new Staff();
-                selectedFile = null;
-                inputFileKey++; // Force InputFile component to reset
+                ResetForm();
             }
             else
             {
@@ -221,7 +339,7 @@
                     {
                         Severity = NotificationSeverity.Warning,
                         Summary = "Warning",
-                        Detail = "Registration failed. Try again.",
+                        Detail = "Registration failed. Please try again.",
                         Duration = 4000
                     });
             }
@@ -238,6 +356,12 @@
         }
     }
 
+    private void ResetForm()
+    {
+        newStaff = new Staff();
+        selectedFile = null;
+        inputFileKey++;
+    }
 
     private void HandleFileChange(InputFileChangeEventArgs e)
     {
