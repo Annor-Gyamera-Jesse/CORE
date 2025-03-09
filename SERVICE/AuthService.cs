@@ -2950,15 +2950,15 @@ namespace CORE.SERVICE
             }
         }
 
-        public async Task<bool> PaySalaryAsync(int staffId, decimal amount, DateTime payDate, int month, int year)
+        public async Task<bool> PaySalaryAsync(int staffId, decimal amount, DateTime payDate, int month, int year, string bankName, string accountName, string accountNumber, decimal overTime, decimal taxDeduction, string paymentMethod, int categoryID)
         {
             try
             {
                 using var connection = new SqlConnection(connectionString);
                 string query = @"
             INSERT INTO SchoolManagement.SalaryPayments 
-            (StaffID, PayedOn, SalaryFor, PaymentYear, Amount) 
-            VALUES (@StaffID, @PayedOn, @SalaryFor, @PaymentYear, @Amount)";
+            (StaffID, PayedOn, SalaryFor, PaymentYear, Amount, BankName, AccountName, AccountNumber, OverTime, TaxDeduction, PaymentMethod, CategoryID) 
+            VALUES (@StaffID, @PayedOn, @SalaryFor, @PaymentYear, @Amount, @BankName, @AccountName, @AccountNumber, @OverTime, @TaxDeduction, @PaymentMethod, @CategoryID)";
 
                 int rows = await connection.ExecuteAsync(query, new
                 {
@@ -2966,7 +2966,15 @@ namespace CORE.SERVICE
                     PayedOn = payDate,
                     SalaryFor = month,
                     PaymentYear = year,
-                    Amount = amount
+                    Amount = amount,
+                    BankName = bankName,
+                    AccountName = accountName,
+                    AccountNumber = accountNumber,
+                    OverTime = overTime,
+                    TaxDeduction = taxDeduction,
+                    PaymentMethod = paymentMethod,
+                    CategoryID = categoryID
+
                 });
 
                 return rows > 0;

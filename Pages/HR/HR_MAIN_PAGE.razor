@@ -303,29 +303,37 @@
     {
         try
         {
-            bool success = await HrService.PaySalaryAsync(selectedStaff.StaffID, selectedStaff.Salary, DateTime.Now, selectedMonth, selectedYear);
+            bool success = await HrService.PaySalaryAsync(
+                selectedStaff.StaffID,
+                selectedStaff.Salary,
+                DateTime.Now,
+                selectedMonth,
+                selectedYear,
+                selectedStaff.BankName,
+                selectedStaff.AccountName,
+                selectedStaff.AccountNumber,
+                selectedStaff.OverTime,
+                selectedStaff.TaxMoney,
+                selectedPaymentMethod,
+                selectedCategoryId
+            );
+
             if (success)
             {
-
-                //await DialogService.Alert($"Salary paid successfully to {selectedStaff.StaffFirstName}!", "Success");
-
                 Notify.ShowNotification("Success", $"Salary paid successfully to {selectedStaff.StaffFirstName}!", NotificationSeverity.Success);
                 paymentHistory = await HrService.GetPaymentHistoryAsync(selectedStaff.StaffID);
             }
             else
             {
-
-                //await DialogService.Alert("Salary payment failed!", "Error");
-
                 Notify.ShowNotification("Error", "Salary payment failed!", NotificationSeverity.Warning);
             }
         }
         catch (Exception ex)
         {
-            //await DialogService.Alert($"Error processing salary payment: {ex.Message}", "Error");
-            Notify.ShowNotification("Error", $" Error processing salary payment: {ex.Message}", NotificationSeverity.Error);
+            Notify.ShowNotification("Error", $"Error processing salary payment: {ex.Message}", NotificationSeverity.Error);
         }
     }
+
 
     private async Task ProcessAutomaticPayment()
     {
