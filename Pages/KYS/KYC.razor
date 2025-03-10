@@ -3,9 +3,12 @@
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
+@using CORE.Tool_Components.KYC
 @inject AuthService AuthService
 @inject NotificationMessageService Notify
+@inherits KYCCodeBehind
 <RadzenNotification />
+
 
 <style>
     .radzen-fieldset {
@@ -42,7 +45,35 @@
         height: auto;
         border-radius: 5px;
     }
+    /* PRINT STUDENT REPOR */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
 </style>
+
+
+  <RadzenHeader title="REPORT GENERATING" class="header-container compact-header">
+    <RadzenFieldset Text="EXPORT STUDENT EXAMS REPORT" class="right-align">
+        <KYSTOOLCOMPONENT OnOpenStudentIdCardExportDialog="OnStudentIDCardExportDialog" />
+</RadzenFieldset>
+            </RadzenHeader>
+            <br/>
 
 <LoadingSpinner Visible="isLoading"/>
 @if (!isLoading)
@@ -95,8 +126,9 @@
                             <RadzenTextBox @bind-Value="student.StudentMedicalReport" class="form-control" ReadOnly="true" />
                         </RadzenFieldset>
                     </div>
-
+                    
                     <div class="col-md-6">
+                        <RadzenFieldset Text="IMAGE" Icon="image">
                         <!-- Image Card -->
                         <div class="image-card">
                         @if(isLoading)
@@ -107,7 +139,8 @@
                         {                                                
                             @if (student?.ImageData != null)
                             {
-                                <img src="@($"data:image/png;base64,{Convert.ToBase64String(student.ImageData)}")" alt="Student Image" />
+                                //<img src="@($"data:image/png;base64,{Convert.ToBase64String(student.ImageData)}")" alt="Student Image" />
+                                        <RadzenImage src="@($"data:image/png;base64,{Convert.ToBase64String(student.ImageData)}")" alt="Student Image" />
                             }
                             else
                             {
@@ -115,6 +148,8 @@
                             }
                         }
                         </div>
+                        </RadzenFieldset>
+
                     <RadzenFieldset Text="STUDENT EMERGENCY CONTACT">
                     <RadzenLabel Text="Guardian Full Name" />
                         <RadzenTextBox @bind-Value="student.GuardianFullName" class="form-control" ReadOnly="true" />
@@ -197,4 +232,7 @@
             isLoading = false;
         }
     }
+
+    async void OnStudentIDCardExportDialog() => await OpenStudentIDCardExportDialog();
+    // async void OnOpenClassExamsExportDialog() => await OpenExamsPerClassExportDialog();
 }

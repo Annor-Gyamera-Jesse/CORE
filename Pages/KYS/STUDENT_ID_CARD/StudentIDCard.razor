@@ -1,0 +1,76 @@
+﻿@page "/student-id-card"
+@using CORE.MODEL
+@using CORE.SERVICE
+@inject AuthService StudentService
+@inject IJSRuntime JSRuntime
+
+<RadzenCard Style="width: 500px; margin: auto; padding: 20px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <RadzenDropDown @bind-Value="SelectedStudentID"
+                    Data="@Students"
+                    TextProperty="FullName"
+                    ValueProperty="StudentID"
+                    Placeholder="Select a Student"
+                    Change="OnStudentChange"
+                    Style="width: 100%;" />
+
+    @if (SelectedStudent != null)
+    {
+        <RadzenCard Style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #f8f8f8;">
+            <div style="display: flex; align-items: center;">
+                <img src="@SelectedStudent.ImageBase64" alt="Student Photo" style="width: 80px; height: 100px; border-radius: 5px;" />
+
+                <div style="margin-left: 15px;">
+                    <h4>@SelectedStudent.FullName</h4>
+                    <p>Class: <b>@SelectedStudent.ClassID</b></p>
+                </div>
+            </div>
+
+            <RadzenButton Click="PrintIDCard" Text="Print ID Card" Icon="print" ButtonStyle="ButtonStyle.Primary" Style="margin-top: 10px;" />
+        </RadzenCard>
+    }
+</RadzenCard>
+
+@code {
+    private List<Student> Students = new();
+    private int? SelectedStudentID;
+    private Student SelectedStudent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Students = (await StudentService.GetStudentsAsync()).ToList();
+    }
+
+    private async Task OnStudentChange(object value)
+    {
+        SelectedStudentID = (int?)value;
+        if (SelectedStudentID.HasValue)
+        {
+            SelectedStudent = await StudentService.GetStudentByIdAsync(SelectedStudentID.Value);
+        }
+    }
+
+    private async Task PrintIDCard()
+    {
+        var studentData = new Dictionary<string, object>
+    {
+        { "StudentID", SelectedStudent.StudentID },
+        { "StudentFirstName", SelectedStudent.StudentFirstName },
+        { "StudentLastName", SelectedStudent.StudentLastName },
+        { "StudentGender", SelectedStudent.StudentGender }, // ✅ Ensure Gender is included
+        { "ClassID", SelectedStudent.ClassID },
+        { "ImageBase64", SelectedStudent.ImageBase64 },
+        { "SchoolName", SelectedStudent.SchoolName },
+        { "SchoolImageBase64", SelectedStudent.SchoolImageBase64 },
+        { "StudentDateOfBirth", SelectedStudent.StudentDateOfBirth },
+        { "GuardianFullName", SelectedStudent.GuardianFullName },
+        { "GuardianFirstContact", SelectedStudent.GuardianFirstContact },
+        { "GuardianSecondContact", SelectedStudent.GuardianSecondContact }
+    };
+
+        Console.WriteLine($"Sending JSON to JS: {System.Text.Json.JsonSerializer.Serialize(studentData)}");
+
+        await JSRuntime.InvokeVoidAsync("generateStudentIDCard", studentData);
+    }
+
+
+}
