@@ -1,4 +1,14 @@
-﻿function generateStudentIDCard(student) {
+﻿function formatDate(isoDate) {
+    if (!isoDate) return "_";
+    const date = new Date(isoDate);
+    return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    }).replace(',', '');
+}
+
+function generateStudentIDCard(student) {
     console.log("Received Student Data:", student);
 
     if (!student || !student.StudentID) {
@@ -6,56 +16,63 @@
         return;
     }
 
-    console.log("Student ID Found:", student.StudentID);
-    console.log("Student Name:", student.StudentFirstName, student.StudentLastName);
-    console.log("Class:", student.ClassID);
-    console.log("Gender:", student.StudentGender);
-    console.log("ImageBase64 Status:", student.ImageBase64 ? "FOUND IMAGE" : "EMPTY");
-    console.log("School Name:", student.SchoolName);
-    console.log("School Image Status:", student.SchoolImageBase64 ? "FOUND SCHOOL IMAGE" : "EMPTY");
-
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('landscape', 'mm', [85, 55]);
 
     try {
-        doc.setFillColor(0, 120, 215);
+        // Background Color
+        doc.setFillColor(0, 76, 153);
         doc.rect(0, 0, 85, 55, 'F');
 
+        // School Logo
         if (student.SchoolImageBase64) {
-            doc.addImage(student.SchoolImageBase64, 'JPEG', 5, 2, 10, 10);
+            doc.addImage(student.SchoolImageBase64, 'JPEG', 5, 3, 10, 10);
         }
 
+        // School Name
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         doc.text(student.SchoolName || 'SCHOOL NAME', 42, 8, { align: 'center' });
 
+        // Student Photo Placeholder
         if (student.ImageBase64) {
-            doc.addImage(student.ImageBase64, 'JPEG', 5, 12, 18, 24);
+            doc.addImage(student.ImageBase64, 'JPEG', 5, 15, 18, 24);
         } else {
             doc.setFillColor(200, 200, 200);
-            doc.rect(5, 12, 18, 24, 'F');
+            doc.roundedRect(5, 15, 18, 24, 2, 2, 'F');
         }
 
+        // Student Information Box
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(25, 12, 55, 30, 3, 3, 'F');
         doc.setTextColor(0, 0, 0);
-        doc.setFont('helvetica', 'normal');
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
 
-        let textY = 15;
-        doc.text(`Name: ${student.StudentFirstName} ${student.StudentLastName}`, 25, textY);
+        let textY = 17;
+        doc.text(`Name: ${student.StudentFirstName} ${student.StudentLastName}`, 27, textY);
         textY += 5;
-        doc.text(`Gender: ${student.StudentGender ?? '_'}`, 25, textY);
+        doc.text(`Gender: ${student.StudentGender ?? '_'}`, 27, textY);
         textY += 5;
-        doc.text(`Class: ${student.ClassID ?? '_'}`, 25, textY);
+        doc.text(`Class: ${student.ClassID ?? '_'}`, 27, textY);
         textY += 5;
-        doc.text(`DOB: ${student.StudentDateOfBirth ?? '_'}`, 25, textY);
+        doc.text(`DOB: ${formatDate(student.StudentDateOfBirth)}`, 27, textY); // **Formatted DOB**
+        //textY += 5;
+        //doc.text(`Guardian: ${student.GuardianFullName ?? '_'}`, 27, textY);
         textY += 5;
-        doc.text(`Guardian: ${student.GuardianFullName ?? '_'}`, 25, textY);
+        doc.text(`Contact 1: ${student.GuardianFirstContact ?? '_'}`, 27, textY);
         textY += 5;
-        doc.text(`GuardianFirstContact: ${student.GuardianFirstContact ?? '_'}`, 25, textY);
-        textY += 5;
-        doc.text(`GuardianFirstContact: ${student.GuardianSecondContact ?? '_'}`, 25, textY);
+        doc.text(`Contact 2: ${student.GuardianSecondContact ?? '_'}`, 27, textY);
 
+        // Footer Design
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(0, 48, 85, 7, 2, 2, 'F');
+        doc.setTextColor(0, 76, 153);
+        doc.setFont('helvetica', 'bold');
+        doc.text('STUDENT ID CARD', 42, 52, { align: 'center' });
+
+        // Save PDF
         doc.save(`Student_ID_${student.StudentID}.pdf`);
     } catch (error) {
         console.error("Error generating ID card:", error);
