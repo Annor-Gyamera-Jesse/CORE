@@ -3553,5 +3553,78 @@ VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @Pa
             }
         }
 
+        //StudentID Card 
+        public async Task<IEnumerable<Student>> GetStudentsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = @"
+            SELECT 
+                StudentID, 
+                StudentFirstName, 
+                StudentLastName, 
+                ClassID, 
+                ImageData 
+            FROM SchoolManagement.Students";
+
+                var students = await connection.QueryAsync<Student>(query);
+
+                foreach (var student in students)
+                {
+                    if (student.ImageData != null)
+                    {
+                        student.ImageBase64 = $"data:image/jpeg;base64,{Convert.ToBase64String(student.ImageData)}";
+                    }
+                }
+
+                return students;
+            }
+        }
+
+
+        public async Task<Student> GetStudentByIdAsync(int studentId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string procedure = "GetStudentIDCardDetails";
+                var parameters = new { StudentID = studentId };
+
+                Console.WriteLine($"Executing Stored Procedure: {procedure} with StudentID: {studentId}");
+
+                var student = await connection.QueryFirstOrDefaultAsync<Student>(
+                    procedure,
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                );
+
+                if (student == null)
+                {
+                    Console.WriteLine($"Error: No student found for ID {studentId}");
+                    return null;
+                }
+
+                Console.WriteLine("Fetched Student Details:");
+                Console.WriteLine($"StudentID: {student.StudentID}");
+                Console.WriteLine($"Name: {student.StudentFirstName} {student.StudentLastName}");
+                Console.WriteLine($"ClassID: {student.ClassID}");
+                Console.WriteLine($"ImageData Status: {(student.ImageData != null ? "FOUND IMAGE" : "EMPTY")}");
+                Console.WriteLine($"CompanyImage Status: {(student.CompanyImage != null ? "FOUND SCHOOL IMAGE" : "EMPTY")}");
+
+                // Convert image bytes to base64
+                if (student.ImageData != null)
+                {
+                    student.ImageBase64 = $"data:image/jpeg;base64,{Convert.ToBase64String(student.ImageData)}";
+                }
+
+                if (student.CompanyImage != null)
+                {
+                    student.SchoolImageBase64 = $"data:image/jpeg;base64,{Convert.ToBase64String(student.CompanyImage)}";
+                }
+
+                return student;
+            }
+        }
+
     }
+
 }

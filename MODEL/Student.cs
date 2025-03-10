@@ -26,6 +26,10 @@ namespace CORE.MODEL
         public int UserID { get; set; }
         public string FullName => $"{StudentFirstName} {StudentLastName}";
         public string DisplayInfo => $"{FullName} - {ClassID}";
+        public string ImageBase64 { get; set; }
+        public string SchoolName { get; set; }
+        public byte[] CompanyImage { get; set; }
+        public string SchoolImageBase64 { get; set; }
 
     }
 
