@@ -1746,6 +1746,51 @@ namespace CORE.SERVICE
             return totalStudents;
         }
 
+        public async Task<int> GetTotalTeachersCount()
+        {
+            int totalStudents = 0;
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT COUNT(*) FROM SchoolManagement.Teacher";
+                SqlCommand command = new SqlCommand(query, connection);
+
+                try
+                {
+                    connection.Open();
+                    totalStudents = (int)command.ExecuteScalar();
+                }
+                catch (Exception ex)
+                {
+                    // Handle exception
+                }
+            }
+
+            return totalStudents;
+        }
+        public async Task<int> GetStaffsCount()
+        {
+            int totalStudents = 0;
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT COUNT(*) FROM SchoolManagement.Staff";
+                SqlCommand command = new SqlCommand(query, connection);
+
+                try
+                {
+                    connection.Open();
+                    totalStudents = (int)command.ExecuteScalar();
+                }
+                catch (Exception ex)
+                {
+                    // Handle exception
+                }
+            }
+
+            return totalStudents;
+        }
+
         //-- Display Logs of intries into the system--//
         public async Task<IEnumerable<UserLog>> GetUserLogsAsync()
         {

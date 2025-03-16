@@ -5,98 +5,112 @@
 @using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
 @inject NotificationMessageService Notify
+
 <RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
 
 <style>
-    .tab-container {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin-top: 20px;
-    }
-
-    .tab {
-        background: linear-gradient(to right, #4facfe, #00f2fe);
-        border-radius: 10px;
-        color: white;
+    .dashboard-container {
         padding: 20px;
-        text-align: center;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        margin: 10px;
-        flex: 1 1 200px; /* Flex-grow, flex-shrink, and flex-basis */
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.3s;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: flex-start; /* Aligns items from top-left */
+        width: 100%;
     }
 
-        .tab:hover {
-            transform: scale(1.05);
+    .dashboard-card {
+        text-align: center;
+        padding: 30px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #2c3e50, #34495e);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        transition: transform 0.3s, box-shadow 0.3s;
+        color: white;
+        margin: 10px; /* Ensures consistent spacing */
+        width: 250px; /* Fixed width */
+    }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
         }
 
-        .tab i {
-            font-size: 2rem;
-            margin-bottom: 10px;
+        .dashboard-card h3 {
+            margin: 10px 0;
+            font-size: 1.4rem;
         }
 
-        .tab h1 {
-            font-size: 1.2rem;
+        .dashboard-card h2 {
             margin: 0;
-        }
-
-        .tab h2 {
-            font-size: 2rem;
-            margin: 10px 0 0;
+            font-size: 2.5rem;
+            font-weight: bold;
         }
 </style>
-<LoadingSpinner Visible="isLoading"/>
+
 @if (!isLoading)
 {
-<div class="container mt-5">
+    <div class="dashboard-container">
+        <RadzenCard Class="dashboard-card">
+            <RadzenIcon Icon="groups" Style="font-size: 3rem; color: #ff7675;" />
+            <h3>Total Students</h3>
+            <h2>@totalStudentsCount</h2>
+            <RadzenProgressBar Value="@studentsProgress" ShowValue="true" />
+        </RadzenCard>
 
-        <div class="tab-container">
-            <div class="tab">
-                <i class="fas fa-users"></i>
-                <h1>Total Students</h1>
-                <h2><b>@totalStudentsCount</b></h2>
-            </div>
-            <div class="tab">
-                <i class="fas fa-chalkboard-teacher"></i>
-                <h1>Total Teachers</h1>
-                <h2><b>@totalTeachersCount</b></h2>
-            </div>
-            <div class="tab">
-                <i class="fas fa-graduation-cap"></i>
-                <h1>Total Graduates</h1>
-                <h2><b>@totalGraduatesCount</b></h2>
-            </div>
-        </div>
-</div>
+        <RadzenCard Class="dashboard-card">
+            <RadzenIcon Icon="school" Style="font-size: 3rem; color: #1abc9c;" />
+            <h3>Total Teachers</h3>
+            <h2>@totalTeachersCount</h2>
+            <RadzenProgressBar Value="@teachersProgress" ShowValue="true" />
+        </RadzenCard>
+
+      @*   <RadzenCard Class="dashboard-card">
+            <RadzenIcon Icon="emoji_events" Style="font-size: 3rem; color: #f39c12;" />
+            <h3>Total Graduates</h3>
+            <h2>@totalGraduatesCount</h2>
+            <RadzenProgressBar Value="@graduatesProgress" ShowValue="true" />
+        </RadzenCard> *@
+
+        <RadzenCard Class="dashboard-card">
+            <RadzenIcon Icon="people" Style="font-size: 3rem; color: coral;" />
+            <h3>Total Staffs</h3>
+            <h2>@totalStaffsCount</h2>
+            <RadzenProgressBar Value="@StaffProgress" ShowValue="true" />
+        </RadzenCard>
+    </div>
 }
+
 @code {
     private int totalStudentsCount;
     private int totalTeachersCount;
     private int totalGraduatesCount;
-    private bool isLoading = false;
+    private int totalStaffsCount;
+    private bool isLoading = true;
+
+    private int studentsProgress = 75;
+    private int teachersProgress = 60;
+    private int graduatesProgress = 90;
+    private int StaffProgress = 90;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            isLoading = true;
             totalStudentsCount = await authService.GetTotalStudentsCount();
-            // totalTeachersCount = await authService.GetTotalTeachersCount();
+            totalTeachersCount = await authService.GetTotalTeachersCount();
             // totalGraduatesCount = await authService.GetTotalGraduatesCount();
-            StateHasChanged();
+            totalStaffsCount = await authService.GetStaffsCount();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            Notify.ShowNotification("", $" .{ex.Message}", NotificationSeverity.Info);
+            Notify.ShowNotification("", $"Error: {ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
             isLoading = false;
+            StateHasChanged();
         }
-
     }
 }
