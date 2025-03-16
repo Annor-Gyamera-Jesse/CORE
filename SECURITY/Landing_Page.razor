@@ -11,87 +11,110 @@
 
 <style>
     .dashboard-container {
-        padding: 20px;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        align-items: center;
+    }
+
+    .card-container {
         display: flex;
         flex-wrap: wrap;
-        align-items: flex-start;
-        justify-content: flex-start; /* Aligns items from top-left */
-        width: 100%;
+        justify-content: center;
+        gap: 25px;
     }
 
     .dashboard-card {
+        width: 300px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(15px);
+        border-radius: 20px;
+        padding: 25px;
         text-align: center;
-        padding: 30px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #2c3e50, #34495e);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        transition: transform 0.3s, box-shadow 0.3s;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
         color: white;
-        margin: 10px; /* Ensures consistent spacing */
-        width: 250px; /* Fixed width */
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
         .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            transform: translateY(-10px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
         }
 
-        .dashboard-card h3 {
-            margin: 10px 0;
-            font-size: 1.4rem;
+        .dashboard-card i {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .dashboard-card h1 {
+            font-size: 1.6rem;
+            margin: 0;
         }
 
         .dashboard-card h2 {
-            margin: 0;
-            font-size: 2.5rem;
+            font-size: 2.2rem;
+            margin: 10px 0 0;
             font-weight: bold;
+        }
+
+    .chart-container {
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.1);
+        width: 80%;
+    }
+
+        .chart-container h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            color: #333;
         }
 </style>
 
 @if (!isLoading)
 {
     <div class="dashboard-container">
-        <RadzenCard Class="dashboard-card">
-            <RadzenIcon Icon="groups" Style="font-size: 3rem; color: #ff7675;" />
-            <h3>Total Students</h3>
-            <h2>@totalStudentsCount</h2>
-            <RadzenProgressBar Value="@studentsProgress" ShowValue="true" />
-        </RadzenCard>
+        <div class="card-container">
+            <div class="dashboard-card" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                <i class="fas fa-users"></i>
+                <h1>Total Students</h1>
+                <h2>@totalStudentsCount</h2>
+            </div>
 
-        <RadzenCard Class="dashboard-card">
-            <RadzenIcon Icon="school" Style="font-size: 3rem; color: #1abc9c;" />
-            <h3>Total Teachers</h3>
-            <h2>@totalTeachersCount</h2>
-            <RadzenProgressBar Value="@teachersProgress" ShowValue="true" />
-        </RadzenCard>
+            <div class="dashboard-card" style="background: linear-gradient(135deg, #ff758c, #ff7eb3);">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <h1>Total Teachers</h1>
+                <h2>@totalTeachersCount</h2>
+            </div>
 
-      @*   <RadzenCard Class="dashboard-card">
-            <RadzenIcon Icon="emoji_events" Style="font-size: 3rem; color: #f39c12;" />
-            <h3>Total Graduates</h3>
-            <h2>@totalGraduatesCount</h2>
-            <RadzenProgressBar Value="@graduatesProgress" ShowValue="true" />
-        </RadzenCard> *@
+            <div class="dashboard-card" style="background: linear-gradient(135deg, #00c6fb, #005bea);">
+                <i class="fas fa-user-graduate"></i>
+                <h1>Total Staff</h1>
+                <h2>@totalStaffsCount</h2>
+            </div>
+        </div>
 
-        <RadzenCard Class="dashboard-card">
-            <RadzenIcon Icon="people" Style="font-size: 3rem; color: coral;" />
-            <h3>Total Staffs</h3>
-            <h2>@totalStaffsCount</h2>
-            <RadzenProgressBar Value="@StaffProgress" ShowValue="true" />
-        </RadzenCard>
+        <div class="chart-container">
+            <h2>Data Overview</h2>
+            <RadzenChart Style="height: 400px;">
+                <RadzenColumnSeries Data="@chartData" CategoryProperty="Category" ValueProperty="Value" />
+                <RadzenCategoryAxis />
+                <RadzenValueAxis />
+            </RadzenChart>
+        </div>
     </div>
 }
 
 @code {
     private int totalStudentsCount;
     private int totalTeachersCount;
-    private int totalGraduatesCount;
     private int totalStaffsCount;
     private bool isLoading = true;
-
-    private int studentsProgress = 75;
-    private int teachersProgress = 60;
-    private int graduatesProgress = 90;
-    private int StaffProgress = 90;
+    private List<ChartData> chartData = new List<ChartData>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -100,8 +123,14 @@
             isLoading = true;
             totalStudentsCount = await authService.GetTotalStudentsCount();
             totalTeachersCount = await authService.GetTotalTeachersCount();
-            // totalGraduatesCount = await authService.GetTotalGraduatesCount();
             totalStaffsCount = await authService.GetStaffsCount();
+
+            chartData = new List<ChartData>
+            {
+                new ChartData { Category = "Students", Value = totalStudentsCount },
+                new ChartData { Category = "Teachers", Value = totalTeachersCount },
+                new ChartData { Category = "Staff", Value = totalStaffsCount }
+            };
         }
         catch (Exception ex)
         {
@@ -112,5 +141,11 @@
             isLoading = false;
             StateHasChanged();
         }
+    }
+
+    public class ChartData
+    {
+        public string Category { get; set; }
+        public int Value { get; set; }
     }
 }
