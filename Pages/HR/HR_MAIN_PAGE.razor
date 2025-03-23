@@ -337,7 +337,13 @@
 
     private async Task ProcessAutomaticPayment()
     {
-        bool success = await HrService.ProcessAutomaticPaymentAsync(selectedCategoryId, "Bank Name", "Account Name", "12345678", selectedPaymentMethod);
+        if (selectedCategoryId == 0 || string.IsNullOrEmpty(selectedPaymentMethod))
+        {
+            await DialogService.Alert("Please select a payment category and method.", "Warning");
+            return;
+        }
+
+        bool success = await HrService.ProcessAutomaticPaymentAsync(selectedCategoryId, selectedPaymentMethod);
         if (success)
         {
             Notify.ShowNotification("Success", "Automatic payment completed successfully!", NotificationSeverity.Success);
