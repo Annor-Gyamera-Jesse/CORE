@@ -3056,19 +3056,33 @@ namespace CORE.SERVICE
             }
         }
 
-        public async Task<bool> ProcessAutomaticPaymentAsync(int categoryId, string bankName, string accountName, string accountNumber, string paymentmethod)
+        public async Task<bool> ProcessAutomaticPaymentAsync(int categoryId, string paymentMethod)
         {
             try
             {
                 using var connection = new SqlConnection(connectionString);
 
                 // Get staff under the selected category
-                string staffQuery = "SELECT StaffID, CategoryID FROM SchoolManagement.Staff WHERE CategoryID = @CategoryID";
+                string staffQuery = "SELECT StaffID FROM SchoolManagement.Staff WHERE CategoryID = @CategoryID";
                 var staffList = await connection.QueryAsync<Staff>(staffQuery, new { CategoryID = categoryId });
 
                 // Get payment amount for this category
                 string salaryQuery = "SELECT Amount FROM SchoolManagement.PaymentCategory WHERE CategoryID = @CategoryID";
                 decimal salaryAmount = await connection.ExecuteScalarAsync<decimal>(salaryQuery, new { CategoryID = categoryId });
+
+                // Calculate total amount to deduct
+                decimal totalAmountToDeduct = salaryAmount * staffList.Count();
+
+                // Check available balance in the bank for the selected payment method
+                string bankQuery = "SELECT SUM(AmountTransferred) FROM SchoolManagement.Bank WHERE MethodName = @PaymentMethod";
+                decimal availableBalance = await connection.ExecuteScalarAsync<decimal>(bankQuery, new { PaymentMethod = paymentMethod });
+
+                // Check if there are sufficient funds
+                if (availableBalance < totalAmountToDeduct)
+                {
+                    Console.WriteLine("Insufficient funds in the selected bank account.");
+                    return false; // Not enough funds
+                }
 
                 // Insert payment for each staff member
                 string insertQuery = @"
@@ -3085,9 +3099,17 @@ VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @Pa
                         SalaryFor = DateTime.Now.Month,
                         PaymentYear = DateTime.Now.Year,
                         Amount = salaryAmount,
-                        PaymentMethod = paymentmethod  // Include Payment Method here
+                        PaymentMethod = paymentMethod  // Include Payment Method here
                     });
                 }
+
+                // Deduct the total amount from the bank
+                string deductQuery = @"
+UPDATE SchoolManagement.Bank
+SET AmountTransferred = AmountTransferred - @TotalAmount
+WHERE MethodName = @PaymentMethod";
+
+                await connection.ExecuteAsync(deductQuery, new { TotalAmount = totalAmountToDeduct, PaymentMethod = paymentMethod });
 
                 return rowsAffected > 0;
             }
