@@ -151,13 +151,31 @@
             return;
         }
 
+        // Calculate total amount to deduct
+        decimal totalAmount = selectedStaff.Salary + selectedStaff.OverTime - selectedStaff.TaxMoney;
+
+        // Check if a payment method is selected
+        if (string.IsNullOrEmpty(selectedPaymentMethod))
+        {
+            await DialogService.Alert("Please select a payment method.", "Warning");
+            return;
+        }
+
+        // Check available balance in the bank for the selected payment method
+        decimal availableBalance = await HrService.GetAvailableBalanceAsync(selectedPaymentMethod);
+        if (availableBalance < totalAmount)
+        {
+            await DialogService.Alert("Insufficient funds in the selected bank account.", "Error");
+            return;
+        }
+
         var paymentData = new
         {
             StaffID = selectedStaff.StaffID,
-            CategoryID = selectedCategoryId, // Ensure this is not null or missing
+             CategoryID = selectedCategoryId,
             SalaryFor = selectedMonth,
             PaymentYear = selectedYear,
-            Amount = selectedStaff.Salary,
+            Amount = totalAmount,
             OverTime = selectedStaff.OverTime,
             TaxDeduction = selectedStaff.TaxMoney,
             BankName = selectedStaff.BankName,
@@ -165,13 +183,21 @@
             AccountNumber = selectedStaff.AccountNumber
         };
 
-
         bool success = await HrService.InsertSalaryPaymentAsync(paymentData);
 
         if (success)
         {
-             Notify.ShowNotification("Manual Payment Successful!","",NotificationSeverity.Success);
-            paymentHistory = await HrService.GetPaymentHistoryAsync(selectedStaff.StaffID);
+            // Deduct the total amount from the bank
+            bool deductionSuccess = await HrService.DeductFromBankAsync(selectedPaymentMethod, totalAmount);
+            if (deductionSuccess)
+            {
+                Notify.ShowNotification("Manual Payment Successful!", "", NotificationSeverity.Success);
+                paymentHistory = await HrService.GetPaymentHistoryAsync(selectedStaff.StaffID);
+            }
+            else
+            {
+                await DialogService.Alert("Failed to deduct amount from the bank.", "Error");
+            }
         }
         else
         {
