@@ -3174,6 +3174,41 @@ WHERE MethodName = @PaymentMethod";
             }
         }
 
+        public async Task<decimal> GetAvailableBalanceAsync(string paymentMethod)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                string query = "SELECT SUM(AmountTransferred) FROM SchoolManagement.Bank WHERE MethodName = @PaymentMethod";
+                return await connection.ExecuteScalarAsync<decimal>(query, new { PaymentMethod = paymentMethod });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching available balance: {ex.Message}");
+                return 0;
+            }
+        }
+
+        public async Task<bool> DeductFromBankAsync(string paymentMethod, decimal amount)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                string query = @"
+            UPDATE SchoolManagement.Bank
+            SET AmountTransferred = AmountTransferred - @Amount
+            WHERE MethodName = @PaymentMethod";
+
+                int rowsAffected = await connection.ExecuteAsync(query, new { Amount = amount, PaymentMethod = paymentMethod });
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deducting amount from bank: {ex.Message}");
+                return false;
+            }
+        }
+
         /*EXPENSES*/
         // Get Expense Categories for the logged-in user
         public async Task<List<ExpenseCategory>> GetExpenseCategoriesAsync(int userId)
