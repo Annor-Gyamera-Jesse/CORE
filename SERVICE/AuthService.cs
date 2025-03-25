@@ -12,6 +12,7 @@ using CORE.MODEL.Expenses;
 using CORE.MODEL.Bank;
 using CORE.MODEL.Term;
 using CORE.MODEL.Department;
+using CORE.MODEL.Bank.LOG;
 
 namespace CORE.SERVICE
 {
@@ -2737,6 +2738,30 @@ namespace CORE.SERVICE
 
         }
 
+        public async Task<int> GetBankIDAsync(string paymentMethod)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = "SELECT BankID FROM SchoolManagement.Bank WHERE MethodName = @PaymentMethod";
+            return await connection.ExecuteScalarAsync<int>(query, new { PaymentMethod = paymentMethod });
+        }
+
+        public async Task LogsBankTransactionAsync(int? bankId, string transactionType, decimal amount, string status, string errorMessage)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string logQuery = @"
+    INSERT INTO SchoolManagement.BankTransactionLog (BankID, TransactionType, Amount, Status, ErrorMessage)
+    VALUES (@BankID, @TransactionType, @Amount, @Status, @ErrorMessage)";
+
+            await connection.ExecuteAsync(logQuery, new
+            {
+                BankID = bankId,
+                TransactionType = transactionType,
+                Amount = amount,
+                Status = status,
+                ErrorMessage = errorMessage
+            });
+        }
+
         /*logic to display student outstanding balance*/
         public async Task<StudentFee> GetStudentFeeAsync(int studentId, int feeTypeId)
         {
@@ -3229,18 +3254,48 @@ namespace CORE.SERVICE
             {
                 using var connection = new SqlConnection(connectionString);
                 string query = @"
-            UPDATE SchoolManagement.Bank
-            SET AmountTransferred = AmountTransferred - @Amount
-            WHERE MethodName = @PaymentMethod";
+        UPDATE SchoolManagement.Bank
+        SET AmountTransferred = AmountTransferred - @Amount
+        WHERE MethodName = @PaymentMethod";
 
                 int rowsAffected = await connection.ExecuteAsync(query, new { Amount = amount, PaymentMethod = paymentMethod });
-                return rowsAffected > 0;
+
+                if (rowsAffected > 0)
+                {
+                    // Log the successful deduction
+                    await LogBankTransactionAsync(null, "Withdrawal", amount, "Success", null);
+                    return true;
+                }
+                else
+                {
+                    // Log the failure
+                    await LogBankTransactionAsync(null, "Withdrawal", amount, "Failed", "No rows affected.");
+                    return false;
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error deducting amount from bank: {ex.Message}");
+                await LogBankTransactionAsync(null, "Withdrawal", amount, "Failed", ex.Message);
                 return false;
             }
+        }
+
+        private async Task LogBankTransactionAsync(int? bankId, string transactionType, decimal amount, string status, string errorMessage)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string logQuery = @"
+    INSERT INTO SchoolManagement.BankTransactionLog (BankID, TransactionType, Amount, Status, ErrorMessage)
+    VALUES (@BankID, @TransactionType, @Amount, @Status, @ErrorMessage)";
+
+            await connection.ExecuteAsync(logQuery, new
+            {
+                BankID = bankId,
+                TransactionType = transactionType,
+                Amount = amount,
+                Status = status,
+                ErrorMessage = errorMessage
+            });
         }
 
         /*EXPENSES*/
@@ -3555,14 +3610,32 @@ namespace CORE.SERVICE
                 try
                 {
                     await connection.OpenAsync();
-                    await connection.ExecuteAsync("EXEC SchoolManagement.TransferStudentFeesToBank", commandType: CommandType.StoredProcedure);
+
+                    // Execute the stored procedure and capture the amount transferred
+                    var result = await connection.QuerySingleAsync<decimal>("EXEC SchoolManagement.TransferStudentFeesToBank", commandType: CommandType.StoredProcedure);
+
+                    // Log the successful transfer
+                    await LogBankTransactionAsync(null, "Deposit", result, "Success", null);
                     return true; // Success
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine("Error in TransferStudentFeesToBank: " + ex.Message);
+                    await LogBankTransactionAsync(null, "Deposit", 0, "Failed", ex.Message); // Log with 0 amount on failure
                     return false; // Failure
                 }
+            }
+        }
+
+        public async Task<IEnumerable<BankTransaction>> GetBankTransactions()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = @"
+        SELECT * FROM SchoolManagement.BankTransactionLog
+        ORDER BY TransactionDate DESC";
+
+                return await connection.QueryAsync<BankTransaction>(query);
             }
         }
 
