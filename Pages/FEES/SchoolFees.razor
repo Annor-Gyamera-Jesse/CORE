@@ -450,16 +450,22 @@
                     PaymentMethod = PaymentMethod,
                     TermID = SelectedTermID,
                     Note = Note,
-                    UserID = userId,
-                    //BankID = bankId
+                    UserID = userId
                 };
 
             // Save the student fee
             var success = await StudentService.SaveStudentFeeAsync(payment);
             if (success)
             {
-                // Log the transaction without deducting from the bank
+                // Retrieve the BankID based on the selected payment method
                 int bankId = await StudentService.GetBankIDAsync(PaymentMethod);
+                if (bankId == 0) // Check if BankID is valid
+                {
+                    NotificationService.ShowNotification("Error", "Invalid payment method selected.", NotificationSeverity.Error);
+                    return;
+                }
+
+                // Log the transaction
                 await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
                 NotificationService.ShowNotification("Success", "Payment saved successfully and logged.", NotificationSeverity.Success);
             }
