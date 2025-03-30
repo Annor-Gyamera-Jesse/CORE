@@ -374,6 +374,56 @@
     }
 
 
+    // private async Task SavePayment()
+    // {
+    //     isLoading = true;  Start loading
+    //     StateHasChanged();
+
+    //     if (AmountPaid <= 0 || SelectedStudentID == 0 || SelectedFeeTypeID == 0)
+    //     {
+    //         NotificationService.ShowNotification("Validation Error", "All fields are required.", NotificationSeverity.Warning);
+    //         return;
+    //     }
+        
+    //     try
+    //     {
+    //         var payment = new StudentFee
+    //             {
+    //                 StudentID = SelectedStudentID,
+    //                 FeeTypeID = SelectedFeeTypeID,
+    //                 StudentName = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.FullName, Ensure this is set
+    //                 FeeTypeName = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID)?.FeeTypeName, Ensure this is set
+    //                 ClassID = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.ClassID, Ensure this is set
+    //                 AmountPaid = AmountPaid,
+    //                 AmountLeft = TotalAmountLeft - AmountPaid,
+    //                 PaymentDate = PaymentDate,
+    //                 PaymentMethod = PaymentMethod,
+    //                 TermID = SelectedTermID,
+    //                 Note = Note,
+    //                 UserID = userId
+    //             };
+
+    //         var success = await StudentService.SaveStudentFeeAsync(payment);
+    //         if (success)
+    //         {
+    //             NotificationService.ShowNotification("Success", "Payment saved successfully.", NotificationSeverity.Success);
+    //         }
+    //         else
+    //         {
+    //             NotificationService.ShowNotification("Error", "Failed to save payment.", NotificationSeverity.Error);
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         NotificationService.ShowNotification("Error", $"Error: {ex.Message}", NotificationSeverity.Error);
+    //     }
+    //     finally
+    //     {
+    //         isLoading = false;
+    //         StateHasChanged();
+    //     }
+    // }
+
     private async Task SavePayment()
     {
         isLoading = true;  // Start loading
@@ -384,16 +434,16 @@
             NotificationService.ShowNotification("Validation Error", "All fields are required.", NotificationSeverity.Warning);
             return;
         }
-        
+
         try
         {
             var payment = new StudentFee
                 {
                     StudentID = SelectedStudentID,
                     FeeTypeID = SelectedFeeTypeID,
-                    StudentName = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.FullName, // Ensure this is set
-                    FeeTypeName = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID)?.FeeTypeName, // Ensure this is set
-                    ClassID = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.ClassID, // Ensure this is set
+                    StudentName = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.FullName,
+                    FeeTypeName = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID)?.FeeTypeName,
+                    ClassID = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.ClassID,
                     AmountPaid = AmountPaid,
                     AmountLeft = TotalAmountLeft - AmountPaid,
                     PaymentDate = PaymentDate,
@@ -403,10 +453,21 @@
                     UserID = userId
                 };
 
+            // Save the student fee
             var success = await StudentService.SaveStudentFeeAsync(payment);
             if (success)
             {
-                NotificationService.ShowNotification("Success", "Payment saved successfully.", NotificationSeverity.Success);
+                // Retrieve the BankID based on the selected payment method
+                int bankId = await StudentService.GetBankIDAsync(PaymentMethod);
+                if (bankId == 0) // Check if BankID is valid
+                {
+                    NotificationService.ShowNotification("Error", "Invalid payment method selected.", NotificationSeverity.Error);
+                    return;
+                }
+
+                // Log the transaction
+                await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
+                NotificationService.ShowNotification("Success", "Payment saved successfully and logged.", NotificationSeverity.Success);
             }
             else
             {
