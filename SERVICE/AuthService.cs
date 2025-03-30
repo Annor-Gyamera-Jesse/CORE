@@ -3235,35 +3235,33 @@ VALUES (@StaffID, @PayedOn, @SalaryFor, @PaymentYear, @Amount, @PaymentMethodId)
             {
                 var query = @"
 INSERT INTO SchoolManagement.SalaryPayments 
-(StaffID, CategoryID, SalaryFor, PaymentYear, Amount, OverTime, TaxDeduction,  BankName, AccountName, AccountNumber, PaymentMethodId) 
+(StaffID, CategoryID, SalaryFor, PaymentYear, Amount, OverTime, TaxDeduction, BankName, AccountName, AccountNumber, PaymentMethodId) 
+OUTPUT INSERTED.PaymentID
 VALUES 
 (@StaffID, @CategoryID, @SalaryFor, @PaymentYear, @Amount, @OverTime, @TaxDeduction, @BankName, @AccountName, @AccountNumber, @PaymentMethodId)";
 
-
                 using (var connection = new SqlConnection(connectionString))
                 {
-                    var result = await connection.ExecuteAsync(query, paymentData);
+                    // Capture the PaymentID of the newly inserted salary payment
+                    int paymentId = await connection.ExecuteScalarAsync<int>(query, paymentData);
 
-                    // Retrieve the BankID before logging
-                    string bankQuery = "SELECT BankID FROM SchoolManagement.Bank WHERE MethodName = @MethodName";
-                    int bankId = await connection.ExecuteScalarAsync<int>(bankQuery, new
-                    {
-                        MethodName = paymentData.GetType().GetProperty("BankName")?.GetValue(paymentData)
-                    });
-
+                    // Retrieve the BankID based on the PaymentMethodId
+                    string bankQuery = "SELECT BankID FROM SchoolManagement.Bank WHERE PaymentMethodID = @PaymentMethodId";
+                    int paymentMethodId = (int)paymentData.GetType().GetProperty("PaymentMethodId").GetValue(paymentData);
+                    int bankId = await connection.ExecuteScalarAsync<int>(bankQuery, new { PaymentMethodId = paymentMethodId });
 
                     // Log the successful insertion
-                    if (result > 0)
+                    if (paymentId > 0)
                     {
-                        await LogPaymentAsync(result, bankId, "Manual",
-                            (decimal)paymentData.GetType().GetProperty("Amount").GetValue(paymentData), "Success", null, bankId);
+                        await LogPaymentAsync(paymentId, bankId, "Manual",
+                            (decimal)paymentData.GetType().GetProperty("Amount").GetValue(paymentData), "Success", null, paymentMethodId);
                         return (true, null);
                     }
                     else
                     {
                         string errorMessage = "No rows affected while inserting salary payment.";
                         await LogPaymentAsync(null, null, "Manual",
-                            (decimal)paymentData.GetType().GetProperty("Amount").GetValue(paymentData), "Failed", errorMessage, bankId);
+                            (decimal)paymentData.GetType().GetProperty("Amount").GetValue(paymentData), "Failed", errorMessage, paymentMethodId);
                         return (false, errorMessage);
                     }
                 }
