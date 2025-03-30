@@ -2,125 +2,130 @@
 @inject AuthService HrService
 @inject DialogService DialogService
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
 @inject NotificationMessageService Notify
 <RadzenNotification/>
 
 <RadzenNotification/>
+<LoadingSpinner Visible="isLoading" />
 
-<RadzenRow Class="gap-6">
-    <!-- Staff List Panel -->
-    <RadzenColumn Size="5">
-        <RadzenCard Class="shadow-lg p-4 bg-white rounded">
-            <!-- Payment Category Dropdown -->
-            <label class="form-label fw-bold text-primary">Select Payment Category</label>
-            <RadzenDropDown @bind-Value="selectedCategoryId" Data="@paymentCategories"
-                            TextProperty="CategoryName" ValueProperty="CategoryID"
-                            Class="form-select mb-3" Placeholder="Select Payment Category" />
+@if (!isLoading)
+{
+   
+    <RadzenRow Class="gap-6">
+        <!-- Staff List Panel -->
+        <RadzenColumn Size="5">
+            <RadzenCard Class="shadow-lg p-4 bg-white rounded">
+                <!-- Payment Category Dropdown -->
+                <label class="form-label fw-bold text-primary">Select Payment Category</label>
+                <RadzenDropDown @bind-Value="selectedCategoryId" Data="@paymentCategories"
+                TextProperty="CategoryName" ValueProperty="CategoryID"
+                Class="form-select mb-3" Placeholder="Select Payment Category" />
 
-            <!-- Staff List Header -->
-            <h4 class="fw-bold text-dark">Staff List</h4>
+                <!-- Staff List Header -->
+                <h4 class="fw-bold text-dark">Staff List</h4>
 
-            <!-- Search Staff Input -->
-            <div class="input-group mb-3">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <RadzenTextBox Value="@searchQuery" @onchange="FilterStaff" Placeholder="Search staff..."
-                               Class="form-control" />
-            </div>
+                <!-- Search Staff Input -->
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <RadzenTextBox Value="@searchQuery" @onchange="FilterStaff" Placeholder="Search staff..."
+                    Class="form-control" />
+                </div>
 
-            <!-- Staff List -->
-            <RadzenListBox TItem="Staff" Data="filteredStaffList" @bind-Value="selectedStaff"
-                           TextProperty="StaffFullName" Class="list-group" />
+                <!-- Staff List -->
+                <RadzenListBox TItem="Staff" Data="filteredStaffList" @bind-Value="selectedStaff"
+                TextProperty="StaffFullName" Class="list-group" />
 
-        </RadzenCard>
-    </RadzenColumn>
+            </RadzenCard>
+        </RadzenColumn>
 
 
-    <!-- Staff Details and Payment Panel -->
-    <RadzenColumn Size="7">
-        <RadzenFieldset>
-            <RadzenCard Class="shadow-xl p-6 bg-white rounded-2xl">
-                <RadzenFlexRow Class="space-x-4">
-                    <RadzenButton Text="Automatic Payment" Click="ProcessAutomaticPayment" Icon="credit_card"
-                                  Class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-2 px-4 rounded-lg w-1/2" />                  
-                    <RadzenDropDown @bind-Value="selectedPaymentMethod" Data="@paymentMethods" Placeholder="Select Payment Method"
-                                    Class="w-1/3 border-gray-300 rounded-lg p-2" />
-                </RadzenFlexRow>
+        <!-- Staff Details and Payment Panel -->
+        <RadzenColumn Size="7">
+            <RadzenFieldset>
+                <RadzenCard Class="shadow-xl p-6 bg-white rounded-2xl">
+                    <RadzenFlexRow Class="space-x-4">
+                        <RadzenButton Text="Automatic Payment" Click="ProcessAutomaticPayment" Icon="credit_card"
+                        Class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-2 px-4 rounded-lg w-1/2" ButtonStyle="ButtonStyle.Success"/>                  
+                        <RadzenDropDown @bind-Value="selectedPaymentMethod" Data="@paymentMethods" Placeholder="Select Payment Method"
+                        Class="w-1/3 border-gray-300 rounded-lg p-2" />
+                    </RadzenFlexRow>
 
-                @if (selectedStaff != null)
-                {
-                    <RadzenRow Class="mt-6">
-                        <RadzenColumn Size="3">
-                            <RadzenImage Path="@GetStaffImage()" Width="100px" Height="100px" Class="rounded-full border-4 border-gray-300 shadow-md" />
-                        </RadzenColumn>
-                        <RadzenColumn Size="9">
-                            <h3 class="text-2xl font-bold text-gray-700">@selectedStaff.StaffFirstName @selectedStaff.StaffLastName</h3>
-                            <p class="text-gray-600"><strong>Department:</strong> @selectedStaff.Department</p>
-                            <p class="text-gray-600"><strong>Position:</strong> @selectedStaff.Position</p>
-                            <p><strong>Status:</strong> <span class="@(selectedStaff.EmploymentStatus == "Active" ? "text-green-600" : "text-red-600") font-semibold">@selectedStaff.EmploymentStatus</span></p>
-                        </RadzenColumn>
-                    </RadzenRow>
-
-                    <RadzenDivider Class="my-6" />
-                    <h4 class="text-2xl font-bold text-indigo-600 mb-4">Process Salary Payment</h4>
-
-                    <RadzenCard Class="p-6 shadow-lg rounded-lg border border-gray-200">
-                        <RadzenRow>
-                            <!-- Bank Details -->
-                            <RadzenColumn Size="6">
-                                <RadzenFieldset Text="Bank Details" Class="border-gray-300 rounded-lg p-4">
-                                    <RadzenLabel Text="Bank Name" Class="font-semibold text-gray-700 mb-1" />
-                                    <RadzenTextBox @bind-Value="selectedStaff.BankName" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
-                                    <RadzenLabel Text="Account Name" Class="font-semibold text-gray-700 mb-1" />
-                                    <RadzenTextBox @bind-Value="selectedStaff.AccountName" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
-                                    <RadzenLabel Text="Account Number" Class="font-semibold text-gray-700 mb-1" />
-                                    <RadzenTextBox @bind-Value="selectedStaff.AccountNumber" Class="w-full border-gray-300 rounded-lg p-2" />
-                                </RadzenFieldset>
+                    @if (selectedStaff != null)
+                    {
+                        <RadzenRow Class="mt-6">
+                            <RadzenColumn Size="3">
+                                <RadzenImage Path="@GetStaffImage()" Width="100px" Height="100px" Class="rounded-full border-4 border-gray-300 shadow-md" />
                             </RadzenColumn>
-
-                            <!-- Salary Details -->
-                            <RadzenColumn Size="6">
-                                <RadzenFieldset Text="Salary Details" Class="border-gray-300 rounded-lg p-4">
-                                    <RadzenLabel Text="Salary ($)" Class="font-semibold text-gray-700 mb-1" />
-                                    <RadzenNumeric @bind-Value="selectedStaff.Salary" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
-                                    <RadzenLabel Text="Overtime ($)" Class="font-semibold text-gray-700 mb-1" />
-                                    <RadzenNumeric @bind-Value="selectedStaff.OverTime" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
-                                    <RadzenLabel Text="Tax Deduction ($)" Class="font-semibold text-gray-700 mb-1" />
-                                    <RadzenNumeric @bind-Value="selectedStaff.TaxMoney" Class="w-full border-gray-300 rounded-lg p-2" />
-                                </RadzenFieldset>
+                            <RadzenColumn Size="9">
+                                <h3 class="text-2xl font-bold text-gray-700">@selectedStaff.StaffFirstName @selectedStaff.StaffLastName</h3>
+                                <p class="text-gray-600"><strong>Department:</strong> @selectedStaff.Department</p>
+                                <p class="text-gray-600"><strong>Position:</strong> @selectedStaff.Position</p>
+                                <p><strong>Status:</strong> <span class="@(selectedStaff.EmploymentStatus == "Active" ? "text-green-600" : "text-red-600") font-semibold">@selectedStaff.EmploymentStatus</span></p>
                             </RadzenColumn>
                         </RadzenRow>
 
                         <RadzenDivider Class="my-6" />
-                        <RadzenFieldset Text="Payment Period" Class="border-gray-300 rounded-lg p-4">
-                            <RadzenFlexRow Class="space-x-4">
-                                <RadzenDropDown @bind-Value="selectedMonth" Data="@months" Placeholder="Select Month"
-                                                Class="w-1/2 border-gray-300 rounded-lg p-2" />
-                                <RadzenDropDown @bind-Value="selectedYear" Data="@years" Placeholder="Select Year"
-                                                Class="w-1/2 border-gray-300 rounded-lg p-2" />
-                            </RadzenFlexRow>
-                        </RadzenFieldset>
+                        <h4 class="text-2xl font-bold text-indigo-600 mb-4">Process Salary Payment</h4>
 
-                        <RadzenFlexRow Class="justify-end mt-6 space-x-4">
-                            <RadzenButton Text="Cancel" Click="ResetFields" Class="bg-gray-400 text-white px-4 py-2 rounded-lg" />
-                        @*     <RadzenButton Text="@buttonText" Icon="credit_card" Click="HandleButtonClick"
+                        <RadzenCard Class="p-6 shadow-lg rounded-lg border border-gray-200">
+                            <RadzenRow>
+                                <!-- Bank Details -->
+                                <RadzenColumn Size="6">
+                                    <RadzenFieldset Text="Bank Details" Class="border-gray-300 rounded-lg p-4">
+                                        <RadzenLabel Text="Bank Name" Class="font-semibold text-gray-700 mb-1" />
+                                        <RadzenTextBox @bind-Value="selectedStaff.BankName" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
+                                        <RadzenLabel Text="Account Name" Class="font-semibold text-gray-700 mb-1" />
+                                        <RadzenTextBox @bind-Value="selectedStaff.AccountName" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
+                                        <RadzenLabel Text="Account Number" Class="font-semibold text-gray-700 mb-1" />
+                                        <RadzenTextBox @bind-Value="selectedStaff.AccountNumber" Class="w-full border-gray-300 rounded-lg p-2" />
+                                    </RadzenFieldset>
+                                </RadzenColumn>
+
+                                <!-- Salary Details -->
+                                <RadzenColumn Size="6">
+                                    <RadzenFieldset Text="Salary Details" Class="border-gray-300 rounded-lg p-4">
+                                        <RadzenLabel Text="Salary ($)" Class="font-semibold text-gray-700 mb-1" />
+                                        <RadzenNumeric @bind-Value="selectedStaff.Salary" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
+                                        <RadzenLabel Text="Overtime ($)" Class="font-semibold text-gray-700 mb-1" />
+                                        <RadzenNumeric @bind-Value="selectedStaff.OverTime" Class="w-full mb-3 border-gray-300 rounded-lg p-2" />
+                                        <RadzenLabel Text="Tax Deduction ($)" Class="font-semibold text-gray-700 mb-1" />
+                                        <RadzenNumeric @bind-Value="selectedStaff.TaxMoney" Class="w-full border-gray-300 rounded-lg p-2" />
+                                    </RadzenFieldset>
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            <RadzenDivider Class="my-6" />
+                            <RadzenFieldset Text="Payment Period" Class="border-gray-300 rounded-lg p-4">
+                                <RadzenFlexRow Class="space-x-4">
+                                    <RadzenDropDown @bind-Value="selectedMonth" Data="@months" Placeholder="Select Month"
+                                    Class="w-1/2 border-gray-300 rounded-lg p-2" />
+                                    <RadzenDropDown @bind-Value="selectedYear" Data="@years" Placeholder="Select Year"
+                                    Class="w-1/2 border-gray-300 rounded-lg p-2" />
+                                </RadzenFlexRow>
+                            </RadzenFieldset>
+
+                            <RadzenFlexRow Class="justify-end mt-6 space-x-4">
+                                <RadzenButton Text="Cancel" Click="ResetFields" Class="bg-gray-400 text-white px-4 py-2 rounded-lg" ButtonStyle="ButtonStyle.Warning"/>
+                                @*     <RadzenButton Text="@buttonText" Icon="credit_card" Click="HandleButtonClick"
                                           Class="mt-4 bg-gradient-to-r from-red-500 to-pink-600 text-white font-bold py-2 px-4 rounded-lg w-full" /> *@
-                            <RadzenButton Text="Manual Payment" Icon="money" Click="HandleManualPayment"
-                                          Class="bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold py-2 px-4 rounded-lg w-1/2" />
-                        </RadzenFlexRow>
-                    </RadzenCard>
-                }
-                else
-                {
-                    <p class="text-center text-gray-500 font-medium">Select a staff member to view details.</p>
-                }
-            </RadzenCard>
-        </RadzenFieldset>
-    </RadzenColumn>
-</RadzenRow>
+                                <RadzenButton Text="Manual Payment" Icon="money" Click="HandleManualPayment"
+                                Class="bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold py-2 px-4 rounded-lg w-1/2" ButtonStyle="ButtonStyle.Secondary"/>
+                            </RadzenFlexRow>
+                        </RadzenCard>
+                    }
+                    else
+                    {
+                        <p class="text-center text-gray-500 font-medium">Select a staff member to view details.</p>
+                    }
+                </RadzenCard>
+            </RadzenFieldset>
+        </RadzenColumn>
+    </RadzenRow>
 
-
+}
 
 
 @code {
@@ -142,87 +147,115 @@
     private Dictionary<int, decimal> manualPaymentAmounts = new();
     private List<string> paymentMethods = new();
     private string selectedPaymentMethod;
+    private bool isLoading = false;
 
     private async Task HandleManualPayment()
     {
-        if (selectedStaff == null)
-        {
-            await DialogService.Alert("Please select a staff member.", "Warning");
-            return;
-        }
-
-        decimal totalAmount = selectedStaff.Salary + selectedStaff.OverTime - selectedStaff.TaxMoney;
-
-        if (string.IsNullOrEmpty(selectedPaymentMethod))
-        {
-            await DialogService.Alert("Please select a payment method.", "Warning");
-            return;
-        }
-
-        decimal availableBalance = await HrService.GetAvailableBalanceAsync(selectedPaymentMethod);
-        if (availableBalance < totalAmount)
-        {
-            await DialogService.Alert("Insufficient funds in the selected bank account.", "Error");
-            return;
-        }
-
-        // Get the payment method ID
-        int paymentMethodId = await HrService.GetPaymentMethodIdAsync(selectedPaymentMethod);
-
-        var paymentData = new
-        {
-            StaffID = selectedStaff.StaffID,
-            CategoryID = selectedCategoryId,
-            SalaryFor = selectedMonth,
-            PaymentYear = selectedYear,
-            Amount = totalAmount,
-            OverTime = selectedStaff.OverTime,
-            TaxDeduction = selectedStaff.TaxMoney,
-            BankName = selectedStaff.BankName, // Ensure this is included
-            AccountName = selectedStaff.AccountName, // Ensure this is included
-            AccountNumber = selectedStaff.AccountNumber, // Ensure this is included
-            PaymentMethodId = paymentMethodId // Ensure this is included
-        };
-
+        isLoading = true;
         try
         {
-            var (success, errorMessage) = await HrService.InsertSalaryPaymentAsync(paymentData);
-
-            if (success)
+            if (selectedStaff == null)
             {
-                bool deductionSuccess = await HrService.DeductFromBankAsync(selectedPaymentMethod, totalAmount);
-                if (deductionSuccess)
+                await DialogService.Alert("Please select a staff member.", "Warning");
+                return;
+            }
+
+            decimal totalAmount = selectedStaff.Salary + selectedStaff.OverTime - selectedStaff.TaxMoney;
+
+            if (string.IsNullOrEmpty(selectedPaymentMethod))
+            {
+                await DialogService.Alert("Please select a payment method.", "Warning");
+                return;
+            }
+
+            decimal availableBalance = await HrService.GetAvailableBalanceAsync(selectedPaymentMethod);
+            if (availableBalance < totalAmount)
+            {
+                await DialogService.Alert("Insufficient funds in the selected bank account.", "Error");
+                return;
+            }
+
+            // Get the payment method ID
+            int paymentMethodId = await HrService.GetPaymentMethodIdAsync(selectedPaymentMethod);
+
+            var paymentData = new
+            {
+                StaffID = selectedStaff.StaffID,
+                CategoryID = selectedCategoryId,
+                SalaryFor = selectedMonth,
+                PaymentYear = selectedYear,
+                Amount = totalAmount,
+                OverTime = selectedStaff.OverTime,
+                TaxDeduction = selectedStaff.TaxMoney,
+                BankName = selectedStaff.BankName, // Ensure this is included
+                AccountName = selectedStaff.AccountName, // Ensure this is included
+                AccountNumber = selectedStaff.AccountNumber, // Ensure this is included
+                PaymentMethodId = paymentMethodId // Ensure this is included
+            };
+
+            try
+            {
+                var (success, errorMessage) = await HrService.InsertSalaryPaymentAsync(paymentData);
+
+                if (success)
                 {
-                    Notify.ShowNotification("Manual Payment Successful!", "", NotificationSeverity.Success);
-                    paymentHistory = await HrService.GetPaymentHistoryAsync(selectedStaff.StaffID);
+                    bool deductionSuccess = await HrService.DeductFromBankAsync(selectedPaymentMethod, totalAmount);
+                    if (deductionSuccess)
+                    {
+                        Notify.ShowNotification("Manual Payment Successful!", "", NotificationSeverity.Success);
+                        paymentHistory = await HrService.GetPaymentHistoryAsync(selectedStaff.StaffID);
+                    }
+                    else
+                    {
+                        await DialogService.Alert("Failed to deduct amount from the bank.", "Error");
+                    }
                 }
                 else
                 {
-                    await DialogService.Alert("Failed to deduct amount from the bank.", "Error");
+                    await DialogService.Alert($"Payment failed: {errorMessage}", "Error");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                await DialogService.Alert($"Payment failed: {errorMessage}", "Error");
+                Console.WriteLine($"Error processing payment: {ex.Message}");
+                await DialogService.Alert($"Unexpected error: {ex.Message}", "Error");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error processing payment: {ex.Message}");
-            await DialogService.Alert($"Unexpected error: {ex.Message}", "Error");
+            Console.WriteLine($"Error processing manual payment: {ex.Message}");
+            await DialogService.Alert($"Error processing manual payment: {ex.Message}", "Error");
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
     private void ResetFields()
     {
-        selectedStaff = null;
-        selectedCategoryId = 0;
-        selectedMonth = DateTime.Now.Month;
-        selectedYear = DateTime.Now.Year;
+        isLoading = true;
+        try
+        {
+            selectedStaff = null;
+            selectedCategoryId = 0;
+            selectedMonth = DateTime.Now.Month;
+            selectedYear = DateTime.Now.Year;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error resetting fields: {ex.Message}");
+            Notify.ShowNotification("Error", $"Error resetting fields: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
 
     protected override async Task OnInitializedAsync()
     {
+        isLoading = true;
         try
         {
             paymentCategories = await HrService.GetPaymentCategoriesAsync();
@@ -234,16 +267,35 @@
         {
             await DialogService.Alert($"Error loading staff list: {ex.Message}", "Error");
         }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadStaffByCategory(ChangeEventArgs e)
     {
-        selectedCategoryId = Convert.ToInt32(e.Value);
-        filteredStaffList = await HrService.GetStaffByCategoryAsync(selectedCategoryId);
+        isLoading = true;
+        try
+        {
+            selectedCategoryId = Convert.ToInt32(e.Value);
+            filteredStaffList = await HrService.GetStaffByCategoryAsync(selectedCategoryId);
+        }
+        catch (Exception ex)
+        {
+            await DialogService.Alert($"Error loading staff by category: {ex.Message}", "Error");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+        // selectedCategoryId = Convert.ToInt32(e.Value);
+        // filteredStaffList = await HrService.GetStaffByCategoryAsync(selectedCategoryId);
     }
 
     private string GetStaffImage()
     {
+        isLoading = true;
         try
         {
             if (selectedStaff?.ImageData != null && selectedStaff.ImageData.Length > 0)
@@ -260,10 +312,15 @@
             Console.WriteLine($"Error loading staff image: {ex.Message}");
             return "default-profile.png";
         }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void FilterStaff(ChangeEventArgs e)
     {
+        isLoading = true;
         try
         {
             searchQuery = e.Value.ToString();
@@ -273,10 +330,15 @@
         {
             Console.WriteLine($"Error filtering staff: {ex.Message}");
         }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task OnStaffSelect(ChangeEventArgs e)
     {
+        isLoading = true;
         try
         {
             selectedStaff = e.Value as Staff;
@@ -289,10 +351,15 @@
         {
             await DialogService.Alert($"Error retrieving payment history: {ex.Message}", "Error");
         }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task HandleButtonClick()
     {
+        isLoading = true;
         try
         {
             if (!isSaved)
@@ -312,14 +379,19 @@
             //await DialogService.Alert($"Error processing action: {ex.Message}", "Error");
             Notify.ShowNotification("Error", $"Error processing action: {ex.Message}", NotificationSeverity.Error);
         }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task SaveSalaryDetails()
     {
+        isLoading = true;
         try
         {
             // Logic to save salary details before payment
-           // await DialogService.Alert("Salary details saved!", "Success");
+            // await DialogService.Alert("Salary details saved!", "Success");
 
             Notify.ShowNotification("Success", "Salary details saved!", NotificationSeverity.Success);
         }
@@ -330,10 +402,15 @@
 
             Notify.ShowNotification("Error", $"Error saving salary details: {ex.Message}", NotificationSeverity.Error);
         }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task ProcessPayment()
     {
+        isLoading = true;
         try
         {
             bool success = await HrService.PaySalaryAsync(
@@ -365,37 +442,56 @@
         {
             Notify.ShowNotification("Error", $"Error processing salary payment: {ex.Message}", NotificationSeverity.Error);
         }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task ProcessAutomaticPayment()
     {
-        if (selectedCategoryId == 0 || string.IsNullOrEmpty(selectedPaymentMethod))
+        isLoading = true;
+        try
         {
-            await DialogService.Alert("Please select a payment category and method.", "Warning");
-            return;
-        }
+            if (selectedCategoryId == 0 || string.IsNullOrEmpty(selectedPaymentMethod))
+            {
+                await DialogService.Alert("Please select a payment category and method.", "Warning");
+                return;
+            }
 
-        // Verify PaymentMethodID
-        int paymentMethodId = await HrService.GetPaymentMethodIdAsync(selectedPaymentMethod);
-        if (paymentMethodId == 0)
-        {
-            await DialogService.Alert("Invalid payment method selected.", "Error");
-            return;
-        }
+            // Verify PaymentMethodID
+            int paymentMethodId = await HrService.GetPaymentMethodIdAsync(selectedPaymentMethod);
+            if (paymentMethodId == 0)
+            {
+                await DialogService.Alert("Invalid payment method selected.", "Error");
+                return;
+            }
 
-        bool success = await HrService.ProcessAutomaticPaymentAsync(selectedCategoryId, selectedPaymentMethod);
-        if (success)
-        {
-            Notify.ShowNotification("Success", "Automatic payment completed successfully!", NotificationSeverity.Success);
+            bool success = await HrService.ProcessAutomaticPaymentAsync(selectedCategoryId, selectedPaymentMethod);
+            if (success)
+            {
+                Notify.ShowNotification("Success", "Automatic payment completed successfully!", NotificationSeverity.Success);
+            }
+            else
+            {
+                Notify.ShowNotification("Error", "Automatic payment failed!", NotificationSeverity.Warning);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Notify.ShowNotification("Error", "Automatic payment failed!", NotificationSeverity.Warning);
+            Notify.ShowNotification("Error", $"Error processing automatic payment: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
     private async Task ProcessManualPayment(int staffId)
     {
+        isLoading = true;
+        try
+        {
         if (!manualPaymentAmounts.ContainsKey(staffId)) return;
 
         decimal amount = manualPaymentAmounts[staffId];
@@ -413,6 +509,16 @@
         else
         {
             Notify.ShowNotification("Error", "Manual payment failed!", NotificationSeverity.Warning);
+        
+        }
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"Error processing manual payment: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }
