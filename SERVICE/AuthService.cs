@@ -3085,32 +3085,35 @@ namespace CORE.SERVICE
 
         public async Task<bool> ProcessAutomaticPaymentAsync(int categoryId, string paymentMethod)
         {
-            int? paymentMethodId = null; // Initialize it here
+            int? paymentMethodId = null;
 
             try
             {
                 using var connection = new SqlConnection(connectionString);
 
-                // Get staff under the selected category
+                // Get both staff and teachers under the selected category
                 string staffQuery = "SELECT StaffID FROM SchoolManagement.Staff WHERE CategoryID = @CategoryID";
                 var staffList = await connection.QueryAsync<Staff>(staffQuery, new { CategoryID = categoryId });
+
+                string teacherQuery = "SELECT TeacherID FROM SchoolManagement.Teacher WHERE CategoryID = @CategoryID";
+                var teacherList = await connection.QueryAsync<TeachersRegistration>(teacherQuery, new { CategoryID = categoryId });
 
                 // Get payment amount for this category
                 string salaryQuery = "SELECT Amount FROM SchoolManagement.PaymentCategory WHERE CategoryID = @CategoryID";
                 decimal salaryAmount = await connection.ExecuteScalarAsync<decimal>(salaryQuery, new { CategoryID = categoryId });
 
                 // Calculate total amount to deduct
-                decimal totalAmountToDeduct = salaryAmount * staffList.Count();
+                decimal totalAmountToDeduct = salaryAmount * (staffList.Count() + teacherList.Count());
 
-                // Get the PaymentMethodID based on the selected payment method name
+                // Get PaymentMethodID
                 string paymentMethodIdQuery = "SELECT PaymentMethodID FROM SchoolManagement.PaymentMethods WHERE MethodName = @MethodName";
                 paymentMethodId = await connection.ExecuteScalarAsync<int>(paymentMethodIdQuery, new { MethodName = paymentMethod });
 
-                // Get the BankID associated with the selected payment method
+                // Get BankID associated with the PaymentMethod
                 string bankIdQuery = "SELECT BankID FROM SchoolManagement.Bank WHERE PaymentMethodID = @PaymentMethodId";
                 int bankId = await connection.ExecuteScalarAsync<int>(bankIdQuery, new { PaymentMethodId = paymentMethodId });
 
-                // Check available balance in the bank for the selected payment method
+                // Check available balance in the bank
                 string availableBalanceQuery = "SELECT SUM(AmountTransferred) FROM SchoolManagement.Bank WHERE PaymentMethodID = @PaymentMethodId";
                 decimal availableBalance = await connection.ExecuteScalarAsync<decimal>(availableBalanceQuery, new { PaymentMethodId = paymentMethodId });
 
@@ -3120,30 +3123,49 @@ namespace CORE.SERVICE
                     return false; // Not enough funds
                 }
 
-                // Insert payment for each staff member and capture the PaymentID
+                // Insert payments for both staff and teachers
                 string insertQuery = @"
-INSERT INTO SchoolManagement.SalaryPayments (StaffID, CategoryID, PayedOn, SalaryFor, PaymentYear, Amount, PaymentMethod, PaymentMethodID)
+INSERT INTO SchoolManagement.SalaryPayments (StaffID, TeacherID, CategoryID, PayedOn, SalaryFor, PaymentYear, Amount, PaymentMethod, PaymentMethodID)
 OUTPUT INSERTED.PaymentID
-VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @PaymentMethod, @PaymentMethodId)";
+VALUES (@StaffID, @TeacherID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @PaymentMethod, @PaymentMethodId)";
 
+                // Process payments for Staff
                 foreach (var staff in staffList)
                 {
                     var paymentId = await connection.ExecuteScalarAsync<int>(insertQuery, new
                     {
                         StaffID = staff.StaffID,
+                        TeacherID = (int?)null,
                         CategoryID = categoryId,
                         SalaryFor = DateTime.Now.Month,
                         PaymentYear = DateTime.Now.Year,
                         Amount = salaryAmount,
                         PaymentMethodId = paymentMethodId.Value,
-                        PaymentMethod = paymentMethod // Pass the payment method here
+                        PaymentMethod = paymentMethod
                     });
 
-                    // Log the payment with the correct PaymentMethodID
                     await LogPaymentAsync(paymentId, bankId, "Automatic", salaryAmount, "Success", null, paymentMethodId.Value);
                 }
 
-                // Deduct the total amount from the bank
+                // Process payments for Teachers
+                foreach (var teacher in teacherList)
+                {
+                    var paymentId = await connection.ExecuteScalarAsync<int>(insertQuery, new
+                    {
+                        StaffID = (int?)null,
+                        TeacherID = teacher.TeacherID,
+                        CategoryID = categoryId,
+                        SalaryFor = DateTime.Now.Month,
+                        PaymentYear = DateTime.Now.Year,
+                        Amount = salaryAmount,
+                        PaymentMethodId = paymentMethodId.Value,
+                        PaymentMethod = paymentMethod
+                    });
+
+                    await LogPaymentAsync(paymentId, bankId, "Automatic", salaryAmount, "Success", null, paymentMethodId.Value);
+                }
+
+                // Deduct total amount from the bank
                 string deductQuery = @"
 UPDATE SchoolManagement.Bank
 SET AmountTransferred = AmountTransferred - @TotalAmount
@@ -3159,6 +3181,7 @@ WHERE PaymentMethodID = @PaymentMethodId";
                 return false;
             }
         }
+
 
 
         private async Task LogPaymentAsync(int? paymentId, int? bankId, string paymentType, decimal amount, string status, string errorMessage, int paymentMethodId)
