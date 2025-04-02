@@ -3173,6 +3173,14 @@ WHERE PaymentMethodID = @PaymentMethodId";
 
                 await connection.ExecuteAsync(deductQuery, new { TotalAmount = totalAmountToDeduct, PaymentMethodId = paymentMethodId.Value });
 
+                // **Log withdrawal in BankTransactionLog**
+                string logWithdrawalQuery = @"
+INSERT INTO SchoolManagement.BankTransactionLog (BankID, TransactionType, Amount, TransactionDate, Status, ErrorMessage)
+VALUES (@BankID, 'Withdrawal', @TotalAmount, GETDATE(), 'Success', NULL)";
+
+                await connection.ExecuteAsync(logWithdrawalQuery, new { BankID = bankId, TotalAmount = totalAmountToDeduct });
+
+
                 return true;
             }
             catch (Exception ex)
