@@ -1,8 +1,9 @@
 ﻿@page "/core/pages/bank/bank-transfers"
 @using CORE.MODEL.Bank
 @using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
 @inject AuthService bankService
-@inject NotificationService NotificationService
+@inject NotificationMessageService NotificationService
 
 <RadzenNotification />
 
@@ -118,13 +119,13 @@
     {
         bool success = await bankService.TransferStudentFeesToBank();
         if (success)
-        {
-            NotificationService.Notify(NotificationSeverity.Success, "Success", "Student Fees Transferred to Bank!");
+        {            
+            NotificationService.ShowNotification("Success", "Student Fees Transferred to Bank!", NotificationSeverity.Success);
             await LoadTransfers();
         }
         else
-        {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", "Transfer Failed! Check logs.");
+        {            
+            NotificationService.ShowNotification("Error", "Transfer Failed! Check logs.", NotificationSeverity.Error);
         }
     }
 }

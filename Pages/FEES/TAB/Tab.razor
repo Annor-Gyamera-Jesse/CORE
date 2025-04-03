@@ -1,6 +1,7 @@
 ﻿@page "/core/pages/fees/tab"
 @using CORE.Pages.ADMIN.Administration_Security
 @using CORE.Pages.BANK
+@using CORE.Pages.BANK.BankTransactionView
 @using CORE.Pages.FEES.ACCOUNT_RECONCILIATION
 @using CORE.SECURITY
 @using CORE.SECURITY.LOADER
@@ -29,6 +30,9 @@
 
                 <RadzenTabsItem Text="MY VAULT" Icon="account_balance">
                     <Bank_Transfer />
+                </RadzenTabsItem> 
+                <RadzenTabsItem Text="TRANSACTION VIEW" Icon="bank">
+                    <BankTransactionView />
                 </RadzenTabsItem>
 
             </Tabs>
