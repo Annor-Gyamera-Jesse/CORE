@@ -1,0 +1,75 @@
+﻿@page "/pages/bank/banktransactionview/bank-transactions"
+@using CORE.MODEL.Bank.Transaction_Logs
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService BankService
+@inject NotificationMessageService NotificationService
+
+<RadzenNotification />
+
+
+<RadzenCard>
+    <RadzenTabs>
+        <Tabs>
+            <RadzenTabsItem Text="Transaction Logs">
+                <RadzenDataGrid TItem="TransactionLog" Data="@transactionLogs" PageSize="10">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="TransactionLog" Property="TransactionID" Title="Transaction ID" />
+                        <RadzenDataGridColumn TItem="TransactionLog" Property="TransactionType" Title="Type" />
+                        <RadzenDataGridColumn TItem="TransactionLog" Property="AmountBeforeTransfer" Title="Before Transfer" />
+                        <RadzenDataGridColumn TItem="TransactionLog" Property="AmountTransferred" Title="Transferred" />
+                        <RadzenDataGridColumn TItem="TransactionLog" Property="AmountAfterTransfer" Title="After Transfer" />
+                        <RadzenDataGridColumn TItem="TransactionLog" Property="TransferDate" Title="Date" />
+                        <RadzenDataGridColumn TItem="TransactionLog" Property="UserID" Title="User ID" />
+                    </Columns>
+                </RadzenDataGrid>
+            </RadzenTabsItem>
+
+            <RadzenTabsItem Text="Bank Transaction Logs">
+                <RadzenDataGrid TItem="BankTransactionLog" Data="@bankTransactionLogs" PageSize="10">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="BankTransactionLog" Property="TransactionID" Title="Transaction ID" />
+                        <RadzenDataGridColumn TItem="BankTransactionLog" Property="BankID" Title="Bank ID" />
+                        <RadzenDataGridColumn TItem="BankTransactionLog" Property="TransactionType" Title="Type" />
+                        <RadzenDataGridColumn TItem="BankTransactionLog" Property="Amount" Title="Amount" />
+                        <RadzenDataGridColumn TItem="BankTransactionLog" Property="TransactionDate" Title="Date" />
+                        <RadzenDataGridColumn TItem="BankTransactionLog" Property="Status" Title="Status" />
+                        <RadzenDataGridColumn TItem="BankTransactionLog" Property="ErrorMessage" Title="Error Message" />
+                    </Columns>
+                </RadzenDataGrid>
+            </RadzenTabsItem>
+
+            <RadzenTabsItem Text="Payment Logs">
+                <RadzenDataGrid TItem="PaymentLog" Data="@paymentLogs" PageSize="10">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="PaymentLog" Property="LogID" Title="Log ID" />
+                        <RadzenDataGridColumn TItem="PaymentLog" Property="PaymentID" Title="Payment ID" />
+                        <RadzenDataGridColumn TItem="PaymentLog" Property="BankID" Title="Bank ID" />
+                        <RadzenDataGridColumn TItem="PaymentLog" Property="PaymentType" Title="Type" />
+                        <RadzenDataGridColumn TItem="PaymentLog" Property="Amount" Title="Amount" />
+                        <RadzenDataGridColumn TItem="PaymentLog" Property="TransactionDate" Title="Date" />
+                        <RadzenDataGridColumn TItem="PaymentLog" Property="Status" Title="Status" />
+                        <RadzenDataGridColumn TItem="PaymentLog" Property="ErrorMessage" Title="Error Message" />
+                        <RadzenDataGridColumn TItem="PaymentLog" Property="CreatedAt" Title="Created At" />
+                        <RadzenDataGridColumn TItem="PaymentLog" Property="PaymentMethodID" Title="Payment Method ID" />
+                    </Columns>
+                </RadzenDataGrid>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+</RadzenCard>
+
+@code {
+    private IEnumerable<TransactionLog> transactionLogs;
+    private IEnumerable<BankTransactionLog> bankTransactionLogs;
+    private IEnumerable<PaymentLog> paymentLogs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        transactionLogs = await BankService.GetTransactionLogsAsync();
+        bankTransactionLogs = await BankService.GetBankTransactionLogsAsync();
+        paymentLogs = await BankService.GetPaymentLogsAsync();
+    }
+}
+

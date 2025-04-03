@@ -13,6 +13,7 @@ using CORE.MODEL.Bank;
 using CORE.MODEL.Term;
 using CORE.MODEL.Department;
 using CORE.MODEL.Bank.LOG;
+using CORE.MODEL.Bank.Transaction_Logs;
 
 namespace CORE.SERVICE
 {
@@ -3924,6 +3925,36 @@ VALUES
                 return student;
             }
         }
+
+        /*To view Movent Of Money*/
+        // Get all bank transactions
+        public async Task<IEnumerable<TransactionLog>> GetTransactionLogsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT * FROM SchoolManagement.TransactionLogs";
+                return await connection.QueryAsync<TransactionLog>(query);
+            }
+        }
+
+        public async Task<IEnumerable<BankTransactionLog>> GetBankTransactionLogsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT * FROM SchoolManagement.BankTransactionLog";
+                return await connection.QueryAsync<BankTransactionLog>(query);
+            }
+        }
+
+        public async Task<IEnumerable<PaymentLog>> GetPaymentLogsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT * FROM SchoolManagement.PaymentLog";
+                return await connection.QueryAsync<PaymentLog>(query);
+            }
+        }
+
 
     }
 
