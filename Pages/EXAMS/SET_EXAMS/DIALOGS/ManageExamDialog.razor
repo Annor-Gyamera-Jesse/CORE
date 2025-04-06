@@ -6,57 +6,77 @@
 
 @if (examModel != null)
 {
-    <div class="grid grid-cols-2 gap-4 p-4">
-        <!-- Left Section - ReadOnly Exam Info -->
-        <RadzenFieldset Text="Exam Details">
-            <p><b>Class:</b> @examModel.Class</p>
-            <p><b>Course:</b> @examModel.SchoolCourse</p>
-            <p><b>Title:</b> @examModel.ExamsTitle</p>
-            <p><b>Type:</b> @examModel.QuestionType</p>
-            <p><b>Main Description:</b> @examModel.ExamsMainDescription</p>
-            <p><b>Sub Description:</b> @examModel.ExamsSubDescription</p>
-            <p><b>Time Limit:</b> @examModel.ExamsTimeLimit?.ToString("f")</p>
-        </RadzenFieldset>
+    <div class="container-fluid mt-4">
+        <div class="row g-4">
+            <!-- Exam Details -->
+            <div class="col-md-6">
+                <div class="card shadow-sm rounded-4 border-0">
+                    <div class="card-header bg-primary text-white rounded-top-4">
+                        <h5 class="mb-0">📘 Exam Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>📚 Class:</strong> @examModel.Class</p>
+                        <p><strong>🧪 Course:</strong> @examModel.SchoolCourse</p>
+                        <p><strong>📝 Title:</strong> @examModel.ExamsTitle</p>
+                        <p><strong>📂 Type:</strong> @examModel.QuestionType</p>
+                        <p><strong>🧾 Main Desc:</strong> @examModel.ExamsMainDescription</p>
+                        <p><strong>📌 Sub Desc:</strong> @examModel.ExamsSubDescription</p>
+                        <p><strong>⏱ Time Limit:</strong> @examModel.ExamsTimeLimit?.ToString("f")</p>
+                    </div>
+                </div>
+            </div>
 
-        <!-- Right Section - Add Question -->
-        <div class="space-y-4">
-            @if (!questionModel.QuestionSwitchButton)
-            {
-                <RadzenTextBox @bind-Value="questionModel.Question" Name="Question" Placeholder="Question" Style="width: 100%;" />
-                <RadzenTextBox @bind-Value="questionModel.ChoiceA" Placeholder="Choice A" Style="width: 100%;" />
-                <RadzenTextBox @bind-Value="questionModel.ChoiceB" Placeholder="Choice B" Style="width: 100%;" />
-                <RadzenTextBox @bind-Value="questionModel.ChoiceC" Placeholder="Choice C" Style="width: 100%;" />
-                <RadzenTextBox @bind-Value="questionModel.ChoiceD" Placeholder="Choice D" Style="width: 100%;" />
-                <RadzenTextBox @bind-Value="questionModel.CorrectAnswer" Placeholder="Correct Answer" Style="width: 100%;" />
+            <!-- Add/Edit Question -->
+            <div class="col-md-6">
+                <div class="card shadow-sm rounded-4 border-0">
+                    <div class="card-header bg-success text-white rounded-top-4">
+                        <h5 class="mb-0">➕ Add New Question</h5>
+                    </div>
+                    <div class="card-body">
 
-                <InputFile id="questionImage" OnChange="HandleQuestionFileChange" key="@questionInputKey" />
-                @if (questionImagePreview != null)
-                {
-                    <img src="@questionImagePreview" style="max-height: 100px;" />
-                }
-            }
+                        @if (!questionModel.QuestionSwitchButton)
+                        {
+                            <RadzenTextBox @bind-Value="questionModel.Question" Placeholder="Enter Question" Style="width:100%" class="mb-3" />
+                            <RadzenTextBox @bind-Value="questionModel.ChoiceA" Placeholder="Choice A" Style="width:100%" class="mb-3" />
+                            <RadzenTextBox @bind-Value="questionModel.ChoiceB" Placeholder="Choice B" Style="width:100%" class="mb-3" />
+                            <RadzenTextBox @bind-Value="questionModel.ChoiceC" Placeholder="Choice C" Style="width:100%" class="mb-3" />
+                            <RadzenTextBox @bind-Value="questionModel.ChoiceD" Placeholder="Choice D" Style="width:100%" class="mb-3" />
+                            <RadzenTextBox @bind-Value="questionModel.CorrectAnswer" Placeholder="Correct Answer" Style="width:100%" class="mb-3" />
 
-            <RadzenLabel Text="Enable Sub Question Mode?  (SECTION B)" />
-            <RadzenSwitch @bind-Value="questionModel.QuestionSwitchButton" Style="margin-top: 5px;" />
+                            <label class="form-label">Upload Question Image</label>
+                            <InputFile id="questionImage" OnChange="HandleQuestionFileChange" key="@questionInputKey" class="form-control mb-3" />
+                            @if (questionImagePreview != null)
+                            {
+                                <img src="@questionImagePreview" class="img-thumbnail mb-3" style="max-height: 120px;" />
+                            }
+                        }
 
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <RadzenLabel Text="Enable Sub Question Mode (Section B)" />
+                            <RadzenSwitch @bind-Value="questionModel.QuestionSwitchButton" class="ms-2" />
+                        </div>
 
-            @if (questionModel.QuestionSwitchButton)
-            {
-                <RadzenTextBox @bind-Value="questionModel.SubQuestion" Placeholder="Sub Question" Style="width: 100%;" />
-                <RadzenTextBox @bind-Value="questionModel.CorrectAnswer" Placeholder="Correct Answer for SubQuestion" Style="width: 100%;" />
+                        @if (questionModel.QuestionSwitchButton)
+                        {
+                            <RadzenTextBox @bind-Value="questionModel.SubQuestion" Placeholder="Sub Question" Style="width:100%" class="mb-3 mt-3" />
+                            <RadzenTextBox @bind-Value="questionModel.CorrectAnswer" Placeholder="Correct Answer for Sub Question" Style="width:100%" class="mb-3" />
 
-                <!-- Replace RadzenFileInput for SubQuestion Image -->                
-                <InputFile id="subQuestionImage" OnChange="HandleSubQuestionFileChange" key="@subQuestionInputKey" />
-                @if (subQuestionImagePreview != null)
-                {
-                    <img src="@subQuestionImagePreview" style="max-height: 100px;" />
-                }
-            }
+                            <label class="form-label">Upload Sub Question Image</label>
+                            <InputFile id="subQuestionImage" OnChange="HandleSubQuestionFileChange" key="@subQuestionInputKey" class="form-control mb-3" />
+                            @if (subQuestionImagePreview != null)
+                            {
+                                <img src="@subQuestionImagePreview" class="img-thumbnail mb-3" style="max-height: 120px;" />
+                            }
+                        }
 
-            <RadzenButton Text="Confirm" Click="@SaveQuestion" Style="background-color: #2196F3; color: white;" />
+                        <RadzenButton Text="✅ Confirm Question" Click="@SaveQuestion" Style="width: 100%; background: linear-gradient(to right, #00c6ff, #0072ff); color: white;" class="rounded-3 mt-3" />
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 }
+
 
 @code {
     [Parameter] public SetMainExamsModel examModel { get; set; }
