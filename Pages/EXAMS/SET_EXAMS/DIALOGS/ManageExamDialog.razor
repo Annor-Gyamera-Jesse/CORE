@@ -1,0 +1,125 @@
+﻿@using CORE.MODEL.Set_Exams
+@using CORE.SERVICE
+@inject AuthService authService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+@if (examModel != null)
+{
+    <div class="container-fluid mt-4">
+        <div class="row g-4">
+            <!-- Exam Details -->
+            <div class="col-md-6">
+                <div class="card shadow-sm rounded-4 border-0">
+                    <div class="card-header bg-primary text-white rounded-top-4">
+                        <h5 class="mb-0">📘 Exam Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>📚 Class:</strong> @examModel.Class</p>
+                        <p><strong>🧪 Course:</strong> @examModel.SchoolCourse</p>
+                        <p><strong>📝 Title:</strong> @examModel.ExamsTitle</p>
+                        <p><strong>📂 Type:</strong> @examModel.QuestionType</p>
+                        <p><strong>🧾 Main Desc:</strong> @examModel.ExamsMainDescription</p>
+                        <p><strong>📌 Sub Desc:</strong> @examModel.ExamsSubDescription</p>
+                        <p><strong>⏱ Time Limit:</strong> @examModel.ExamsTimeLimit?.ToString("f")</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add/Edit Question -->
+            <div class="col-md-6">
+                <div class="card shadow-sm rounded-4 border-0">
+                    <div class="card-header bg-success text-white rounded-top-4">
+                        <h5 class="mb-0">➕ Add New Question</h5>
+                    </div>
+                    <div class="card-body">
+
+                        @if (!questionModel.QuestionSwitchButton)
+                        {
+                            <RadzenTextBox @bind-Value="questionModel.Question" Placeholder="Enter Question" Style="width:100%" class="mb-3" />
+                            <RadzenTextBox @bind-Value="questionModel.ChoiceA" Placeholder="Choice A" Style="width:100%" class="mb-3" />
+                            <RadzenTextBox @bind-Value="questionModel.ChoiceB" Placeholder="Choice B" Style="width:100%" class="mb-3" />
+                            <RadzenTextBox @bind-Value="questionModel.ChoiceC" Placeholder="Choice C" Style="width:100%" class="mb-3" />
+                            <RadzenTextBox @bind-Value="questionModel.ChoiceD" Placeholder="Choice D" Style="width:100%" class="mb-3" />
+                            <RadzenTextBox @bind-Value="questionModel.CorrectAnswer" Placeholder="Correct Answer" Style="width:100%" class="mb-3" />
+
+                            <label class="form-label">Upload Question Image</label>
+                            <InputFile id="questionImage" OnChange="HandleQuestionFileChange" key="@questionInputKey" class="form-control mb-3" />
+                            @if (questionImagePreview != null)
+                            {
+                                <img src="@questionImagePreview" class="img-thumbnail mb-3" style="max-height: 120px;" />
+                            }
+                        }
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <RadzenLabel Text="Enable Sub Question Mode (Section B)" />
+                            <RadzenSwitch @bind-Value="questionModel.QuestionSwitchButton" class="ms-2" />
+                        </div>
+
+                        @if (questionModel.QuestionSwitchButton)
+                        {
+                            <RadzenTextBox @bind-Value="questionModel.SubQuestion" Placeholder="Sub Question" Style="width:100%" class="mb-3 mt-3" />
+                            <RadzenTextBox @bind-Value="questionModel.CorrectAnswer" Placeholder="Correct Answer for Sub Question" Style="width:100%" class="mb-3" />
+
+                            <label class="form-label">Upload Sub Question Image</label>
+                            <InputFile id="subQuestionImage" OnChange="HandleSubQuestionFileChange" key="@subQuestionInputKey" class="form-control mb-3" />
+                            @if (subQuestionImagePreview != null)
+                            {
+                                <img src="@subQuestionImagePreview" class="img-thumbnail mb-3" style="max-height: 120px;" />
+                            }
+                        }
+
+                        <RadzenButton Text="✅ Confirm Question" Click="@SaveQuestion" Style="width: 100%; background: linear-gradient(to right, #00c6ff, #0072ff); color: white;" class="rounded-3 mt-3" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    [Parameter] public SetMainExamsModel examModel { get; set; }
+
+    ExamsExamsContentModel questionModel = new();
+    string questionImagePreview;
+    string subQuestionImagePreview;
+
+    string questionInputKey = Guid.NewGuid().ToString();
+    string subQuestionInputKey = Guid.NewGuid().ToString();
+
+    private async Task HandleQuestionFileChange(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        using var stream = new MemoryStream();
+        await file.OpenReadStream().CopyToAsync(stream);
+        questionModel.QuestionImageData = stream.ToArray();
+        questionImagePreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(stream.ToArray())}";
+    }
+
+    private async Task HandleSubQuestionFileChange(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        using var stream = new MemoryStream();
+        await file.OpenReadStream().CopyToAsync(stream);
+        questionModel.QuestionImageData = stream.ToArray(); // Same field reused
+        subQuestionImagePreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(stream.ToArray())}";
+    }
+
+    async Task SaveQuestion()
+    {
+        questionModel.SetExamsID = examModel.SetExamsID;
+        //questionModel.UserID = 1; // Replace with actual user ID
+
+        await authService.InsertExamQuestion(questionModel);
+        NotificationService.Notify(NotificationSeverity.Success, "Saved", "Question saved successfully.");
+        StateHasChanged();
+
+        // Clear form
+        questionModel = new();
+        questionImagePreview = null;
+        subQuestionImagePreview = null;
+        questionInputKey = Guid.NewGuid().ToString();
+        subQuestionInputKey = Guid.NewGuid().ToString();
+    }
+}

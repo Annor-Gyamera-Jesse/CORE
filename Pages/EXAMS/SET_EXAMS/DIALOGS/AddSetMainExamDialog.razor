@@ -1,0 +1,47 @@
+﻿@using CORE.MODEL.Set_Exams
+@using CORE.SERVICE
+@inject AuthService authService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@newExam" TItem="SetMainExamsModel" Submit="@OnSubmit">
+    <div class="max-w-2xl mx-auto bg-white shadow-xl rounded-2xl p-6 space-y-6 border border-gray-300">
+
+        <RadzenHeading Size="H4" Text="📝 Create New Exam" />
+
+        <RadzenTextBox @bind-Value="newExam.Class" Name="Class" Placeholder="📘 Class" Style="width: 100%;" />
+        <RadzenTextBox @bind-Value="newExam.SchoolCourse" Name="SchoolCourse" Placeholder="📚 School Course" Style="width: 100%;" />
+        <RadzenTextBox @bind-Value="newExam.ExamsTitle" Name="ExamsTitle" Placeholder="🧾 Exam Title" Style="width: 100%;" />
+        <RadzenTextBox @bind-Value="newExam.QuestionType" Name="QuestionType" Placeholder="🗂️ Question Type" Style="width: 100%;" />
+        <RadzenTextArea @bind-Value="newExam.ExamsMainDescription" Name="ExamsMainDescription" Placeholder="🖋️ Main Description" Style="width: 100%;" />
+        <RadzenTextArea @bind-Value="newExam.ExamsSubDescription" Name="ExamsSubDescription" Placeholder="📝 Sub Description" Style="width: 100%;" />
+        <RadzenDatePicker @bind-Value="newExam.ExamsTimeLimit" Name="ExamsTimeLimit" Placeholder="⏳ Time Limit" Style="width: 100%;" />
+
+        <!-- Buttons Row -->
+        <div class="flex justify-between items-center pt-4 space-x-4">
+            <RadzenButton Text="✅ Save"
+                          Type="Submit"
+                          Style="background-color: #16A34A; color: white; font-weight: 600; height: 45px; width: 48%; border-radius: 0.75rem;"
+                          Icon="save" />
+            <RadzenButton Text="❌ Cancel"
+                          ButtonStyle="ButtonStyle.Secondary"
+                          Style="height: 45px; width: 48%; font-weight: 600; border-radius: 0.75rem;"
+                          Click="() => DialogService.Close()"
+                          Icon="close" />
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@code {
+    SetMainExamsModel newExam = new();
+
+    async Task OnSubmit()
+    {
+        // Optionally fetch logged-in user ID
+        // newExam.UserID = await authService.GetCurrentUserId();
+
+        await authService.AddSetMainExam(newExam);
+        NotificationService.Notify(NotificationSeverity.Success, "Success", "✅ Exam added successfully");
+        DialogService.Close(true);
+    }
+}
