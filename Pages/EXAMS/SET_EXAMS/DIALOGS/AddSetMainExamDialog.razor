@@ -1,0 +1,35 @@
+﻿@using CORE.MODEL.Set_Exams
+@using CORE.SERVICE
+@inject AuthService authService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@newExam" TItem="SetMainExamsModel" Submit="@OnSubmit">
+    <div class="p-4 space-y-4">
+
+        <RadzenTextBox @bind-Value="newExam.Class" Name="Class" Placeholder="Class" Style="width: 100%;" />
+        <RadzenTextBox @bind-Value="newExam.SchoolCourse" Name="SchoolCourse" Placeholder="School Course" Style="width: 100%;" />
+        <RadzenTextBox @bind-Value="newExam.ExamsTitle" Name="ExamsTitle" Placeholder="Exams Title" Style="width: 100%;" />
+        <RadzenTextBox @bind-Value="newExam.QuestionType" Name="QuestionType" Placeholder="Question Type" Style="width: 100%;" />
+        <RadzenTextArea @bind-Value="newExam.ExamsMainDescription" Name="ExamsMainDescription" Placeholder="Main Description" Style="width: 100%;" />
+        <RadzenTextArea @bind-Value="newExam.ExamsSubDescription" Name="ExamsSubDescription" Placeholder="Sub Description" Style="width: 100%;" />
+        <RadzenDatePicker @bind-Value="newExam.ExamsTimeLimit" Name="ExamsTimeLimit" Placeholder="Time Limit" Style="width: 100%;" />
+
+        <RadzenButton Text="Save" Type="Submit" Style="background-color: #4CAF50; color: white;" />
+        <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Secondary" Click="() => DialogService.Close()" />
+    </div>
+</RadzenTemplateForm>
+
+@code {
+    SetMainExamsModel newExam = new();
+
+    async Task OnSubmit()
+    {
+        // You can set the UserID here if you're tracking logged-in users
+       /// newExam.UserID = 1; // Replace with actual logged-in user ID
+
+        await authService.AddSetMainExam(newExam);
+        NotificationService.Notify(NotificationSeverity.Success, "Success", "Exam added successfully");
+        DialogService.Close(true);
+    }
+}

@@ -1,0 +1,80 @@
+﻿@page "/core/pages/exams/set-exams"
+@inject AuthService authService
+@inject DialogService DialogService
+@using CORE.MODEL
+@using CORE.MODEL.Set_Exams
+@using CORE.Pages.EXAMS.SET_EXAMS.DIALOGS
+@using CORE.SERVICE
+@using Radzen
+
+<RadzenCard Style="margin: 2rem; box-shadow: 0 2px 12px rgba(0,0,0,0.1); border-radius: 12px;">
+    <div class="d-flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold text-gray-700">Set Main Exams</h3>
+        <RadzenButton Text="Add Exam" Icon="add_circle" Style="background-color: #4CAF50; color: white;" Click="@AddExam" />
+    </div>
+
+    <RadzenDataGrid TItem="SetMainExamsModel" Data="@examsList" RowSelect="@OnRowSelect" ColumnWidth="200px">
+        <Columns>
+            <RadzenDataGridColumn TItem="SetMainExamsModel" Property="SetExamsID" Title="ID" />
+            <RadzenDataGridColumn TItem="SetMainExamsModel" Property="Class" Title="Class" />
+            <RadzenDataGridColumn TItem="SetMainExamsModel" Property="SchoolCourse" Title="Course" />
+            <RadzenDataGridColumn TItem="SetMainExamsModel" Property="ExamsTitle" Title="Title" />
+            <RadzenDataGridColumn TItem="SetMainExamsModel" Property="QuestionType" Title="Question Type" />
+            <RadzenDataGridColumn TItem="SetMainExamsModel" Property="ExamsMainDescription" Title="Main Description" />
+            <RadzenDataGridColumn TItem="SetMainExamsModel" Property="ExamsTimeLimit" Title="Time Limit" />
+
+            <RadzenDataGridColumn TItem="SetMainExamsModel" Title="Actions">
+                <Template Context="data">
+                    <RadzenButton Icon="edit" Text="Manage" Style="margin-right: 10px;" Click="@(() => ManageExam(data))" />
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="@(() => DeleteExam(data))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+@code {
+    private List<SetMainExamsModel> examsList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        examsList = await authService.GetAllSetMainExams();
+    }
+
+    async void AddExam()
+    {
+        var result = await DialogService.OpenAsync<AddSetMainExamDialog>("Add New Exam", null,
+            new DialogOptions() { Width = "600px", Height = "600px", Resizable = true, Draggable = true });
+
+        if (result == true)
+        {
+            examsList = await authService.GetAllSetMainExams();
+            StateHasChanged();
+        }
+    }
+
+
+    async void ManageExam(SetMainExamsModel exam)
+    {
+        await DialogService.OpenAsync<ManageExamDialog>("Manage Exam",
+            new Dictionary<string, object>() { { "examModel", exam } },
+            new DialogOptions() { Width = "900px", Height = "600px", Resizable = true });
+    }
+
+
+    async Task DeleteExam(SetMainExamsModel exam)
+    {
+        bool confirmed = await DialogService.Confirm("Are you sure you want to delete this exam?", "Confirm") ?? false;
+        if (confirmed)
+        {
+            await authService.DeleteSetMainExam(exam.SetExamsID);
+            examsList = await authService.GetAllSetMainExams();
+            StateHasChanged();
+        }
+    }
+
+    void OnRowSelect(SetMainExamsModel exam)
+    {
+        // Optional: select logic
+    }
+}

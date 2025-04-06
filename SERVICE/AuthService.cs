@@ -14,6 +14,7 @@ using CORE.MODEL.Term;
 using CORE.MODEL.Department;
 using CORE.MODEL.Bank.LOG;
 using CORE.MODEL.Bank.Transaction_Logs;
+using CORE.MODEL.Set_Exams;
 
 namespace CORE.SERVICE
 {
@@ -3953,6 +3954,47 @@ VALUES
                 string query = "SELECT * FROM SchoolManagement.PaymentLog";
                 return await connection.QueryAsync<PaymentLog>(query);
             }
+        }
+
+        /*Set Exams*/
+        public async Task<List<SetMainExamsModel>> GetAllSetMainExams()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = "SELECT * FROM SchoolManagement.SetMAinExams";
+            var result = await connection.QueryAsync<SetMainExamsModel>(query);
+            return result.ToList();
+        }
+
+        public async Task DeleteSetMainExam(int setExamId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = "DELETE FROM SchoolManagement.SetMAinExams WHERE SetExamsID = @SetExamsID";
+            await connection.ExecuteAsync(query, new { SetExamsID = setExamId });
+        }
+
+        public async Task AddSetMainExam(SetMainExamsModel model)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        INSERT INTO SchoolManagement.SetMAinExams
+        (Class, SchoolCourse, ExamsTitle, QuestionType, ExamsMainDescription, ExamsSubDescription, ExamsTimeLimit)
+        VALUES (@Class, @SchoolCourse, @ExamsTitle, @QuestionType, @ExamsMainDescription, @ExamsSubDescription, @ExamsTimeLimit)";
+
+            await connection.ExecuteAsync(query, model);
+        }
+
+        public async Task InsertExamQuestion(ExamsExamsContentModel model)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        INSERT INTO SchoolManagement.ExamsContent
+        (SetExamsID, Question, SubQuestion, ChoiceA, ChoiceB, ChoiceC, ChoiceD,
+         QuestionImageData, CorrectAnswer, Remarks, QuestionSwitchButton)
+        VALUES
+        (@SetExamsID, @Question, @SubQuestion, @ChoiceA, @ChoiceB, @ChoiceC, @ChoiceD,
+         @QuestionImageData, @CorrectAnswer, @Remarks, @QuestionSwitchButton)";
+
+            await connection.ExecuteAsync(query, model);
         }
 
 

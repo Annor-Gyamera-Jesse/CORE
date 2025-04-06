@@ -1,0 +1,105 @@
+﻿@using CORE.MODEL.Set_Exams
+@using CORE.SERVICE
+@inject AuthService authService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+@if (examModel != null)
+{
+    <div class="grid grid-cols-2 gap-4 p-4">
+        <!-- Left Section - ReadOnly Exam Info -->
+        <RadzenFieldset Text="Exam Details">
+            <p><b>Class:</b> @examModel.Class</p>
+            <p><b>Course:</b> @examModel.SchoolCourse</p>
+            <p><b>Title:</b> @examModel.ExamsTitle</p>
+            <p><b>Type:</b> @examModel.QuestionType</p>
+            <p><b>Main Description:</b> @examModel.ExamsMainDescription</p>
+            <p><b>Sub Description:</b> @examModel.ExamsSubDescription</p>
+            <p><b>Time Limit:</b> @examModel.ExamsTimeLimit?.ToString("f")</p>
+        </RadzenFieldset>
+
+        <!-- Right Section - Add Question -->
+        <div class="space-y-4">
+            @if (!questionModel.QuestionSwitchButton)
+            {
+                <RadzenTextBox @bind-Value="questionModel.Question" Name="Question" Placeholder="Question" Style="width: 100%;" />
+                <RadzenTextBox @bind-Value="questionModel.ChoiceA" Placeholder="Choice A" Style="width: 100%;" />
+                <RadzenTextBox @bind-Value="questionModel.ChoiceB" Placeholder="Choice B" Style="width: 100%;" />
+                <RadzenTextBox @bind-Value="questionModel.ChoiceC" Placeholder="Choice C" Style="width: 100%;" />
+                <RadzenTextBox @bind-Value="questionModel.ChoiceD" Placeholder="Choice D" Style="width: 100%;" />
+                <RadzenTextBox @bind-Value="questionModel.CorrectAnswer" Placeholder="Correct Answer" Style="width: 100%;" />
+
+                <InputFile id="questionImage" OnChange="HandleQuestionFileChange" key="@questionInputKey" />
+                @if (questionImagePreview != null)
+                {
+                    <img src="@questionImagePreview" style="max-height: 100px;" />
+                }
+            }
+
+            <RadzenLabel Text="Enable Sub Question Mode?  (SECTION B)" />
+            <RadzenSwitch @bind-Value="questionModel.QuestionSwitchButton" Style="margin-top: 5px;" />
+
+
+            @if (questionModel.QuestionSwitchButton)
+            {
+                <RadzenTextBox @bind-Value="questionModel.SubQuestion" Placeholder="Sub Question" Style="width: 100%;" />
+                <RadzenTextBox @bind-Value="questionModel.CorrectAnswer" Placeholder="Correct Answer for SubQuestion" Style="width: 100%;" />
+
+                <!-- Replace RadzenFileInput for SubQuestion Image -->                
+                <InputFile id="subQuestionImage" OnChange="HandleSubQuestionFileChange" key="@subQuestionInputKey" />
+                @if (subQuestionImagePreview != null)
+                {
+                    <img src="@subQuestionImagePreview" style="max-height: 100px;" />
+                }
+            }
+
+            <RadzenButton Text="Confirm" Click="@SaveQuestion" Style="background-color: #2196F3; color: white;" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public SetMainExamsModel examModel { get; set; }
+
+    ExamsExamsContentModel questionModel = new();
+    string questionImagePreview;
+    string subQuestionImagePreview;
+
+    string questionInputKey = Guid.NewGuid().ToString();
+    string subQuestionInputKey = Guid.NewGuid().ToString();
+
+    private async Task HandleQuestionFileChange(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        using var stream = new MemoryStream();
+        await file.OpenReadStream().CopyToAsync(stream);
+        questionModel.QuestionImageData = stream.ToArray();
+        questionImagePreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(stream.ToArray())}";
+    }
+
+    private async Task HandleSubQuestionFileChange(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        using var stream = new MemoryStream();
+        await file.OpenReadStream().CopyToAsync(stream);
+        questionModel.QuestionImageData = stream.ToArray(); // Same field reused
+        subQuestionImagePreview = $"data:{file.ContentType};base64,{Convert.ToBase64String(stream.ToArray())}";
+    }
+
+    async Task SaveQuestion()
+    {
+        questionModel.SetExamsID = examModel.SetExamsID;
+        //questionModel.UserID = 1; // Replace with actual user ID
+
+        await authService.InsertExamQuestion(questionModel);
+        NotificationService.Notify(NotificationSeverity.Success, "Saved", "Question saved successfully.");
+        StateHasChanged();
+
+        // Clear form
+        questionModel = new();
+        questionImagePreview = null;
+        subQuestionImagePreview = null;
+        questionInputKey = Guid.NewGuid().ToString();
+        subQuestionInputKey = Guid.NewGuid().ToString();
+    }
+}
