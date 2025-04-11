@@ -4065,6 +4065,25 @@ VALUES
           ORDER BY StartDate DESC", new { staffId }) ?? "";
         }
 
+        public async Task<IEnumerable<LeaveOfAbsence>> GetLeaveHistoryForTeacherAsync(int teacherId)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryAsync<LeaveOfAbsence>(
+                @"SELECT * FROM SchoolManagement.LeaveOfAbsence 
+          WHERE TeacherID = @teacherId 
+          ORDER BY StartDate DESC", new { teacherId });
+        }
+
+        public async Task<IEnumerable<LeaveOfAbsence>> GetLeaveHistoryForStaffAsync(int staffId)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryAsync<LeaveOfAbsence>(
+                @"SELECT * FROM SchoolManagement.LeaveOfAbsence 
+          WHERE StaffID = @staffId 
+          ORDER BY StartDate DESC", new { staffId });
+        }
+
+
     }
 
 }
