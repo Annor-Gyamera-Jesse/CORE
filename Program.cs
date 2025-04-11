@@ -40,10 +40,10 @@ builder.Services.AddFastReport();
 
 
 // Add the UserService registration
-builder.Services.AddScoped<AuthService>(provider => new AuthService("Server=ANDERSON-WALKER;Database=INTEL;Trusted_Connection=True;MultipleActiveResultSets=true;Encrypt=False;"));
+builder.Services.AddScoped<AuthService>(provider => new AuthService("workstation id=SmssCore.mssql.somee.com;packet size=4096;user id=Smss_SQLLogin_1;pwd=rh5eysynka;data source=SmssCore.mssql.somee.com;persist security info=False;initial catalog=SmssCore;TrustServerCertificate=True;"));
 
 // Register MenuService with the necessary connection string
-builder.Services.AddScoped<MenuService>(provider => new MenuService("Server=ANDERSON-WALKER;Database=INTEL;Trusted_Connection=True;MultipleActiveResultSets=true;Encrypt=False;"));
+builder.Services.AddScoped<MenuService>(provider => new MenuService("workstation id=SmssCore.mssql.somee.com;packet size=4096;user id=Smss_SQLLogin_1;pwd=rh5eysynka;data source=SmssCore.mssql.somee.com;persist security info=False;initial catalog=SmssCore;TrustServerCertificate=True;"));
 
 builder.Services.AddScoped<ContentLoaderTemplate>();
 builder.Services.AddTransient<UserService>();
