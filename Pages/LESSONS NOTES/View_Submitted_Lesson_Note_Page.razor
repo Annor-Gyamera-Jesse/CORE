@@ -14,125 +14,91 @@
 
 @if (!isLoading)
 {
-        <div class="container my-5">
-        <div class="mb-3">
+    <div class="container my-5">
+        <div class="mb-4 d-flex align-items-center">
             <RadzenDatePicker @bind-Value="fromDate" Placeholder="From Date" Style="width: 200px;" />
             <RadzenDatePicker @bind-Value="toDate" Placeholder="To Date" Style="width: 200px; margin-left: 10px;" />
             <RadzenButton Text="Filter" Click="@FilterLessonNotes" ButtonStyle="ButtonStyle.Primary" Style="margin-left: 10px;" />
         </div>
-        </div>
-    <div class="container my-5">
+
         @if (lessonNotes != null && lessonNotes.Any())
         {
-            <RadzenGrid Data="@lessonNotes" TItem="TEACHERSLESSONNOTES" AllowPaging="true" PageSize="10" AllowSorting="true" AllowColumnResize="true" EditMode="DataGridEditMode.Single" Style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-                <Columns>
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="UserName" Title="User" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="SchoolCourse" Title="School Course" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="Strand" Title="Strand" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="SubStrand" Title="SubStrand" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="ContentStandard" Title="Content Standard" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="Indicator" Title="Indicator" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="TeachingLearningResources" Title="Teaching Learning Resources" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="TeachingLearningResourcePreparationNotes" Title="Preparation Notes" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="SourcesLearningResources" Title="Sources" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="LearningGroup" Title="Learning Group" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="LearnerExpectation" Title="Learner Expectation" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="ImportantGradeExpectation" Title="Grade Expectation" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="LearningOutcomes" Title="Learning Outcomes" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="FormofAssessment" Title="Form of Assessment" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="LearnerEntryBehavior" Title="Entry Behavior" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Filterable="true" Sortable="true" Property="SequenceofLesson" Title="Sequence of Lesson" />
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Title="Change Status">
-                        <Template Context="note">
-                            <RadzenDropDown @bind-Value="note.Status"
-                                            Data="Enum.GetValues(typeof(Lesson_Note_Dialog_Status)).Cast<Lesson_Note_Dialog_Status>()"
-                                            Style="width: 100%; border-radius: 4px; border: 1px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.1);"
-                                            Change="@(args => ValidateStatusSelection(note))" />
-                            <RadzenButton Text="View" Icon="visibility" Click="@(args => ViewLessonNote(note))" ButtonStyle="ButtonStyle.Info" Style="margin-top: 5px;" />
-                        </Template>
-                    </RadzenGridColumn>
-                    <RadzenGridColumn TItem="TEACHERSLESSONNOTES" Title="Display">
-                        <Template Context="note">                           
-                            <RadzenButton Text="View" Icon="visibility" Click="@(args => ViewLessonNote(note))" ButtonStyle="ButtonStyle.Info" Style="margin-top: 5px;" />
-                        </Template>
-                    </RadzenGridColumn>
-                </Columns>
-            </RadzenGrid>
+            <div class="row">
+                @foreach (var note in lessonNotes)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="shadow-sm rounded-3 p-3 bg-white border h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="mb-2 text-primary">@note.UserName</h5>
+                                <p class="text-muted mb-2"><strong>Course:</strong> @note.SchoolCourse</p>
 
-            <div class="d-flex justify-content-end mt-3">
-                <RadzenButton Click="CloseForm" ButtonStyle="ButtonStyle.Danger" Text="Close" Icon="close" Style="margin-left: 10px; width: 120px;" />
-                <RadzenButton Click="OnDone" ButtonStyle="ButtonStyle.Info" Text="Done" Icon="check" Style="margin-left: 10px; width: 120px;" />
+                                <RadzenDropDown @bind-Value="note.Status"
+                                                Data="Enum.GetValues(typeof(Lesson_Note_Dialog_Status)).Cast<Lesson_Note_Dialog_Status>()"
+                                                Style="width: 100%; border-radius: 6px;"
+                                                Change="@(args => ValidateStatusSelection(note))" />
+
+                                <RadzenButton Text="View" Icon="visibility" Click="@(args => ViewLessonNote(note))" ButtonStyle="ButtonStyle.Info" Style="margin-top: 10px; width: 100%;" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="d-flex justify-content-end mt-4">
+                <RadzenButton Click="CloseForm" ButtonStyle="ButtonStyle.Danger" Text="Close" Icon="close" Style="margin-right: 10px; width: 120px;" />
+                <RadzenButton Click="OnDone" ButtonStyle="ButtonStyle.Info" Text="Done" Icon="check" Style="width: 120px;" />
             </div>
         }
         else
         {
-            <div class="alert alert-info" role="alert" style="border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div class="alert alert-info mt-5" role="alert" style="border-radius: 8px;">
                 No lesson notes have been submitted yet.
             </div>
         }
     </div>
 
-    @* Display selected lesson note details *@
     @if (selectedLessonNote != null)
     {
         <RadzenFieldset Text="Lesson Note Details" Icon="book" Style="margin-top: 20px; border-radius: 8px; background: #f8f9fa;">
             <dl class="row">
                 <dt class="col-sm-4">User:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.UserName</dd>
-
                 <dt class="col-sm-4">School Course:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.SchoolCourse</dd>
-
                 <dt class="col-sm-4">Strand:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.Strand</dd>
-
                 <dt class="col-sm-4">SubStrand:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.SubStrand</dd>
-
                 <dt class="col-sm-4">Sequence of Lesson:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.SequenceofLesson</dd>
-
                 <dt class="col-sm-4">Content Standard:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.ContentStandard</dd>
-
                 <dt class="col-sm-4">Indicator:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.Indicator</dd>
-
                 <dt class="col-sm-4">Teaching Learning Resources:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.TeachingLearningResources</dd>
-
                 <dt class="col-sm-4">Preparation Notes:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.TeachingLearningResourcePreparationNotes</dd>
-
                 <dt class="col-sm-4">Sources:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.SourcesLearningResources</dd>
-
                 <dt class="col-sm-4">Learning Group:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.LearningGroup</dd>
-
                 <dt class="col-sm-4">Learner Expectation:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.LearnerExpectation</dd>
-
                 <dt class="col-sm-4">Grade Expectation:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.ImportantGradeExpectation</dd>
-
                 <dt class="col-sm-4">Learning Outcomes:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.LearningOutcomes</dd>
-
                 <dt class="col-sm-4">Form of Assessment:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.FormofAssessment</dd>
-
                 <dt class="col-sm-4">Entry Behavior:</dt>
                 <dd class="col-sm-8">@selectedLessonNote.LearnerEntryBehavior</dd>
-
-                <dt class="col-sm-4">Sequence of Lesson:</dt>
-                <dd class="col-sm-8">@selectedLessonNote.SequenceofLesson</dd>
             </dl>
-
             <RadzenButton Click="ClearSelectedLessonNote" ButtonStyle="ButtonStyle.Secondary" Text="Close" Style="margin-top: 10px;" />
         </RadzenFieldset>
     }
 }
+
 
 @code {
     private IEnumerable<TEACHERSLESSONNOTES> lessonNotes;
@@ -157,15 +123,29 @@
             isLoading = false;
         }
     }
-    private void ValidateStatusSelection(TEACHERSLESSONNOTES note)
+    private async Task ValidateStatusSelection(TEACHERSLESSONNOTES note)
     {
-        // Ensure that only valid statuses (1, 2, 3) are set
         if (!Enum.IsDefined(typeof(Lesson_Note_Dialog_Status), note.Status) || note.Status == 0)
         {
-            // Set default status to "New" if invalid value is selected
             note.Status = Lesson_Note_Dialog_Status.New;
         }
+        else if (note.Status != Lesson_Note_Dialog_Status.New)
+        {
+            string userIdStr = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userID");
+            var userId = Convert.ToInt32(userIdStr);
+
+            note.UpdatedBy = userId;
+            note.UpdatedOn = DateTime.Now;
+
+            await lessonNoteService.UpdateLessonNoteStatusAsync(note, userId);
+
+            // Reload lesson notes (only New ones will remain)
+            lessonNotes = await lessonNoteService.GetSubmittedLessonNotesAsync();
+
+            StateHasChanged();
+        }
     }
+
 
 
     async Task OnDone()
@@ -173,16 +153,6 @@
         try
         {
             isLoading = true;
-
-            // Validate status to ensure a valid value
-            foreach (var note in lessonNotes)
-            {
-                if (!Enum.IsDefined(typeof(Lesson_Note_Dialog_Status), note.Status))
-                {
-                    // Set a default value if invalid status is selected
-                    note.Status = Lesson_Note_Dialog_Status.New;
-                }
-            }
 
             string userIdStr = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", new object[] { "userID" });
 
@@ -193,17 +163,22 @@
             }
 
             var userId = Convert.ToInt32(userIdStr);
+
             foreach (var note in lessonNotes)
             {
-                note.UpdatedBy = userId;
-                note.UpdatedOn = DateTime.Now;
+                if (Enum.IsDefined(typeof(Lesson_Note_Dialog_Status), note.Status) && note.Status != Lesson_Note_Dialog_Status.New)
+                {
+                    note.UpdatedBy = userId;
+                    note.UpdatedOn = DateTime.Now;
 
-                // Assuming a service method for updating status
-                await lessonNoteService.UpdateLessonNoteStatusAsync(note, userId);
+                    await lessonNoteService.UpdateLessonNoteStatusAsync(note, userId);
+                }
             }
 
-            // Notify success
             Notify.ShowNotification("Success", "Lesson notes updated successfully!", NotificationSeverity.Success);
+
+            // 🔄 Refresh notes list so updated ones disappear
+            lessonNotes = await lessonNoteService.GetSubmittedLessonNotesAsync();
         }
         catch (Exception ex)
         {
@@ -214,6 +189,7 @@
             isLoading = false;
         }
     }
+
 
     // Selects a lesson note to view its details
     void ViewLessonNote(TEACHERSLESSONNOTES note)

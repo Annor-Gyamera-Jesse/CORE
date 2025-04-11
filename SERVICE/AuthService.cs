@@ -2095,17 +2095,22 @@ namespace CORE.SERVICE
         //----For viewing Lesson Note submitted in the View lesson note dialog----//
         public async Task<IEnumerable<TEACHERSLESSONNOTES>> GetSubmittedLessonNotesAsync()
         {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                string query = @"
-                SELECT ln.LessonnotesID, ln.UserId, u.UserName, ln.SchoolCourse, ln.Strand, ln.SubStrand, ln.ContentStandard, ln.Indicator, ln.TeachingLearningResources, ln.TeachingLearningResourcePreparationNotes, ln.SourcesLearningResources, ln.LearningGroup,ln.LearnerExpectation, ln.ImportantGradeExpectation, ln.LearningOutcomes, ln.FormofAssessment, ln.LearnerEntryBehavior, ln.SequenceofLesson
-                FROM SchoolManagement.TEACHERSLESSONNOTES ln
-                JOIN SchoolManagement.Users u ON ln.UserId = u.UserID";
+            using var connection = new SqlConnection(connectionString);
+            var sql = @"
+        SELECT ln.LessonnotesID, ln.UserId, u.UserName, ln.SchoolCourse, ln.Strand, ln.SubStrand, 
+               ln.ContentStandard, ln.Indicator, ln.TeachingLearningResources, 
+               ln.TeachingLearningResourcePreparationNotes, ln.SourcesLearningResources, 
+               ln.LearningGroup, ln.LearnerExpectation, ln.ImportantGradeExpectation, 
+               ln.LearningOutcomes, ln.FormofAssessment, ln.LearnerEntryBehavior, 
+               ln.SequenceofLesson, ln.Status, ln.UpdatedOn
+        FROM SchoolManagement.TEACHERSLESSONNOTES ln
+        JOIN SchoolManagement.Users u ON ln.UserId = u.UserID
+        WHERE ln.Status = @Status
+        ORDER BY ln.UpdatedOn DESC";
 
-                var lessonNotes = await connection.QueryAsync<TEACHERSLESSONNOTES>(query);
-                return lessonNotes;
-            }
+            return await connection.QueryAsync<TEACHERSLESSONNOTES>(sql, new { Status = Lesson_Note_Dialog_Status.New });
         }
+
         public async Task UpdateLessonNoteStatusAsync(TEACHERSLESSONNOTES note, int userId)
         {
             // Ensure the status is valid before proceeding
