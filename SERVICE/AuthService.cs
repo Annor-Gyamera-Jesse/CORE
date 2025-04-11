@@ -15,6 +15,7 @@ using CORE.MODEL.Department;
 using CORE.MODEL.Bank.LOG;
 using CORE.MODEL.Bank.Transaction_Logs;
 using CORE.MODEL.Set_Exams;
+using CORE.MODEL.LeaveManagement;
 
 namespace CORE.SERVICE
 {
@@ -3997,6 +3998,72 @@ VALUES
             await connection.ExecuteAsync(query, model);
         }
 
+        /*Leave of absence*/
+        public async Task<bool> InsertLeaveAsync(LeaveOfAbsence leave)
+        {
+            try
+            {
+                using var conn = new SqlConnection(connectionString);
+                var sql = @"
+            INSERT INTO SchoolManagement.LeaveOfAbsence
+            (UserID, TeacherID, StaffID, LeaveType, StartDate, EndDate, Reason, Status, ApprovedBy, UpdatedBY)
+            VALUES (@UserID, @TeacherID, @StaffID, @LeaveType, @StartDate, @EndDate, @Reason, @Status, @ApprovedBy, @UpdatedBY)";
+                var rowsAffected = await conn.ExecuteAsync(sql, leave);
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return false;
+            }
+        }
+
+
+        public async Task<IEnumerable<TeachersRegistration>> GetTeacherAsync()
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryAsync<TeachersRegistration>("SELECT TeacherID, TeacherFirstName, TeacherLastName FROM SchoolManagement.Teacher");
+        }
+
+        public async Task<IEnumerable<Staff>> GetStaffAsync()
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryAsync<Staff>("SELECT * FROM SchoolManagement.Staff WHERE IsEnabled = 1");
+        }
+
+        public async Task<TeachersRegistration> GetTeacherByIdAsync(int id)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryFirstOrDefaultAsync<TeachersRegistration>(
+                "SELECT * FROM SchoolManagement.Teacher WHERE TeacherID = @id", new { id });
+        }
+
+        public async Task<Staff> GetStaffByIdAsync(int id)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryFirstOrDefaultAsync<Staff>(
+                "SELECT * FROM SchoolManagement.Staff WHERE StaffID = @id", new { id });
+        }
+
+        public async Task<string> GetActiveLeaveTypeForTeacherAsync(int teacherId)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryFirstOrDefaultAsync<string>(
+                @"SELECT TOP 1 LeaveType 
+          FROM SchoolManagement.LeaveOfAbsence 
+          WHERE TeacherID = @teacherId AND Status = 'Approved' AND EndDate >= GETDATE()
+          ORDER BY StartDate DESC", new { teacherId }) ?? "";
+        }
+
+        public async Task<string> GetActiveLeaveTypeForStaffAsync(int staffId)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryFirstOrDefaultAsync<string>(
+                @"SELECT TOP 1 LeaveType 
+          FROM SchoolManagement.LeaveOfAbsence 
+          WHERE StaffID = @staffId AND Status = 'Approved' AND EndDate >= GETDATE()
+          ORDER BY StartDate DESC", new { staffId }) ?? "";
+        }
 
     }
 

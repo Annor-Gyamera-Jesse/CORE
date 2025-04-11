@@ -1,0 +1,207 @@
+﻿@page "/leave-processing"
+@using CORE.MODEL.LeaveManagement
+@using CORE.SERVICE
+@using Radzen
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject AuthService LeaveService
+@inject IJSRuntime jsRuntime
+<RadzenNotification />
+<PageTitle>Process Leave</PageTitle>
+
+<RadzenRow>
+    <RadzenColumn Width="40%">
+        <RadzenListBox TValue="int" Data="@allPeople"
+                       TextProperty="FullName" ValueProperty="ID"
+                       Value="@selectedPersonId"
+                       Change="@OnPersonSelected"
+                       Style="height: 500px; width:auto" />
+    </RadzenColumn>
+
+    <RadzenColumn Width="10%">
+        @if (selectedPerson != null)
+        {
+            <RadzenCard Style="text-align: center; padding: 10px;">
+                @if (!string.IsNullOrEmpty(selectedPersonImageBase64))
+                {
+                    <img src="@selectedPersonImageBase64" width="100" style="border-radius: 50%;" />
+                }
+                else
+                {
+                    <RadzenIcon Icon="account_circle" Style="font-size: 80px;" />
+                }
+        
+            </RadzenCard>
+        }
+    </RadzenColumn>
+
+    <RadzenColumn Width="40%">
+        <RadzenCard Style="margin-bottom: 20px">
+            <RadzenHeading Size="H4">Select Leave Type</RadzenHeading>
+            <RadzenRow>
+                @foreach (var type in leaveTypes)
+                {
+                    <RadzenColumn Width="33%">
+                        <RadzenButton Text="@type"
+                                      Click="@(() => SelectLeaveType(type))"
+                                      Style="@GetButtonStyle(type)"
+                                      class="leave-type-button" />
+                    </RadzenColumn>
+                }
+            </RadzenRow>
+        </RadzenCard>
+
+        <RadzenFieldset Text="Leave Details">
+            <RadzenDatePicker @bind-Value="leave.StartDate" Style="width: 100%; margin-bottom: 10px" Placeholder="Start Date" />
+            <RadzenDatePicker @bind-Value="leave.EndDate" Style="width: 100%; margin-bottom: 10px" Placeholder="End Date" />
+            <RadzenTextArea @bind-Value="leave.Reason" Style="width: 100%; margin-bottom: 10px" Placeholder="Reason" />
+            <RadzenDropDown @bind-Value="leave.Status" Data="@statusOptions" Style="width: 100%; margin-bottom: 10px" />
+
+            <p>Selected Leave Type: <strong>@selectedLeaveType</strong></p>
+            <RadzenButton ButtonStyle="ButtonStyle.Primary"
+                          Text="Approve Leave"
+                          Icon="check"
+                          Click="@OnSubmit" />
+        </RadzenFieldset>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    private List<PersonOption> allPeople = new();
+    private int selectedPersonId;
+    private string selectedLeaveType;
+    private List<string> leaveTypes = new() { "Sick Leave", "Maternity Leave", "Personal Leave", "Emergency Leave" };
+    private List<string> statusOptions = new() { "Pending", "Approved", "Rejected" };
+    private LeaveOfAbsence leave = new();
+    private PersonOption selectedPerson;
+    private string? selectedPersonImageBase64;
+    private string? activeLeaveType;
+    private int userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var user = await LeaveService.GetUserByUsernameAsync(username);
+        if (user != null)
+        {
+            userId = user.UserID;
+        }
+
+        var teachers = await LeaveService.GetTeacherAsync();
+        var staff = await LeaveService.GetStaffAsync();
+
+        allPeople = teachers.Select(t => new PersonOption
+            {
+                ID = t.TeacherID,
+                FullName = $"{t.TeacherFirstName} {t.TeacherLastName}"
+            })
+        .Concat(staff.Select(s => new PersonOption
+            {
+                ID = s.StaffID + 1000000,
+                FullName = $"{s.StaffFirstName} {s.StaffLastName}"
+            }))
+        .ToList();
+    }
+
+    void SelectLeaveType(string type)
+    {
+        selectedLeaveType = type;
+    }
+
+    async Task OnSubmit()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(selectedLeaveType))
+            {
+                NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = "Select Leave Type",
+                        Detail = "Please select a leave type before submitting."
+                    });
+                return;
+            }
+
+            leave.LeaveType = selectedLeaveType;
+            leave.UserID = userId;  // Use the userId field instead of GetCurrentUserID
+            leave.ApprovedBy = userId;  // Use the userId field instead of GetCurrentUserID
+            leave.DateApproved = DateTime.Now;
+
+            if (selectedPersonId < 1000000)
+            {
+                leave.TeacherID = selectedPersonId;
+            }
+            else
+            {
+                leave.StaffID = selectedPersonId - 1000000;
+            }
+
+            await LeaveService.InsertLeaveAsync(leave);
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Leave Approved",
+                    Detail = "Leave processed successfully."
+                });
+
+            leave = new();
+            selectedLeaveType = null; // Reset selection
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = $"An error occurred while processing the leave: {ex.Message}"
+                });
+        }
+    }
+
+    string GetButtonStyle(string type)
+    {
+        var isSelected = selectedLeaveType == type;
+        return isSelected
+            ? "margin: 5px; width: 100%; background-color: #ffe6e6; border: 2px solid red; color: black;"
+            : "margin: 5px; width: 100%; background-color: #f4f4f4; border: 1px solid #ccc; color: black;";
+    }
+
+    private async Task OnPersonSelected(object value)
+    {
+        try
+        {
+            if (value is int id)
+            {
+                selectedPersonId = id;
+
+                if (selectedPersonId < 1000000)
+                {
+                    var teacher = await LeaveService.GetTeacherByIdAsync(selectedPersonId);
+                    selectedPerson = new PersonOption { ID = teacher.TeacherID, FullName = $"{teacher.TeacherFirstName} {teacher.TeacherLastName}" };
+                    selectedPersonImageBase64 = teacher.ImageData != null ? $"data:image/png;base64,{Convert.ToBase64String(teacher.ImageData)}" : null;
+                    activeLeaveType = await LeaveService.GetActiveLeaveTypeForTeacherAsync(selectedPersonId);
+                }
+                else
+                {
+                    int staffId = selectedPersonId - 1000000;
+                    var staff = await LeaveService.GetStaffByIdAsync(staffId);
+                    selectedPerson = new PersonOption { ID = staff.StaffID, FullName = $"{staff.StaffFirstName} {staff.StaffLastName}" };
+                    selectedPersonImageBase64 = staff.ImageData != null ? $"data:image/png;base64,{Convert.ToBase64String(staff.ImageData)}" : null;
+                    activeLeaveType = await LeaveService.GetActiveLeaveTypeForStaffAsync(staffId);
+                }
+
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = $"An error occurred while selecting the person: {ex.Message}"
+                });
+        }
+    }
+}
