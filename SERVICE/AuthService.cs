@@ -15,6 +15,8 @@ using CORE.MODEL.Department;
 using CORE.MODEL.Bank.LOG;
 using CORE.MODEL.Bank.Transaction_Logs;
 using CORE.MODEL.Set_Exams;
+using CORE.MODEL.LeaveManagement;
+using CORE.MODEL.LeaveStatus;
 
 namespace CORE.SERVICE
 {
@@ -2094,17 +2096,22 @@ namespace CORE.SERVICE
         //----For viewing Lesson Note submitted in the View lesson note dialog----//
         public async Task<IEnumerable<TEACHERSLESSONNOTES>> GetSubmittedLessonNotesAsync()
         {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                string query = @"
-                SELECT ln.LessonnotesID, ln.UserId, u.UserName, ln.SchoolCourse, ln.Strand, ln.SubStrand, ln.ContentStandard, ln.Indicator, ln.TeachingLearningResources, ln.TeachingLearningResourcePreparationNotes, ln.SourcesLearningResources, ln.LearningGroup,ln.LearnerExpectation, ln.ImportantGradeExpectation, ln.LearningOutcomes, ln.FormofAssessment, ln.LearnerEntryBehavior, ln.SequenceofLesson
-                FROM SchoolManagement.TEACHERSLESSONNOTES ln
-                JOIN SchoolManagement.Users u ON ln.UserId = u.UserID";
+            using var connection = new SqlConnection(connectionString);
+            var sql = @"
+        SELECT ln.LessonnotesID, ln.UserId, u.UserName, ln.SchoolCourse, ln.Strand, ln.SubStrand, 
+               ln.ContentStandard, ln.Indicator, ln.TeachingLearningResources, 
+               ln.TeachingLearningResourcePreparationNotes, ln.SourcesLearningResources, 
+               ln.LearningGroup, ln.LearnerExpectation, ln.ImportantGradeExpectation, 
+               ln.LearningOutcomes, ln.FormofAssessment, ln.LearnerEntryBehavior, 
+               ln.SequenceofLesson, ln.Status, ln.UpdatedOn
+        FROM SchoolManagement.TEACHERSLESSONNOTES ln
+        JOIN SchoolManagement.Users u ON ln.UserId = u.UserID
+        WHERE ln.Status = @Status
+        ORDER BY ln.UpdatedOn DESC";
 
-                var lessonNotes = await connection.QueryAsync<TEACHERSLESSONNOTES>(query);
-                return lessonNotes;
-            }
+            return await connection.QueryAsync<TEACHERSLESSONNOTES>(sql, new { Status = Lesson_Note_Dialog_Status.New });
         }
+
         public async Task UpdateLessonNoteStatusAsync(TEACHERSLESSONNOTES note, int userId)
         {
             // Ensure the status is valid before proceeding
@@ -3997,6 +4004,171 @@ VALUES
             await connection.ExecuteAsync(query, model);
         }
 
+        /*Leave of absence*/
+        public async Task<bool> InsertLeaveAsync(LeaveOfAbsence leave)
+        {
+            try
+            {
+                using var conn = new SqlConnection(connectionString);
+                var sql = @"
+            INSERT INTO SchoolManagement.LeaveOfAbsence
+            (UserID, TeacherID, StaffID, LeaveType, StartDate, EndDate, Reason, Status, ApprovedBy, UpdatedBY)
+            VALUES (@UserID, @TeacherID, @StaffID, @LeaveType, @StartDate, @EndDate, @Reason, @Status, @ApprovedBy, @UpdatedBY)";
+                var rowsAffected = await conn.ExecuteAsync(sql, leave);
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return false;
+            }
+        }
+
+
+        public async Task<IEnumerable<TeachersRegistration>> GetTeacherAsync()
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryAsync<TeachersRegistration>("SELECT TeacherID, TeacherFirstName, TeacherLastName FROM SchoolManagement.Teacher");
+        }
+
+        public async Task<IEnumerable<Staff>> GetStaffAsync()
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryAsync<Staff>("SELECT * FROM SchoolManagement.Staff WHERE IsEnabled = 1");
+        }
+
+        public async Task<TeachersRegistration> GetTeacherByIdAsync(int id)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryFirstOrDefaultAsync<TeachersRegistration>(
+                "SELECT * FROM SchoolManagement.Teacher WHERE TeacherID = @id", new { id });
+        }
+
+        public async Task<Staff> GetStaffByIdAsync(int id)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryFirstOrDefaultAsync<Staff>(
+                "SELECT * FROM SchoolManagement.Staff WHERE StaffID = @id", new { id });
+        }
+
+        public async Task<string> GetActiveLeaveTypeForTeacherAsync(int teacherId)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryFirstOrDefaultAsync<string>(
+                @"SELECT TOP 1 LeaveType 
+          FROM SchoolManagement.LeaveOfAbsence 
+          WHERE TeacherID = @teacherId AND Status = 'Approved' AND EndDate >= GETDATE()
+          ORDER BY StartDate DESC", new { teacherId }) ?? "";
+        }
+
+        public async Task<string> GetActiveLeaveTypeForStaffAsync(int staffId)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryFirstOrDefaultAsync<string>(
+                @"SELECT TOP 1 LeaveType 
+          FROM SchoolManagement.LeaveOfAbsence 
+          WHERE StaffID = @staffId AND Status = 'Approved' AND EndDate >= GETDATE()
+          ORDER BY StartDate DESC", new { staffId }) ?? "";
+        }
+
+        public async Task<IEnumerable<LeaveOfAbsence>> GetLeaveHistoryForTeacherAsync(int teacherId)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryAsync<LeaveOfAbsence>(
+                @"SELECT * FROM SchoolManagement.LeaveOfAbsence 
+          WHERE TeacherID = @teacherId 
+          ORDER BY StartDate DESC", new { teacherId });
+        }
+
+        public async Task<IEnumerable<LeaveOfAbsence>> GetLeaveHistoryForStaffAsync(int staffId)
+        {
+            using var conn = new SqlConnection(connectionString);
+            return await conn.QueryAsync<LeaveOfAbsence>(
+                @"SELECT * FROM SchoolManagement.LeaveOfAbsence 
+          WHERE StaffID = @staffId 
+          ORDER BY StartDate DESC", new { staffId });
+        }
+
+        /*Approval of leave*/
+        public async Task<IEnumerable<LeaveOfAbsenceViewModel>> GetPendingLeaveRequestsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Only get pending leave requests (Status = 0)
+                return await connection.QueryAsync<LeaveOfAbsenceViewModel>(
+                   @"SELECT l.LeaveID, l.UserID, u.UserName, l.LeaveType, l.StartDate, l.EndDate, l.Reason, l.Status
+      FROM SchoolManagement.LeaveOfAbsence l
+      INNER JOIN SchoolManagement.Users u ON l.UserID = u.UserID
+      WHERE l.Status = 'Pending'"
+                );
+            }
+        }
+
+
+        public async Task UpdateLeaveRequestStatusAsync(LeaveOfAbsenceViewModel leaveRequest, int updatedBy)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var query = @"
+            UPDATE SchoolManagement.LeaveOfAbsence 
+            SET 
+                Status = @Status, 
+                ApprovedBy = @ApprovedBy, 
+                DateApproved = @DateApproved, 
+                UpdatedBY = @UpdatedBY 
+            WHERE LeaveID = @LeaveID";
+
+                await connection.ExecuteAsync(query, new
+                {
+                    Status = leaveRequest.Status.ToString(), // ?? convert enum to string
+                    ApprovedBy = updatedBy,
+                    DateApproved = DateTime.Now,
+                    UpdatedBY = updatedBy,
+                    leaveRequest.LeaveID
+                });
+            }
+        }
+
+
+        public async Task<IEnumerable<LeaveOfAbsenceViewModel>> GetLeaveRequestsByDateRangeAsync(DateTime fromDate, DateTime toDate)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                return await connection.QueryAsync<LeaveOfAbsenceViewModel>(
+                    "SELECT l.LeaveID, l.UserID, u.UserName, l.LeaveType, l.StartDate, l.EndDate, l.Reason, l.Status FROM SchoolManagement.LeaveOfAbsence l INNER JOIN SchoolManagement.Users u ON l.UserID = u.UserID WHERE l.StartDate BETWEEN @FromDate AND @ToDate",
+                    new { FromDate = fromDate, ToDate = toDate }
+                );
+            }
+        }
+
+        /*Leave Dialog*/
+        public async Task<IEnumerable<LeaveOfAbsenceViewModel>> GetLeaveRequestsByStatusAsync(LeaveStatus status)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        SELECT 
+            loa.LeaveID,
+            loa.UserID,
+            u.UserName,
+            loa.LeaveType,
+            loa.StartDate,
+            loa.EndDate,
+            loa.Reason,
+            loa.Status,
+            loa.ApprovedBy,
+            loa.DateApproved,
+            loa.UpdatedBY
+        FROM SchoolManagement.LeaveOfAbsence loa
+        INNER JOIN SchoolManagement.Users u ON loa.UserID = u.UserID
+        WHERE loa.Status = @Status";
+
+            var results = await connection.QueryAsync<LeaveOfAbsenceViewModel>(query, new { Status = status.ToString() });
+            return results;
+        }
 
     }
 

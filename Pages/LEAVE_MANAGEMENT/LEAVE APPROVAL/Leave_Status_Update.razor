@@ -1,0 +1,259 @@
+﻿@page "/leave-status-update"
+@using CORE.MODEL
+@using CORE.MODEL.LeaveStatus
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using CORE.Tool_Components.Leave_Status_Update
+@inject AuthService leaveRequestService
+@inject DialogService DialogService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+@inherits Leave_Status_Update_CodeBehind
+
+<RadzenNotification />
+
+<LoadingSpinner Visible="isLoading" />
+
+<style>
+    .text-blue {
+        color: blue;
+    }
+
+    .text-red {
+        color: red;
+    }
+
+    .student-list-container {
+        max-width: 300px;
+        float: left;
+        margin-right: 20px;
+    }
+
+    .form-container {
+        margin-left: 320px;
+    }
+
+    .input-group {
+        margin-bottom: 15px;
+    }
+
+    /* PRINT STUDENT REPOR */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
+
+    .custom-background {
+        background-color: green !important;
+    }
+</style>
+
+@if (!isLoading)
+{
+      <RadzenHeader title="School Fees Payment" class="header-container compact-header">
+      @*   <RadzenFieldset Text="INCOMING" class="right-align">
+
+        </RadzenFieldset> *@
+          
+          <RadzenFieldset Text="ACTION" class="right-align">
+            <ApprovedLeaveStatusUpdateToolComponent OnApprovedDialog="ApprovedDialog" OnRejectedDialog="RejectedDialog" />
+        </RadzenFieldset>
+       
+    </RadzenHeader>
+    <br />
+    <RadzenFieldset Text="INCOMING LEAVES">
+    <div class="container my-5">
+        <div class="mb-4 d-flex align-items-center">
+            <RadzenDatePicker @bind-Value="fromDate" Placeholder="From Date" Style="width: 200px;" />
+            <RadzenDatePicker @bind-Value="toDate" Placeholder="To Date" Style="width: 200px; margin-left: 10px;" />
+            <RadzenButton Text="Filter" Click="@FilterLeaveRequests" ButtonStyle="ButtonStyle.Primary" Style="margin-left: 10px;" />
+        </div>
+
+        @if (leaveRequests != null && leaveRequests.Any())
+        {
+            <div class="row">
+                @foreach (var leave in leaveRequests)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="shadow-sm rounded-3 p-3 bg-white border h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="mb-2 text-primary">@leave.UserName</h5>
+                                <p class="text-muted mb-2"><strong>Leave Type:</strong> @leave.LeaveType</p>
+
+                                <RadzenDropDown @bind-Value="leave.Status"
+                                                Data="Enum.GetValues(typeof(LeaveStatus)).Cast<LeaveStatus>()"
+                                                Style="width: 100%; border-radius: 6px;"
+                                                Change="@(args => ValidateStatusSelection(leave))" />
+
+                                <RadzenButton Text="View" Icon="visibility" Click="@(args => ViewLeaveRequest(leave))" ButtonStyle="ButtonStyle.Info" Style="margin-top: 10px; width: 100%;" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="d-flex justify-content-end mt-4">
+                <RadzenButton Click="CloseForm" ButtonStyle="ButtonStyle.Danger" Text="Close" Icon="close" Style="margin-right: 10px; width: 120px;" />
+                <RadzenButton Click="OnDone" ButtonStyle="ButtonStyle.Info" Text="Done" Icon="check" Style="width: 120px;" />
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info mt-5" role="alert" style="border-radius: 8px;">
+                No leave requests have been submitted yet.
+            </div>
+        }
+    </div>
+
+    @if (selectedLeaveRequest != null)
+    {
+        <RadzenFieldset Text="Leave Request Details" Icon="book" Style="margin-top: 20px; border-radius: 8px; background: #f8f9fa;">
+            <dl class="row">
+                <dt class="col-sm-4">User:</dt>
+                <dd class="col-sm-8">@selectedLeaveRequest.UserName</dd>
+                <dt class="col-sm-4">Leave Type:</dt>
+                <dd class="col-sm-8">@selectedLeaveRequest.LeaveType</dd>
+                <dt class="col-sm-4">Start Date:</dt>
+                <dd class="col-sm-8">@selectedLeaveRequest.StartDate.ToShortDateString()</dd>
+                <dt class="col-sm-4">End Date:</dt>
+                <dd class="col-sm-8">@selectedLeaveRequest.EndDate.ToShortDateString()</dd>
+                <dt class="col-sm-4">Reason:</dt>
+                <dd class="col-sm-8">@selectedLeaveRequest.Reason</dd>
+            </dl>
+            <RadzenButton Click="ClearSelectedLeaveRequest" ButtonStyle="ButtonStyle.Secondary" Text="Close" Style="margin-top: 10px;" />
+        </RadzenFieldset>
+    }
+    </RadzenFieldset>
+}
+
+@code {
+    private IEnumerable<LeaveOfAbsenceViewModel> leaveRequests;
+    private bool isLoading = false;
+    private LeaveOfAbsenceViewModel selectedLeaveRequest;
+    private DateTime? fromDate;
+    private DateTime? toDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            leaveRequests = await leaveRequestService.GetPendingLeaveRequestsAsync(); // Use the new method here
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"Error initializing page: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private async Task ValidateStatusSelection(LeaveOfAbsenceViewModel leave)
+    {
+        // Check if the status is Pending using the enum value
+        if (leave.Status == LeaveStatus.Pending)
+        {
+            string userIdStr = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userID");
+            var userId = Convert.ToInt32(userIdStr);
+
+            leave.UpdatedBY = userId;
+            leave.DateApproved = DateTime.Now;
+
+            await leaveRequestService.UpdateLeaveRequestStatusAsync(leave, userId);
+            leaveRequests = await leaveRequestService.GetPendingLeaveRequestsAsync();
+            StateHasChanged();
+        }
+    }
+
+
+    private void ViewLeaveRequest(LeaveOfAbsenceViewModel leave)
+    {
+        selectedLeaveRequest = leave;
+    }
+
+    private void ClearSelectedLeaveRequest()
+    {
+        selectedLeaveRequest = null;
+    }
+
+    private async Task OnDone()
+    {
+        try
+        {
+            isLoading = true;
+
+            string userIdStr = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userID");
+            var userId = Convert.ToInt32(userIdStr);
+
+            foreach (var leave in leaveRequests)
+            {
+                // Use the enum value for comparison
+                if (leave.Status != LeaveStatus.Pending)
+                {
+                    leave.UpdatedBY = userId;
+                    await leaveRequestService.UpdateLeaveRequestStatusAsync(leave, userId);
+                }
+            }
+
+            Notify.ShowNotification("Success", "Leave requests updated successfully!", NotificationSeverity.Success);
+            leaveRequests = await leaveRequestService.GetPendingLeaveRequestsAsync();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"Error updating leave requests: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private async Task FilterLeaveRequests()
+    {
+        if (fromDate.HasValue && toDate.HasValue)
+        {
+            isLoading = true;
+            try
+            {
+                leaveRequests = await leaveRequestService.GetLeaveRequestsByDateRangeAsync(fromDate.Value, toDate.Value);
+            }
+            finally
+            {
+                isLoading = false;
+            }
+        }
+        else
+        {
+            Notify.ShowNotification("Error", "Please select both 'From' and 'To' dates.", NotificationSeverity.Error);
+        }
+    }
+
+    private void CloseForm()
+    {
+        DialogService.Close();
+    }
+
+    async void RejectedDialog() => await OpenRejectedDialog();
+
+    async void ApprovedDialog() => await OpenApprovedDialog();
+}

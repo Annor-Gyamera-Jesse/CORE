@@ -1,0 +1,29 @@
+﻿@using CORE.Pages.LOADING_COMPONENT
+@* ToolComponent Page *@
+
+<style>
+    .toolset-container {
+        display: flex;
+        gap: 10px; /* Adjust the spacing between buttons */
+    }
+
+    .toolset-btn {
+        font-size: 14px;
+        flex: 1; /* Makes both buttons take equal space */
+    }
+</style>
+
+<LoadingSpinner Visible="isLoading" />
+@if (!isLoading)
+{
+    <div class="toolset-container mt-2">
+        <RadzenButton Text="Approved" Icon="check" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Success" Click=@OnApprovedDialog />
+        <RadzenButton Text="Rejected" Icon="cancel" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OnRejectedDialog />
+    </div>
+}
+@code {
+    private bool isLoading = false;
+    [Parameter] public Action OnApprovedDialog { get; set; }
+    [Parameter] public Action OnRejectedDialog { get; set; }
+
+}
