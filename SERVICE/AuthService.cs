@@ -16,6 +16,7 @@ using CORE.MODEL.Bank.LOG;
 using CORE.MODEL.Bank.Transaction_Logs;
 using CORE.MODEL.Set_Exams;
 using CORE.MODEL.LeaveManagement;
+using CORE.MODEL.LeaveStatus;
 
 namespace CORE.SERVICE
 {
@@ -4088,6 +4089,61 @@ VALUES
           ORDER BY StartDate DESC", new { staffId });
         }
 
+        /*Approval of leave*/
+        public async Task<IEnumerable<LeaveOfAbsenceViewModel>> GetPendingLeaveRequestsAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Only get pending leave requests (Status = 0)
+                return await connection.QueryAsync<LeaveOfAbsenceViewModel>(
+                   @"SELECT l.LeaveID, l.UserID, u.UserName, l.LeaveType, l.StartDate, l.EndDate, l.Reason, l.Status
+      FROM SchoolManagement.LeaveOfAbsence l
+      INNER JOIN SchoolManagement.Users u ON l.UserID = u.UserID
+      WHERE l.Status = 'Pending'"
+                );
+            }
+        }
+
+
+        public async Task UpdateLeaveRequestStatusAsync(LeaveOfAbsenceViewModel leaveRequest, int updatedBy)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var query = @"
+            UPDATE SchoolManagement.LeaveOfAbsence 
+            SET 
+                Status = @Status, 
+                ApprovedBy = @ApprovedBy, 
+                DateApproved = @DateApproved, 
+                UpdatedBY = @UpdatedBY 
+            WHERE LeaveID = @LeaveID";
+
+                await connection.ExecuteAsync(query, new
+                {
+                    Status = leaveRequest.Status.ToString(), // ?? convert enum to string
+                    ApprovedBy = updatedBy,
+                    DateApproved = DateTime.Now,
+                    UpdatedBY = updatedBy,
+                    leaveRequest.LeaveID
+                });
+            }
+        }
+
+
+        public async Task<IEnumerable<LeaveOfAbsenceViewModel>> GetLeaveRequestsByDateRangeAsync(DateTime fromDate, DateTime toDate)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                return await connection.QueryAsync<LeaveOfAbsenceViewModel>(
+                    "SELECT l.LeaveID, l.UserID, u.UserName, l.LeaveType, l.StartDate, l.EndDate, l.Reason, l.Status FROM SchoolManagement.LeaveOfAbsence l INNER JOIN SchoolManagement.Users u ON l.UserID = u.UserID WHERE l.StartDate BETWEEN @FromDate AND @ToDate",
+                    new { FromDate = fromDate, ToDate = toDate }
+                );
+            }
+        }
 
     }
 
