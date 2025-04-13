@@ -4145,6 +4145,31 @@ VALUES
             }
         }
 
+        /*Leave Dialog*/
+        public async Task<IEnumerable<LeaveOfAbsenceViewModel>> GetLeaveRequestsByStatusAsync(LeaveStatus status)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        SELECT 
+            loa.LeaveID,
+            loa.UserID,
+            u.UserName,
+            loa.LeaveType,
+            loa.StartDate,
+            loa.EndDate,
+            loa.Reason,
+            loa.Status,
+            loa.ApprovedBy,
+            loa.DateApproved,
+            loa.UpdatedBY
+        FROM SchoolManagement.LeaveOfAbsence loa
+        INNER JOIN SchoolManagement.Users u ON loa.UserID = u.UserID
+        WHERE loa.Status = @Status";
+
+            var results = await connection.QueryAsync<LeaveOfAbsenceViewModel>(query, new { Status = status.ToString() });
+            return results;
+        }
+
     }
 
 }

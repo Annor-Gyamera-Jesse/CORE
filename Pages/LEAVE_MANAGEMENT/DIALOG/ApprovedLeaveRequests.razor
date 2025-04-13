@@ -1,0 +1,57 @@
+﻿@page "/approved-leaves"
+@using CORE.MODEL.LeaveStatus
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService leaveRequestService
+@inject NotificationMessageService Notify
+
+
+@if (isLoading)
+{
+    <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+}
+else if (approvedLeaves?.Any() == true)
+{
+    <div class="row">
+        @foreach (var leave in approvedLeaves)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="shadow-sm rounded-3 p-3 bg-white border h-100">
+                    <h5 class="text-primary">@leave.UserName</h5>
+                    <p><strong>Leave Type:</strong> @leave.LeaveType</p>
+                    <p><strong>Start:</strong> @leave.StartDate.ToShortDateString()</p>
+                    <p><strong>End:</strong> @leave.EndDate.ToShortDateString()</p>
+                    <p><strong>Reason:</strong> @leave.Reason</p>
+                    <p><strong>Approved By:</strong> @leave.ApprovedBy</p>
+                    <p><strong>Date Approved:</strong> @leave.DateApproved?.ToString("g")</p>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">No approved leave requests found.</div>
+}
+
+@code {
+    private bool isLoading = true;
+    private IEnumerable<LeaveOfAbsenceViewModel> approvedLeaves;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            approvedLeaves = await leaveRequestService.GetLeaveRequestsByStatusAsync(LeaveStatus.Approved);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"Error loading approved leaves: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
