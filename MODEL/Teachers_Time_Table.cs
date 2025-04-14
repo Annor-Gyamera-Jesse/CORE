@@ -34,8 +34,8 @@
             public string SchoolCourseID { get; set; } // Add this property
             public string ClassID { get; set; }
             public int TimeslotID { get; set; }
-            public TimeSpan? StartTime { get; set; }
-            public TimeSpan? EndTime { get; set; }
+            public DateTime? StartTime { get; set; }
+            public DateTime? EndTime { get; set; }
             public int DayID { get; set; }
             public DateTime SubjectStartTime { get; set; } 
             public DateTime SubjectEndTime { get; set; }
