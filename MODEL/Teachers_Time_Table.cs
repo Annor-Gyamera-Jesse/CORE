@@ -44,5 +44,18 @@
             public bool AfterFirstBreak { get; set; }
             public bool AfterSecondBreak { get; set; }
         }
+
+        public class ClassTimetableModel
+        {
+            public int ScheduleID { get; set; }
+            public string ClassID { get; set; }
+            public string SCID { get; set; }
+            public string Subject { get; set; }
+            public string Day { get; set; }
+            public string Period { get; set; }
+            public DateTime StartTime { get; set; }
+            public DateTime EndTime { get; set; }
+        }
+
     }
 }

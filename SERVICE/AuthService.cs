@@ -4177,6 +4177,37 @@ VALUES
             return results;
         }
 
+
+        /*Print time table*/
+        public async Task<IEnumerable<ClassTimetableModel>> GetClassTimetableByClassIdAsync(string classId)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            var query = @"
+        SELECT 
+            s.ScheduleID,
+            s.ClassID,
+            s.SCID,
+            c.SchoolCourse AS Subject,  -- Changed alias here
+            d.DayName AS Day,
+            s.SubjectStartTime AS StartTime,
+            s.SubjectEndTime AS EndTime,
+            CASE 
+                WHEN s.BeforeFirstBreak = 1 THEN 'BeforeFirstBreak'
+                WHEN s.AfterFirstBreak = 1 THEN 'AfterFirstBreak'
+                WHEN s.AfterSecondBreak = 1 THEN 'AfterSecondBreak'
+                ELSE 'Unknown'
+            END AS Period
+        FROM SchoolManagement.StudentTimetable_Schedule s
+        INNER JOIN SchoolManagement.SchoolCourse c ON s.SCID = c.SCID
+        INNER JOIN SchoolManagement.StudentTimetable_Days d ON s.DayID = d.DayID
+        WHERE s.ClassID = @ClassID
+        ORDER BY d.DayID, s.SubjectStartTime";
+
+            var result = await connection.QueryAsync<ClassTimetableModel>(query, new { ClassID = classId });
+            return result;
+        }
+
     }
 
 }

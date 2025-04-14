@@ -1,0 +1,60 @@
+﻿@inject AuthService authService
+@inject IJSRuntime JSRuntime
+@inject NotificationMessageService Notify
+@using CORE.MODEL
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using static CORE.MODEL.Teachers_Time_Table
+@inject IJSRuntime JSRuntime
+@using System.Text
+@using System.Text.Json
+
+<RadzenNotification />
+
+<div class="card" style="max-width: 600px; margin: auto; padding: 20px;">
+    <RadzenDropDown Data="@classIds"
+                    @bind-Value="selectedClassId"
+                    Placeholder="📚 Select a class"
+                    Style="width: 100%; margin-bottom: 20px;" />
+
+    <RadzenButton Text="📄 Generate Timetable PDF"
+                  Icon="picture_as_pdf"
+                  Click="@GenerateClassTimetablePdf"
+                  Disabled="@string.IsNullOrEmpty(selectedClassId)"
+                  Style="width: 100%; background-color: #4CAF50; color: white;" />
+</div>
+
+@code {
+    private List<string> classIds = new();
+    private string selectedClassId;
+    private List<ClassTimetableModel> classTimetable = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        classIds = (await authService.GetClassIDsAsync()).ToList();
+    }
+
+    private async Task GenerateClassTimetablePdf()
+    {
+        try
+        {
+            classTimetable = (await authService.GetClassTimetableByClassIdAsync(selectedClassId)).ToList();
+            if (!classTimetable.Any())
+            {
+                Notify.ShowNotification("No timetable found for selected class.", "", NotificationSeverity.Warning);
+                return;
+            }
+
+            var json = JsonSerializer.Serialize(classTimetable);
+            var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+
+            await JSRuntime.InvokeVoidAsync("downloadClassTimetablePdf", $"Timetable_{selectedClassId}.pdf", base64);
+            Notify.ShowNotification("PDF downloaded successfully.", "", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error: {ex.Message}", "", NotificationSeverity.Error);
+        }
+    }
+}
