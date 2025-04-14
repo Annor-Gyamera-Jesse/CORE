@@ -1,5 +1,6 @@
 ﻿@page "/core/pages/teachers/teachersregistration"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using System.ComponentModel.DataAnnotations
 @using CORE.SERVICE.NOTIFICATION
@@ -9,228 +10,231 @@
 
 <style>
     form .row {
-        margin-bottom: 16px;
-        margin-top: 10px;
+    margin-bottom: 16px;
+    margin-top: 10px;
     }
 
     .rz-fieldset-content {
-        padding: 0;
+    padding: 0;
     }
 
     .form-label {
-        padding-top: 8px;
+    padding-top: 8px;
     }
 
     .form-control {
-        margin-bottom: 8px;
+    margin-bottom: 8px;
     }
 </style>
+<LoadingSpinner Visible="isLoading" />
 
-<RadzenFieldset Text="Teachers Registration">
-    <div class="row">
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Teacher FirstName" Component="textteachername" />
-        </div>
-        <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherFirstName" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Teacher LastName" Component="textteacherlastname" />
-        </div>
-        <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherLastName" />
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Date of Birth" Component="textteacherdob" />
-        </div>
-        <div class="col-md-3">
-            <RadzenDatePicker @bind-Value="@teachersRegistration.TeacherDateOfBirth" Format="d" Placeholder="Select Date of Birth" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Teacher Gender" Component="textteachergender" />
-        </div>
-        <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherGender" />
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Teacher Address" Component="textteacheraddress" />
-        </div>
-        <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherAddress" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Teacher Phone Number" Component="textteacherphonenumber" />
-        </div>
-        <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherPhoneNumber" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Upload Image" Component="fileInput" />
-        </div>
-        <div class="col-md-3">
-            <InputFile id="teacherImage" OnChange="HandleFileChange" key="@inputFileKey" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Teacher Email" Component="textteacheremail" />
-        </div>
-        <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherEmail" />
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Teacher ID" Component="textteacherid" />
-        </div>
-        <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" Value="@newTeacherId.ToString()" ReadOnly="true" />
-        </div>
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Date Hired" Component="textteacherid" />
-        </div>
-        <div class="col-md-3">
-            <RadzenDatePicker class="form-control form-control-sm" @bind-Value="@teachersRegistration.DateHired" />
-        </div>
-    </div>
-
-    <RadzenFieldset Text="SSNIT">
+@if (!isLoading)
+{
+    <RadzenFieldset Text="Teachers Registration">
         <div class="row">
             <div class="col-md-3 text-md-end form-label">
-                <RadzenLabel Text="SSNIT" />
+                <RadzenLabel Text="Teacher FirstName" Component="textteachername" />
             </div>
             <div class="col-md-3">
-                <RadzenDropDown @bind-Value="@teachersRegistration.SSNIT"
-                                Data="@(new List<string> { "Y", "N" })"
-                                Placeholder="Do You Have SSNIT"
-                                Class="form-control form-control-sm" />
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherFirstName" />
             </div>
 
             <div class="col-md-3 text-md-end form-label">
-                <RadzenLabel Text="Basic Salary" />
+                <RadzenLabel Text="Teacher LastName" Component="textteacherlastname" />
             </div>
             <div class="col-md-3">
-                <RadzenNumeric @bind-Value="@teachersRegistration.BasicSalary"
-                               Class="form-control form-control-sm"
-                               Change="@((decimal value) => CalculateSSNITTier2(value))" />
-
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherLastName" />
             </div>
+        </div>
 
         <div class="row">
             <div class="col-md-3 text-md-end form-label">
-                <RadzenLabel Text="PAYE" />
+                <RadzenLabel Text="Date of Birth" Component="textteacherdob" />
             </div>
             <div class="col-md-3">
-                <RadzenNumeric @bind-Value="@teachersRegistration.PAYE"
-                               Class="form-control form-control-sm" />
+                <RadzenDatePicker @bind-Value="@teachersRegistration.TeacherDateOfBirth" Format="d" Placeholder="Select Date of Birth" />
             </div>
 
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Teacher Gender" Component="textteachergender" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherGender" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Teacher Address" Component="textteacheraddress" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherAddress" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Teacher Phone Number" Component="textteacherphonenumber" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherPhoneNumber" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Upload Image" Component="fileInput" />
+            </div>
+            <div class="col-md-3">
+                <InputFile id="teacherImage" OnChange="HandleFileChange" key="@inputFileKey" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Teacher Email" Component="textteacheremail" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@teachersRegistration.TeacherEmail" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Teacher ID" Component="textteacherid" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" Value="@newTeacherId.ToString()" ReadOnly="true" />
+            </div>
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Date Hired" Component="textteacherid" />
+            </div>
+            <div class="col-md-3">
+                <RadzenDatePicker class="form-control form-control-sm" @bind-Value="@teachersRegistration.DateHired" />
+            </div>
+        </div>
+
+        <RadzenFieldset Text="SSNIT">
+            <div class="row">
                 <div class="col-md-3 text-md-end form-label">
-                    <RadzenLabel Text="SSNIT Tier 2" />
+                    <RadzenLabel Text="SSNIT" />
                 </div>
                 <div class="col-md-3">
-                    <RadzenNumeric @bind-Value="@teachersRegistration.SSNITTIER2"
-                                   Class="form-control form-control-sm"
-                                   ReadOnly="true" />
+                    <RadzenDropDown @bind-Value="@teachersRegistration.SSNIT"
+                    Data="@(new List<string> { "Y", "N" })"
+                    Placeholder="Do You Have SSNIT"
+                    Class="form-control form-control-sm" />
                 </div>
+
                 <div class="col-md-3 text-md-end form-label">
-                    <RadzenLabel Text="SSNIT Number" />
-                </div>
-                <div class="col-md-4">
-                    <RadzenTextBox @bind-Value="@teachersRegistration.SSNITNumber" class="form-control form-control-sm" />
-                </div>
-                <div class="col-md-2 text-md-end form-label">
-                    <RadzenLabel Text="PMT CAT" />
+                    <RadzenLabel Text="Basic Salary" />
                 </div>
                 <div class="col-md-3">
-                    <RadzenDropDown @bind-Value="selectedCategoryId" Data="@paymentCategories"
-                                    TextProperty="CategoryName" ValueProperty="CategoryID"
-                                    Class="w-full border-gray-300 rounded-lg p-2" Placeholder="Select Payment Category" />
+                    <RadzenNumeric @bind-Value="@teachersRegistration.BasicSalary"
+                    Class="form-control form-control-sm"
+                    Change="@((decimal value) => CalculateSSNITTier2(value))" />
+
                 </div>
-          </div>
+
+                <div class="row">
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="PAYE" />
+                    </div>
+                    <div class="col-md-3">
+                        <RadzenNumeric @bind-Value="@teachersRegistration.PAYE"
+                        Class="form-control form-control-sm" />
+                    </div>
+
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="SSNIT Tier 2" />
+                    </div>
+                    <div class="col-md-3">
+                        <RadzenNumeric @bind-Value="@teachersRegistration.SSNITTIER2"
+                        Class="form-control form-control-sm"
+                        ReadOnly="true" />
+                    </div>
+                    <div class="col-md-3 text-md-end form-label">
+                        <RadzenLabel Text="SSNIT Number" />
+                    </div>
+                    <div class="col-md-4">
+                        <RadzenTextBox @bind-Value="@teachersRegistration.SSNITNumber" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-md-2 text-md-end form-label">
+                        <RadzenLabel Text="PMT CAT" />
+                    </div>
+                    <div class="col-md-3">
+                        <RadzenDropDown @bind-Value="selectedCategoryId" Data="@paymentCategories"
+                        TextProperty="CategoryName" ValueProperty="CategoryID"
+                        Class="w-full border-gray-300 rounded-lg p-2" Placeholder="Select Payment Category" />
+                    </div>
+                </div>
+            </div>
+        </RadzenFieldset>
+
+        <RadzenFieldset Text="Account Details">
+            <div class="row">
+                <div class="col-md-3 text-md-end form-label">
+                    <RadzenLabel Text="Voters ID" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenTextBox @bind-Value="@teachersRegistration.VotersID"                                
+                    Placeholder="Voters ID"
+                    Class="form-control form-control-sm" />
+                </div>
+
+                <div class="col-md-3 text-md-end form-label">
+                    <RadzenLabel Text="Health Insurance" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenTextBox @bind-Value="@teachersRegistration.HealthInsurance"                                
+                    Placeholder="Health Insurance"
+                    Class="form-control form-control-sm" />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3 text-md-end form-label">
+                    <RadzenLabel Text="Ghana Card" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenTextBox @bind-Value="@teachersRegistration.GhanaCard"                                
+                    Placeholder="Ghana Card Number"
+                    Class="form-control form-control-sm" />
+                </div>
+
+                <div class="col-md-3 text-md-end form-label">
+                    <RadzenLabel Text="Bank" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenDropDown @bind-Value="@teachersRegistration.Bank"
+                    Data="@Banks"
+                    Placeholder="Select Bank"
+                    Class="form-control form-control-sm" />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3 text-md-end form-label">
+                    <RadzenLabel Text="Account Number" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenTextBox class="form-control form-control-sm"
+                    @bind-Value="@teachersRegistration.AccountNumber" />
+                </div>
+
+                <div class="col-md-3 text-md-end form-label">
+                    <RadzenLabel Text="Remarks" />
+                </div>
+                <div class="col-md-3">
+                    <RadzenTextBox class="form-control form-control-sm"
+                    @bind-Value="@teachersRegistration.Remarks" />
+                </div>
+            </div>
+        </RadzenFieldset>
+        <div class="row mt-2">
+            <div class="col-md-3">
+                <RadzenButton Text="Submit" Icon="check" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Click="@SubmitForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
+            </div>
+            <div class="col-md-3">
+                <RadzenButton Text="New" Icon="add" ButtonStyle="ButtonStyle.Info" Click="@ResetForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
+            </div>
         </div>
     </RadzenFieldset>
-
-    <RadzenFieldset Text="Account Details">
-        <div class="row">
-            <div class="col-md-3 text-md-end form-label">
-                <RadzenLabel Text="Voters ID" />
-            </div>
-            <div class="col-md-3">
-                <RadzenTextBox @bind-Value="@teachersRegistration.VotersID"                                
-                                Placeholder="Voters ID"
-                                Class="form-control form-control-sm" />
-            </div>
-
-            <div class="col-md-3 text-md-end form-label">
-                <RadzenLabel Text="Health Insurance" />
-            </div>
-            <div class="col-md-3">
-                <RadzenTextBox @bind-Value="@teachersRegistration.HealthInsurance"                                
-                                Placeholder="Health Insurance"
-                                Class="form-control form-control-sm" />
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-3 text-md-end form-label">
-                <RadzenLabel Text="Ghana Card" />
-            </div>
-            <div class="col-md-3">
-                <RadzenTextBox @bind-Value="@teachersRegistration.GhanaCard"                                
-                                Placeholder="Ghana Card Number"
-                                Class="form-control form-control-sm" />
-            </div>
-
-            <div class="col-md-3 text-md-end form-label">
-                <RadzenLabel Text="Bank" />
-            </div>
-            <div class="col-md-3">
-                <RadzenDropDown @bind-Value="@teachersRegistration.Bank"
-                                Data="@Banks"
-                                Placeholder="Select Bank"
-                                Class="form-control form-control-sm" />
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-3 text-md-end form-label">
-                <RadzenLabel Text="Account Number" />
-            </div>
-            <div class="col-md-3">
-                <RadzenTextBox class="form-control form-control-sm"
-                               @bind-Value="@teachersRegistration.AccountNumber" />
-            </div>
-
-            <div class="col-md-3 text-md-end form-label">
-                <RadzenLabel Text="Remarks" />
-            </div>
-            <div class="col-md-3">
-                <RadzenTextBox class="form-control form-control-sm"
-                               @bind-Value="@teachersRegistration.Remarks" />
-            </div>
-        </div>
-    </RadzenFieldset>
-    <div class="row mt-2">
-        <div class="col-md-3">
-            <RadzenButton Text="Submit" Icon="check" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" Click="@SubmitForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
-        </div>
-        <div class="col-md-3">
-            <RadzenButton Text="New" Icon="add" ButtonStyle="ButtonStyle.Info" Click="@ResetForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
-        </div>
-    </div>
-</RadzenFieldset>
-
+}
 
 @code {
     TeachersRegistration teachersRegistration = new TeachersRegistration();
@@ -241,10 +245,25 @@
     private int inputFileKey = 0;
     private List<PaymentCategory> paymentCategories = new();
     private int selectedCategoryId;
+    private bool isLoading = false;
+
     protected override async Task OnInitializedAsync()
     {
-        Banks = await authService.GetPaymentMethodsAsync();
-        paymentCategories = await authService.GetPaymentCategoriesAsync();
+        try
+        {
+            isLoading = true;
+            Banks = await authService.GetPaymentMethodsAsync();
+            paymentCategories = await authService.GetPaymentCategoriesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
     private Task CalculateSSNITTier2(decimal newSalary)
@@ -259,6 +278,7 @@
     {
         try
         {
+            isLoading = true;
             if (IsValid(teachersRegistration))
             {
                 if (selectedFile != null)
@@ -299,6 +319,11 @@
             // Notify error with exception message
             Notify.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
         }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
     bool IsValid(object obj)
@@ -311,13 +336,44 @@
 
     private void HandleFileChange(InputFileChangeEventArgs e)
     {
-        selectedFile = e.File;
+        try
+        {
+            isLoading = true;
+            // Check if the file is not null and has a valid size
+            if (e.File != null && e.File.Size > 0)
+            {
+                // Read the file into a byte array
+                using (var stream = e.File.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024)) // 2 MB limit
+                {
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        stream.CopyTo(memoryStream);
+                        imageData = memoryStream.ToArray();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"An error occurred while uploading the file: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+
+
+
+        // Handle the file change event
+       // selectedFile = e.File;
     }
 
     void ResetForm()
     {
         try
         {
+            isLoading = true;
             // Create a new instance of the TeachersRegistration class to clear all fields
             teachersRegistration = new TeachersRegistration();
 
@@ -333,6 +389,11 @@
         catch
         {
             Notify.ShowNotification("", "Error reseting", NotificationSeverity.Error);   
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
         }
 
     }

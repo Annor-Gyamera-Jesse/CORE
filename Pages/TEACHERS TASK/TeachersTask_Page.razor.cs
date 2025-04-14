@@ -13,7 +13,7 @@ namespace CORE.Pages.TEACHERS_TASK
         public async Task OpenManageTeachersTimeTable()
         {
             var dialogOptions = new DialogOptions() { Draggable = true, ShowClose = true, CloseDialogOnEsc = true, Width = "900px", Resizable = false, Height = "500px" };
-            var dialogTitle = $"Manage Teachers Time Table";
+            var dialogTitle = $"Teachers Time Table";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<EditTeachersTimeTableDialog>(dialogTitle, null, dialogOptions);
         }
@@ -29,7 +29,7 @@ namespace CORE.Pages.TEACHERS_TASK
         public async Task OpenTeacherTimeTable()
         {
             var dialogOptions = new DialogOptions() { Draggable = true, ShowClose = true, CloseDialogOnEsc = true, Width = "1000px", Resizable = false, Height = "512px" };
-            var dialogTitle = $"Teachers Time Table";
+            var dialogTitle = $"CLASS TIME TABLE";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<TeachersTimetablePage>(dialogTitle, null, dialogOptions);
         }

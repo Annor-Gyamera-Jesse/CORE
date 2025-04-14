@@ -1,5 +1,6 @@
 ﻿@page "/core/pages/bank/bank-transfers"
 @using CORE.MODEL.Bank
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
 @inject AuthService bankService
@@ -10,122 +11,164 @@
 <!-- Custom Styling -->
 <style>
     .bank-transfers-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
     }
 
     .transfer-btn {
-        padding: 12px 20px !important;
-        font-size: 16px !important;
-        font-weight: 600;
-        border-radius: 8px;
-        transition: all 0.3s ease-in-out;
+    padding: 12px 20px !important;
+    font-size: 16px !important;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease-in-out;
     }
 
-        .transfer-btn:hover {
-            transform: scale(1.05);
-            background-color: #1E8449 !important;
-        }
+    .transfer-btn:hover {
+    transform: scale(1.05);
+    background-color: #1E8449 !important;
+    }
 
     .amount {
-        font-weight: bold;
-        font-size: 16px;
+    font-weight: bold;
+    font-size: 16px;
     }
 
     .high-amount {
-        color: #28A745;
+    color: #28A745;
     }
 
     .low-amount {
-        color: #E74C3C;
+    color: #E74C3C;
     }
 
     .date-badge {
-        background-color: #2980B9;
-        color: white;
-        font-size: 13px;
-        padding: 6px 12px;
-        border-radius: 6px;
+    background-color: #2980B9;
+    color: white;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
     }
 </style>
 
+<LoadingSpinner Visible="isLoading" />
 
-<!-- Stylish Card Layout -->
-<div class="bank-transfers-container">
-    <h2 class="title">
-        <RadzenIcon Icon="account_balance" Style="font-size: 32px; color: #2E86C1;" />
-        <span style="font-weight: 600; margin-left: 10px; color: #34495E;">Vault Transfers</span>
-    </h2>
+@if (!isLoading)
+{
 
-    <!-- Animated Transfer Button -->
-@*     <RadzenButton Text="Transfer Student Fees to Bank"
+    <!-- Stylish Card Layout -->
+    <div class="bank-transfers-container">
+        <h2 class="title">
+            <RadzenIcon Icon="account_balance" Style="font-size: 32px; color: #2E86C1;" />
+            <span style="font-weight: 600; margin-left: 10px; color: #34495E;">Vault Transfers</span>
+        </h2>
+
+        <!-- Animated Transfer Button -->
+        @*     <RadzenButton Text="Transfer Student Fees to Bank"
                   Click="@TransferToBank"
                   Icon="money"
                   ButtonStyle="ButtonStyle.Primary"
                   Class="transfer-btn" /> *@
-</div>
+    </div>
 
-<!-- Premium UI for DataGrid -->
-<RadzenCard Style="box-shadow: 0 5px 15px rgba(0,0,0,0.15); padding: 20px; border-radius: 12px;">
-    <RadzenDataGrid TItem="BankTransfer" Data="@transfers" ColumnWidth="180px"
-                    RowStyle="background-color: #fff; border-radius: 8px;"
-                    Style="border-radius: 12px;">
+    <!-- Premium UI for DataGrid -->
+    <RadzenCard Style="box-shadow: 0 5px 15px rgba(0,0,0,0.15); padding: 20px; border-radius: 12px;">
+        <RadzenDataGrid TItem="BankTransfer" Data="@transfers" ColumnWidth="180px"
+        RowStyle="background-color: #fff; border-radius: 8px;"
+        Style="border-radius: 12px;">
 
-        <Columns>
-            <RadzenDataGridColumn TItem="BankTransfer" Property="BankID" Title="ID" />
-            <RadzenDataGridColumn TItem="BankTransfer" Property="MethodName" Title="Bank Name" />
-            <RadzenDataGridColumn TItem="BankTransfer" Property="BankNumber" Title="Bank Number" />
+            <Columns>
+                <RadzenDataGridColumn TItem="BankTransfer" Property="BankID" Title="ID" />
+                <RadzenDataGridColumn TItem="BankTransfer" Property="MethodName" Title="Bank Name" />
+                <RadzenDataGridColumn TItem="BankTransfer" Property="BankNumber" Title="Bank Number" />
 
-            <!-- Amount Column - Color-Coded -->
-            <RadzenDataGridColumn TItem="BankTransfer" Title="Amount">
-                <Template Context="data">
-                    <span class="amount @(data.AmountTransferred >= 50 ? "high-amount" : "low-amount")">
-                        ₵@($"{data.AmountTransferred:N2}")
-                    </span>
-                </Template>
-            </RadzenDataGridColumn>
+                <!-- Amount Column - Color-Coded -->
+                <RadzenDataGridColumn TItem="BankTransfer" Title="Amount">
+                    <Template Context="data">
+                        <span class="amount @(data.AmountTransferred >= 50 ? "high-amount" : "low-amount")">
+                            ₵@($"{data.AmountTransferred:N2}")
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
 
-            <!-- Date Column with Modern Badge -->
-            <RadzenDataGridColumn TItem="BankTransfer" Title="Transfer Date">
-                <Template Context="data">
-                    <RadzenBadge Text="@data.TransferDate.ToString("MMM dd, yyyy hh:mm tt")"
-                                 Class="date-badge" />
-                </Template>
-            </RadzenDataGridColumn>
+                <!-- Date Column with Modern Badge -->
+                <RadzenDataGridColumn TItem="BankTransfer" Title="Transfer Date">
+                    <Template Context="data">
+                        <RadzenBadge Text="@data.TransferDate.ToString("MMM dd, yyyy hh:mm tt")"
+                        Class="date-badge" />
+                    </Template>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="BankTransfer" Property="SystemTransferID" Title="Transfer ID" />
-        </Columns>
-    </RadzenDataGrid>
-</RadzenCard>
+                <RadzenDataGridColumn TItem="BankTransfer" Property="SystemTransferID" Title="Transfer ID" />
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenCard>
 
-
+}
 
 @code {
     private List<BankTransfer> transfers = new();
+    private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadTransfers();
+        try
+        {
+            isLoading = true;
+            await LoadTransfers();
+        }
+        catch(Exception ex)
+        {
+            NotificationService.ShowNotification("Warnining", $"Initialization Error:{ex.Message}", NotificationSeverity.Warning);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
     }
 
     private async Task LoadTransfers()
     {
-        transfers = (await bankService.GetBankTransfers()).ToList();
+        try
+        {
+            isLoading = true;
+            transfers = (await bankService.GetBankTransfers()).ToList();
+        }
+        catch(Exception ex)
+        {
+            NotificationService.ShowNotification("Warnining", $"Initialization Error:{ex.Message}", NotificationSeverity.Warning);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task TransferToBank()
     {
-        bool success = await bankService.TransferStudentFeesToBank();
-        if (success)
-        {            
-            NotificationService.ShowNotification("Success", "Student Fees Transferred to Bank!", NotificationSeverity.Success);
-            await LoadTransfers();
+        try
+        {
+            isLoading = true;
+            bool success = await bankService.TransferStudentFeesToBank();
+            if (success)
+            {
+                NotificationService.ShowNotification("Success", "Student Fees Transferred to Bank!", NotificationSeverity.Success);
+                await LoadTransfers();
+            }
+            else
+            {
+                NotificationService.ShowNotification("Error", "Transfer Failed! Check logs.", NotificationSeverity.Error);
+            }
         }
-        else
-        {            
-            NotificationService.ShowNotification("Error", "Transfer Failed! Check logs.", NotificationSeverity.Error);
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Warnining", $"Initialization Error:{ex.Message}", NotificationSeverity.Warning);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }
