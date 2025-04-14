@@ -40,6 +40,9 @@
             public DateTime SubjectStartTime { get; set; } 
             public DateTime SubjectEndTime { get; set; }
             public CustomDayOfWeek DayName { get; set; } // Changed to enum
+            public bool BeforeFirstBreak { get; set; }
+            public bool AfterFirstBreak { get; set; }
+            public bool AfterSecondBreak { get; set; }
         }
     }
 }

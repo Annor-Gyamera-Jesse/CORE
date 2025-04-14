@@ -2275,10 +2275,10 @@ namespace CORE.SERVICE
                 }
 
                 var query = @"
-     INSERT INTO SchoolManagement.StudentTimetable_Schedule 
-         (SCID, ClassID, SubjectStartTime, SubjectEndTime, DayID) 
-     VALUES 
-         (@SCID, @ClassID, @SubjectStartTime, @SubjectEndTime, @DayID)";
+                  INSERT INTO SchoolManagement.StudentTimetable_Schedule 
+                 (SCID, ClassID, SubjectStartTime, SubjectEndTime, DayID, BeforeFirstBreak, AfterFirstBreak, AfterSecondBreak) 
+                   VALUES 
+                  (@SCID, @ClassID, @SubjectStartTime, @SubjectEndTime, @DayID, @BeforeFirstBreak, @AfterFirstBreak, @AfterSecondBreak)";
 
                 await connection.ExecuteAsync(query, new
                 {
@@ -2286,8 +2286,12 @@ namespace CORE.SERVICE
                     schedule.ClassID,
                     schedule.SubjectStartTime,
                     schedule.SubjectEndTime,
-                    schedule.DayID
+                    schedule.DayID,
+                    schedule.BeforeFirstBreak,
+                    schedule.AfterFirstBreak,
+                    schedule.AfterSecondBreak
                 });
+
             }
         }
         // Example method to check for schedule conflicts
@@ -2315,13 +2319,16 @@ namespace CORE.SERVICE
         public async Task UpdateScheduleAsync(Schedule schedule)
         {
             var query = @"
- UPDATE SchoolManagement.StudentTimetable_Schedule
- SET SCID = @SCID, 
-     ClassID = @ClassID,
-     SubjectStartTime = @SubjectStartTime,
-     SubjectEndTime = @SubjectEndTime,
-     DayID = @DayID
- WHERE ScheduleID = @ScheduleID;";
+             UPDATE SchoolManagement.StudentTimetable_Schedule
+             SET SCID = @SCID, 
+             ClassID = @ClassID,
+             SubjectStartTime = @SubjectStartTime,
+               SubjectEndTime = @SubjectEndTime,
+              DayID = @DayID,
+              BeforeFirstBreak = @BeforeFirstBreak,
+             AfterFirstBreak = @AfterFirstBreak,
+             AfterSecondBreak = @AfterSecondBreak
+             WHERE ScheduleID = @ScheduleID;";
 
             using (var connection = new SqlConnection(connectionString))
             {

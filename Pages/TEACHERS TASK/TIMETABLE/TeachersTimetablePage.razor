@@ -53,6 +53,24 @@
                                     TextProperty="DayName"
                                     ValueProperty="DayID"
                                     Style="width: 100%" />
+
+                    <RadzenFieldset Text="Break Periods">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <RadzenCheckBox @bind-Value="EditingSchedule.BeforeFirstBreak" />
+                                <RadzenLabel Text="Before First Break" />
+                            </div>
+                            <div class="col-md-4">
+                                <RadzenCheckBox @bind-Value="EditingSchedule.AfterFirstBreak" />
+                                <RadzenLabel Text="After First Break" />
+                            </div>
+                            <div class="col-md-4">
+                                <RadzenCheckBox @bind-Value="EditingSchedule.AfterSecondBreak" />
+                                <RadzenLabel Text="After Second Break" />
+                            </div>
+                        </div>
+                    </RadzenFieldset>
+
                 </RadzenFieldset>
                 <div>
                     <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Success" ButtonType="ButtonType.Submit" Style="margin-top: 20px;" />
@@ -73,6 +91,31 @@
             <RadzenDataGridColumn TItem="Schedule" Property="SubjectStartTime" Title="Start Time" />
             <RadzenDataGridColumn TItem="Schedule" Property="SubjectEndTime" Title="End Time" />
             <RadzenDataGridColumn TItem="Schedule" Property="DayName" Title="Day Name" />
+            <RadzenDataGridColumn TItem="Schedule" Title="Before First Break">
+                <Template Context="schedule">
+                    @if (schedule.BeforeFirstBreak)
+                    {
+                        <RadzenIcon Icon="check" Style="color: green;" />
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Schedule" Title="After First Break">
+                <Template Context="schedule">
+                    @if (schedule.AfterFirstBreak)
+                    {
+                        <RadzenIcon Icon="check" Style="color: black;" />
+                    }
+                </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Schedule" Title="After Second Break">
+                    <Template Context="schedule">
+                    @if (schedule.AfterSecondBreak)
+                    {
+                        <RadzenIcon Icon="check" Style="color: red;" />
+                    }
+                    </Template>
+            </RadzenDataGridColumn>
+
             <RadzenDataGridColumn TItem="Schedule" Context="schedule" Width="70px">
                 <Template Context="schedule">
                     <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Click="@(() => EditSchedule(schedule))" />
