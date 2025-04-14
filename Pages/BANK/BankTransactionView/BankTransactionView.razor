@@ -7,6 +7,10 @@
 @inject NotificationMessageService NotificationService
 
 <RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
 
 
 <RadzenCard>
@@ -59,17 +63,32 @@
         </Tabs>
     </RadzenTabs>
 </RadzenCard>
+}
 
 @code {
     private IEnumerable<TransactionLog> transactionLogs;
     private IEnumerable<BankTransactionLog> bankTransactionLogs;
     private IEnumerable<PaymentLog> paymentLogs;
+    private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        transactionLogs = await BankService.GetTransactionLogsAsync();
-        bankTransactionLogs = await BankService.GetBankTransactionLogsAsync();
-        paymentLogs = await BankService.GetPaymentLogsAsync();
+        try
+        {
+            isLoading = true;
+            transactionLogs = await BankService.GetTransactionLogsAsync();
+            bankTransactionLogs = await BankService.GetBankTransactionLogsAsync();
+            paymentLogs = await BankService.GetPaymentLogsAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Warnining", $"Initialization Error:{ex.Message}", NotificationSeverity.Warning);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
     }
 }
 

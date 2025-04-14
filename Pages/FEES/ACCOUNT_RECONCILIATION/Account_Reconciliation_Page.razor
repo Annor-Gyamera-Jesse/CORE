@@ -1,54 +1,63 @@
 ﻿@page "/core/pages/fees/account-reconciliation"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService AccountReconciliationService
 @inject NavigationManager Navigation
 <RadzenNotification />
-<h3>Account Reconciliation</h3>
 
-<!-- 🔹 Search Header -->
-<RadzenFieldset Text="Search Student">
-    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-        <div style="display: flex; align-items: center;">
-            <RadzenTextBox @bind-Value="searchTerm" Placeholder="Search student..." Style="width: 600px;" />
-            <RadzenButton Text="Search" Click="@SearchStudents" Icon="search" Style="margin-left: 10px;" />
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+
+    <h3>Account Reconciliation</h3>
+
+
+    <!-- 🔹 Search Header -->
+    <RadzenFieldset Text="Search Student">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <div style="display: flex; align-items: center;">
+                <RadzenTextBox @bind-Value="searchTerm" Placeholder="Search student..." Style="width: 600px;" />
+                <RadzenButton Text="Search" Click="@SearchStudents" Icon="search" Style="margin-left: 10px;" />
+            </div>
+            @*         <RadzenSwitch @bind-Value="isBankVault" Change="@(args => OnSwitchChange(args))" /> *@
         </div>
-@*         <RadzenSwitch @bind-Value="isBankVault" Change="@(args => OnSwitchChange(args))" /> *@
-    </div>
-</RadzenFieldset>
+    </RadzenFieldset>
 
-<RadzenRow>
-    <!-- 🔹 Left: Select Students -->
-    <RadzenColumn Size="6">
-        <RadzenFieldset Text="Select Students">
-            <RadzenListBox TValue="Student" Data="@students" TextProperty="FullName"
-                           @bind-Value="@selectedStudent"
-                           Change="@(args => OnSelectStudent(selectedStudent))"
-                           Style="width: 100%; height: 300px;" />
-        </RadzenFieldset>
-    </RadzenColumn>
+    <RadzenRow>
+        <!-- 🔹 Left: Select Students -->
+        <RadzenColumn Size="6">
+            <RadzenFieldset Text="Select Students">
+                <RadzenListBox TValue="Student" Data="@students" TextProperty="FullName"
+                @bind-Value="@selectedStudent"
+                Change="@(args => OnSelectStudent(selectedStudent))"
+                Style="width: 100%; height: 300px;" />
+            </RadzenFieldset>
+        </RadzenColumn>
 
-    <!-- 🔹 Right: Selected Student (Name + Class) -->
-    <RadzenColumn Size="6">
-        <RadzenFieldset Text="Selected Student">
-            <RadzenListBox TValue="string" Data="@selectedStudentsDisplay"
-                           Style="width: 100%; height: 200px;" />
-        </RadzenFieldset>
-    </RadzenColumn>
-</RadzenRow>
+        <!-- 🔹 Right: Selected Student (Name + Class) -->
+        <RadzenColumn Size="6">
+            <RadzenFieldset Text="Selected Student">
+                <RadzenListBox TValue="string" Data="@selectedStudentsDisplay"
+                Style="width: 100%; height: 200px;" />
+            </RadzenFieldset>
+        </RadzenColumn>
+    </RadzenRow>
 
-<!-- 🔹 Bottom Section: Student Fees Results -->
-<RadzenFieldset Text="Student Fees Result">
-    <RadzenDataGrid Data="@studentFees" TItem="StudentFee" Style="width: 100%;">
-        <Columns>
-            <RadzenDataGridColumn TItem="StudentFee" Property="StudentName" Title="Student" />
-            <RadzenDataGridColumn TItem="StudentFee" Property="FeeTypeName" Title="Fee Type" />
-            <RadzenDataGridColumn TItem="StudentFee" Property="AmountPaid" Title="Paid" />
-            <RadzenDataGridColumn TItem="StudentFee" Property="AmountLeft" Title="Remaining" />
-            <RadzenDataGridColumn TItem="StudentFee" Property="PaymentDate" Title="Payment Date" />
-        </Columns>
-    </RadzenDataGrid>
-</RadzenFieldset>
+    <!-- 🔹 Bottom Section: Student Fees Results -->
+    <RadzenFieldset Text="Student Fees Result">
+        <RadzenDataGrid Data="@studentFees" TItem="StudentFee" Style="width: 100%;">
+            <Columns>
+                <RadzenDataGridColumn TItem="StudentFee" Property="StudentName" Title="Student" />
+                <RadzenDataGridColumn TItem="StudentFee" Property="FeeTypeName" Title="Fee Type" />
+                <RadzenDataGridColumn TItem="StudentFee" Property="AmountPaid" Title="Paid" />
+                <RadzenDataGridColumn TItem="StudentFee" Property="AmountLeft" Title="Remaining" />
+                <RadzenDataGridColumn TItem="StudentFee" Property="PaymentDate" Title="Payment Date" />
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenFieldset>
+}
 
 @code {
     private string searchTerm;
@@ -57,14 +66,29 @@
     private List<string> selectedStudentsDisplay = new();
     private List<StudentFee> studentFees = new();
     private bool isBankVault = false;
+    private bool isLoading = false;
 
     private async Task SearchStudents()
     {
-        students = (await AccountReconciliationService.SearchStudentAsync(searchTerm)).ToList();
+        try
+        {
+            isLoading = true;
+            students = (await AccountReconciliationService.SearchStudentAsync(searchTerm)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task OnSelectStudent(Student student)
     {
+        try{
+            isLoading = true;
         if (student != null)
         {
             selectedStudentsDisplay.Clear();
@@ -73,13 +97,22 @@
             studentFees = (await AccountReconciliationService.GetStudentFeesAsync(student.StudentID)).ToList();
             StateHasChanged();
         }
-    }
-
-    private void OnSwitchChange(bool value)
-    {
-        if (value)
+        }
+        catch (Exception ex)
         {
-            Navigation.NavigateTo("/core/pages/bank/bank-transfers");
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
+
+    // private void OnSwitchChange(bool value)
+    // {
+    //     if (value)
+    //     {
+    //         Navigation.NavigateTo("/core/pages/bank/bank-transfers");
+    //     }
+    // }
 }
