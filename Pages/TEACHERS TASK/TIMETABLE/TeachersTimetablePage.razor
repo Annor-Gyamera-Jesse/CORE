@@ -32,27 +32,19 @@
                                     Style="width: 100%" />
 
                     <RadzenLabel Text="Start Time" />
-                    <RadzenTimePicker Value="@EditingSchedule.StartTime" 
-                                      ValueChange="@((TimeSpan? value) => EditingSchedule.StartTime = value)" 
-                                      Style="width: 100%" />
+                    <RadzenDatePicker @bind-Value="EditingSchedule.StartTime" Style="width: 100%" />
 
                     <RadzenLabel Text="End Time" />
-                    <RadzenTimePicker Value="@EditingSchedule.EndTime" 
-                                      ValueChange="@((TimeSpan? value) => EditingSchedule.EndTime = value)" 
-                                      Style="width: 100%" />
+                    <RadzenDatePicker @bind-Value="EditingSchedule.EndTime" Style="width: 100%" />
 
                     <RadzenLabel Text="Subject Start Time" />
-                    <RadzenDatePicker TValue="DateTime?"
-                                      Value="@EditingSchedule.SubjectStartTime"
-                                      ValueChange="@((DateTime? value) =>
-                    EditingSchedule.SubjectStartTime = value.HasValue ? value.Value.Date + (EditingSchedule.StartTime ?? TimeSpan.Zero) : DateTime.MinValue)"
+                    <RadzenDatePicker @bind-Value="EditingSchedule.SubjectStartTime"
+                                      ShowTime="true"
                                       Style="width: 100%" />
 
                     <RadzenLabel Text="Subject End Time" />
-                    <RadzenDatePicker TValue="DateTime?"
-                                      Value="@EditingSchedule.SubjectEndTime"
-                                      ValueChange="@((DateTime? value) =>
-                    EditingSchedule.SubjectEndTime = value.HasValue ? value.Value.Date + (EditingSchedule.EndTime ?? TimeSpan.Zero) : DateTime.MinValue)"
+                    <RadzenDatePicker @bind-Value="EditingSchedule.SubjectEndTime"
+                                      ShowTime="true"
                                       Style="width: 100%" />
 
                     <RadzenLabel Text="Day Name" />
