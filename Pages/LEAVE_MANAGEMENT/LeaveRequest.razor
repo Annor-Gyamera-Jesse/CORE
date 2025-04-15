@@ -79,7 +79,9 @@
             </RadzenCard>
 
             <RadzenFieldset Text="Leave Details">
+                <RadzenLabel Text="Start Date"/>
                 <RadzenDatePicker @bind-Value="leave.StartDate" Style="width: 100%; margin-bottom: 10px" Placeholder="Start Date" />
+                <RadzenLabel Text="End Date" />
                 <RadzenDatePicker @bind-Value="leave.EndDate" Style="width: 100%; margin-bottom: 10px" Placeholder="End Date" />
                 <RadzenTextArea @bind-Value="leave.Reason" Style="width: 100%; margin-bottom: 10px" Placeholder="Reason" />
                 <RadzenDropDown @bind-Value="leave.Status" Data="@statusOptions" Style="width: 100%; margin-bottom: 10px" />
