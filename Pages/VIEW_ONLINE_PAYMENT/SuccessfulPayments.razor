@@ -8,32 +8,70 @@
 
 <RadzenNotification />
 <LoadingSpinner Visible="isLoading" />
+<style>
+    .rz-datagrid-hover .rz-cell:hover {
+        background-color: #F3F4F6 !important;
+        transition: background-color 0.3s;
+    }
+
+    .rz-datagrid-hover .rz-header {
+        background-color: #F9FAFB;
+        font-weight: 600;
+        color: #374151;
+    }
+
+</style>
 
 @if (!isLoading)
 {
+    <div class="p-4 space-y-4">
+        <div class="flex justify-between items-center bg-white shadow-md rounded-2xl px-6 py-4">
+            <h2 class="text-2xl font-bold text-gray-800">✅ Successful Payments</h2>
+            <RadzenButton Icon="refresh" Text="Refresh" Style="background-color: #10B981; color: white;" Click="@RefreshData" />
+        </div>
 
-    <RadzenDataGrid Data="@successfulPayments" TItem="PaymentTransaction" ColumnWidth="200px">
-        <Columns>
-            <RadzenDataGridColumn TItem="PaymentTransaction" Property="Reference" Title="Reference" />
-            <RadzenDataGridColumn TItem="PaymentTransaction" Property="Customer.Email" Title="Email" />
-            <RadzenDataGridColumn TItem="PaymentTransaction" Title="Amount">
-                <Template Context="tx">@($"GHS{tx.Currency} {tx.Amount / 100.0:N2}")</Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="PaymentTransaction" Property="PaidAt" Title="Paid At" />
-            <RadzenDataGridColumn TItem="PaymentTransaction" Property="Channel" Title="Channel" />
-            <RadzenDataGridColumn TItem="PaymentTransaction" Property="Authorization.CardType" Title="Card Type" />
-        </Columns>
-    </RadzenDataGrid>
+        <div class="rounded-2xl shadow-lg border border-gray-200 bg-white p-4">
+            <RadzenDataGrid Data="@successfulPayments"
+                            TItem="PaymentTransaction"
+                            ColumnWidth="200px"
+                            Class="rz-datagrid-hover"
+                            AllowFiltering="true"
+                            FilterMode="FilterMode.Simple"
+                            AllowPaging="true"
+                            PageSize="10"
+                            Responsive="true"
+                            Style="min-height: 400px;">
+                <Columns>
+                    <RadzenDataGridColumn TItem="PaymentTransaction" Property="Reference" Title="Reference" />
+                    <RadzenDataGridColumn TItem="PaymentTransaction" Property="Customer.Email" Title="Email" />
+                    <RadzenDataGridColumn TItem="PaymentTransaction" Title="Amount">
+                        <Template Context="tx">
+                            <span class="font-semibold text-green-600">₵@($"GHS{tx.Amount / 100.0:N2}")</span>
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="PaymentTransaction" Property="PaidAt" Title="Paid At" />
+                    <RadzenDataGridColumn TItem="PaymentTransaction" Property="Channel" Title="Channel" />
+                    <RadzenDataGridColumn TItem="PaymentTransaction" Property="Authorization.CardType" Title="Card Type" />
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
 }
 else
 {
     <LoadingSpinner Visible="true" />
 }
+
 @code {
     List<PaymentTransaction> successfulPayments = new();
     private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadPayments();
+    }
+
+    private async Task LoadPayments()
     {
         try
         {
@@ -42,8 +80,6 @@ else
         }
         catch (Exception ex)
         {
-            // Handle exceptions, e.g., show a notification
-            Console.WriteLine($"Error fetching payments: {ex.Message}");
             Notify.ShowNotification($"Error fetching payments: {ex.Message}", "", NotificationSeverity.Error);
         }
         finally
@@ -52,4 +88,8 @@ else
         }
     }
 
+    private async Task RefreshData()
+    {
+        await LoadPayments();
+    }
 }
