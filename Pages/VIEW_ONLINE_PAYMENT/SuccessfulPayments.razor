@@ -1,0 +1,55 @@
+﻿@page "/successful-payments"
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject PaymentVerificationService PaymentService
+@inject NotificationMessageService Notify
+
+<RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+
+    <RadzenDataGrid Data="@successfulPayments" TItem="PaymentTransaction" ColumnWidth="200px">
+        <Columns>
+            <RadzenDataGridColumn TItem="PaymentTransaction" Property="Reference" Title="Reference" />
+            <RadzenDataGridColumn TItem="PaymentTransaction" Property="Customer.Email" Title="Email" />
+            <RadzenDataGridColumn TItem="PaymentTransaction" Title="Amount">
+                <Template Context="tx">@($"GHS{tx.Currency} {tx.Amount / 100.0:N2}")</Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="PaymentTransaction" Property="PaidAt" Title="Paid At" />
+            <RadzenDataGridColumn TItem="PaymentTransaction" Property="Channel" Title="Channel" />
+            <RadzenDataGridColumn TItem="PaymentTransaction" Property="Authorization.CardType" Title="Card Type" />
+        </Columns>
+    </RadzenDataGrid>
+}
+else
+{
+    <LoadingSpinner Visible="true" />
+}
+@code {
+    List<PaymentTransaction> successfulPayments = new();
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            successfulPayments = await PaymentService.GetAllSuccessfulPaymentsAsync();
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions, e.g., show a notification
+            Console.WriteLine($"Error fetching payments: {ex.Message}");
+            Notify.ShowNotification($"Error fetching payments: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+}
