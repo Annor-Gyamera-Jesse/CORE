@@ -104,6 +104,13 @@
                 <h1>Total Online Transactions</h1>
                 <h2>GHS @totalTransactionAmount</h2>
             </div>
+
+            <div class="dashboard-card" style="background: linear-gradient(135deg, #00b09b, #96c93d);">
+                <i class="fas fa-university"></i>
+                <h1>Total Bank Transfers</h1>
+                <h2>GHS @totalBankTransferAmount</h2>
+            </div>
+
         </div>
 
         <!-- Charts Section -->
@@ -133,7 +140,8 @@ else
     private int totalTeachersCount;
     private int totalStaffsCount;
     private decimal totalTransactionAmount;
-    private bool isLoading = true;
+    private bool isLoading = true;  
+    private decimal totalBankTransferAmount;
 
     private List<ChartData> chartData = new();
     private List<ChartData> lineChartData = new();
@@ -146,7 +154,9 @@ else
 
             totalStudentsCount = await authService.GetTotalStudentsCount();
             totalTeachersCount = await authService.GetTotalTeachersCount();
-            totalStaffsCount = await authService.GetStaffsCount();
+            totalStaffsCount = await authService.GetStaffsCount();            
+            totalBankTransferAmount = await authService.GetTotalBankTransferredAsync();
+
 
             var transactions = await PaymentService.GetAllSuccessfulPaymentsAsync();
             totalTransactionAmount = transactions.Sum(x => x.Amount) / 100.0m;
