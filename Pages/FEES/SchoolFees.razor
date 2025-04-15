@@ -233,10 +233,10 @@
     private List<Class> Classes = new List<Class>(); // Stores the list of classes
 
     protected override async Task OnInitializedAsync()
-    {
-        isLoading = true;
+    {        
         try
         {
+            isLoading = true;
             Terms = await StudentService.GetAllSchoolTermsAsync();
             // Fetch classes
             Classes = await StudentService.GetsAllClassesAsync();

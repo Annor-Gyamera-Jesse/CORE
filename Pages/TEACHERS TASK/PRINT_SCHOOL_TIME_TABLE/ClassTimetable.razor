@@ -2,6 +2,7 @@
 @inject IJSRuntime JSRuntime
 @inject NotificationMessageService Notify
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
 @using Radzen
@@ -11,34 +12,54 @@
 @using System.Text.Json
 
 <RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
 
-<div class="card" style="max-width: 600px; margin: auto; padding: 20px;">
-    <RadzenDropDown Data="@classIds"
-                    @bind-Value="selectedClassId"
-                    Placeholder="📚 Select a class"
-                    Style="width: 100%; margin-bottom: 20px;" />
+@if (!isLoading)
+{
 
-    <RadzenButton Text="📄 Generate Timetable PDF"
-                  Icon="picture_as_pdf"
-                  Click="@GenerateClassTimetablePdf"
-                  Disabled="@string.IsNullOrEmpty(selectedClassId)"
-                  Style="width: 100%; background-color: #4CAF50; color: white;" />
-</div>
+    <div class="card" style="max-width: 600px; margin: auto; padding: 20px;">
+        <RadzenDropDown Data="@classIds"
+        @bind-Value="selectedClassId"
+        Placeholder="📚 Select a class"
+        Style="width: 100%; margin-bottom: 20px;" />
+
+        <RadzenButton Text="📄 Generate Timetable PDF"
+        Icon="picture_as_pdf"
+        Click="@GenerateClassTimetablePdf"
+        Disabled="@string.IsNullOrEmpty(selectedClassId)"
+        Style="width: 100%; background-color: #4CAF50; color: white;" />
+    </div>
+}
+
 
 @code {
     private List<string> classIds = new();
     private string selectedClassId;
     private List<ClassTimetableModel> classTimetable = new();
+    private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            isLoading = true;
         classIds = (await authService.GetClassIDsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task GenerateClassTimetablePdf()
     {
         try
         {
+            isLoading = true;
             classTimetable = (await authService.GetClassTimetableByClassIdAsync(selectedClassId)).ToList();
             if (!classTimetable.Any())
             {
@@ -55,6 +76,10 @@
         catch (Exception ex)
         {
             Notify.ShowNotification($"Error: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }

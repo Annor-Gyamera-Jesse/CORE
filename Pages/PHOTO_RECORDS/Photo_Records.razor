@@ -1,64 +1,78 @@
 ﻿@page "/upload-photo"
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE.NOTIFICATION
 @using Microsoft.AspNetCore.Components.Forms
 @using CORE.MODEL
 @using CORE.SERVICE
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
+@inject NotificationMessageService NotificationService
+<RadzenNotification/>
 
-<PageTitle>Upload Photo</PageTitle>
+<LoadingSpinner Visible="isLoading" />
 
-<RadzenTemplateForm Data="@photoRecord" Submit="OnSubmit" TItem="PhotoRecord">
-    <!-- Form Container with Card Style -->
-    <div class="form-container card">
-        <h3 class="form-title">Upload Student Tests In Photo</h3>
+@if (!isLoading)
+{
 
-        <!-- Class Selection -->
-        <div class="form-group">
-            <label for="classSelect" class="form-label">Select Class</label>
-            <RadzenDropDown @bind-Value="selectedClass" Placeholder="Select Class"
-                            Data="@(classes ?? new List<Class>())" TextProperty="ClassID"
-                            ValueProperty="ClassID" Change="OnClassChange" class="form-control" />
+    <PageTitle>Upload Photo</PageTitle>
+
+
+    <RadzenTemplateForm Data="@photoRecord" Submit="OnSubmit" TItem="PhotoRecord">
+        <!-- Form Container with Card Style -->
+        <div class="form-container card">
+            <h3 class="form-title">Upload Student Tests In Photo</h3>
+
+            <!-- Class Selection -->
+            <div class="form-group">
+                <label for="classSelect" class="form-label">Select Class</label>
+                <RadzenDropDown @bind-Value="selectedClass" Placeholder="Select Class"
+                Data="@(classes ?? new List<Class>())" TextProperty="ClassID"
+                ValueProperty="ClassID" Change="OnClassChange" class="form-control" />
+            </div>
+
+            <!-- Student Selection -->
+            <div class="form-group">
+                <label for="studentSelect" class="form-label">Select Student</label>
+                <RadzenDropDown @bind-Value="selectedStudentName" Placeholder="Select Student"
+                Data="@(students ?? new List<Student>())" TextProperty="FullName"
+                ValueProperty="FullName" Change="OnStudentChange" class="form-control" />
+            </div>
+
+            <!-- Student ID Display -->        
+            <div class="form-group">
+                <label for="studentId" class="form-label">Student ID</label>
+                <RadzenTextBox @bind-Value="selectedStudentIDText" ReadOnly="true" Style="width:100%" />
+            </div>
+
+            <!-- Photo Title -->
+            <div class="form-group">
+                <label for="photoTitle" class="form-label">Photo Title</label>
+                <RadzenTextBox @bind-Value="photoRecord.PhotoTitle" Name="PhotoTitle" class="form-control" />
+            </div>
+
+            <!-- Photo Description -->
+            <div class="form-group">
+                <label for="photoDescription" class="form-label">Photo Description</label>
+                <RadzenTextArea @bind-Value="photoRecord.PhotoDescription" Name="PhotoDescription" class="form-control" />
+            </div>
+
+            <!-- Photo Upload Section -->
+            <div class="form-group">
+                <label for="photoUpload" class="form-label">Upload Photo</label>
+                <InputFile OnChange="OnFileUpload" class="form-control-file" />
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-group">
+                <RadzenButton Text="Submit" ButtonType="ButtonType.Submit" Style="width: 100%;" class="btn btn-primary" />
+            </div>
         </div>
-
-      @*   <!-- Student Selection -->
-        <div class="form-group">
-            <label for="studentSelect" class="form-label">Select Student</label>
-            <RadzenDropDown @bind-Value="selectedStudentName" Placeholder="Select Student"
-                            Data="@(students ?? new List<Student>())" TextProperty="StudentFirstName"
-                            ValueProperty="StudentFirstName" Change="OnStudentChange" class="form-control" />
-        </div> *@
-
-        <!-- Student ID Display -->
-        <div class="form-group">
-            <label for="studentId" class="form-label">Student ID</label>
-            <RadzenTextBox Value="selectedStudentID" ReadOnly="true" class="form-control" />
-        </div>
-
-        <!-- Photo Title -->
-        <div class="form-group">
-            <label for="photoTitle" class="form-label">Photo Title</label>
-            <RadzenTextBox @bind-Value="photoRecord.PhotoTitle" Name="PhotoTitle" class="form-control" />
-        </div>
-
-        <!-- Photo Description -->
-        <div class="form-group">
-            <label for="photoDescription" class="form-label">Photo Description</label>
-            <RadzenTextArea @bind-Value="photoRecord.PhotoDescription" Name="PhotoDescription" class="form-control" />
-        </div>
-
-        <!-- Photo Upload Section -->
-        <div class="form-group">
-            <label for="photoUpload" class="form-label">Upload Photo</label>
-            <InputFile OnChange="OnFileUpload" class="form-control-file" />
-        </div>
-
-        <!-- Submit Button -->
-        <div class="form-group">
-            <RadzenButton Text="Submit" ButtonType="ButtonType.Submit" Style="width: 100%;" class="btn btn-primary" />
-        </div>
-    </div>
-</RadzenTemplateForm>
-
+    </RadzenTemplateForm>
+}
+else
+{
+    <LoadingSpinner Visible="true" />
+}
 @code {
     private string selectedClass;
     private string selectedStudentName;
@@ -67,52 +81,126 @@
     private List<Student> students;
     private PhotoRecord photoRecord = new PhotoRecord();
     private IBrowserFile selectedFile;
+    private string selectedStudentIDText;
+    private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
-    {
-        classes = (await AuthService.GetTClassesAsync()).ToList();
-    }
-
-    private async Task OnClassChange(object value)
-    {
-        selectedClass = value?.ToString();
-        students = (await AuthService.GetStudentsByClassAsync(selectedClass)).ToList();
-    }
-
-    private void OnStudentChange(object value)
-    {
-        selectedStudentName = value?.ToString();
-        var student = students.FirstOrDefault(s => s.StudentFirstName == selectedStudentName);
-        if (student != null)
+    {        
+        try
         {
-            selectedStudentID = student.StudentID;
+            isLoading = true;
+            classes = (await AuthService.GetTClassesAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching classes: {ex.Message}");
+            NotificationService.ShowNotification("Error", $"Initialization Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
-    private async Task OnFileUpload(InputFileChangeEventArgs e)
-    {
-        selectedFile = e.File;
-        if (selectedFile != null)
+    private async Task OnClassChange(object value)
+    {        
+        try
         {
-            try
+            isLoading = true;
+            selectedClass = value?.ToString();
+            students = (await AuthService.GetStudentsByClassAsync(selectedClass)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching students: {ex.Message}");
+            NotificationService.ShowNotification("Error", $"Class Change Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnStudentChange(object value)
+    {        
+        try
+        {
+            isLoading = true;
+            selectedStudentName = value?.ToString();
+
+            if (!string.IsNullOrWhiteSpace(selectedStudentName) && !string.IsNullOrWhiteSpace(selectedClass))
             {
-                using var memoryStream = new MemoryStream();
-                await selectedFile.OpenReadStream().CopyToAsync(memoryStream);
-                photoRecord.PhotoData = memoryStream.ToArray(); // Store the photo data as a byte array
+                var student = await AuthService.GetStudentByFullNameAsync(selectedStudentName, selectedClass);
+                if (student != null)
+                {
+                    selectedStudentID = student.StudentID;
+                    selectedStudentIDText = student.StudentID.ToString();
+                }
             }
-            catch (Exception ex)
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching student ID: {ex.Message}");
+            NotificationService.ShowNotification("Error", $"Student Change Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private async Task OnFileUpload(InputFileChangeEventArgs e)
+    {        
+        try
+        {
+            isLoading = true;
+            selectedFile = e.File;
+            if (selectedFile != null)
             {
-                Console.WriteLine($"File upload failed: {ex.Message}");
+                try
+                {
+                    using var memoryStream = new MemoryStream();
+                    await selectedFile.OpenReadStream().CopyToAsync(memoryStream);
+                    photoRecord.PhotoData = memoryStream.ToArray(); // Store the photo data as a byte array
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"File upload failed: {ex.Message}");
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during file upload: {ex.Message}");
+            NotificationService.ShowNotification("Error", $"File Upload Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
     private async Task OnSubmit()
-    {
-        photoRecord.Class = selectedClass;
-        photoRecord.StudentName = selectedStudentName;
-        photoRecord.StudentID = selectedStudentID;
+    {        
+        try
+        {
+            isLoading = true;
+            photoRecord.Class = selectedClass;
+            photoRecord.StudentName = selectedStudentName;
+            photoRecord.StudentID = selectedStudentID;
 
-        await AuthService.SavePhotoRecordAsync(photoRecord);
+            await AuthService.SavePhotoRecordAsync(photoRecord);
+            NotificationService.ShowNotification("Success", "Photo record saved successfully!", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving photo record: {ex.Message}");
+            NotificationService.ShowNotification("Error", $"Submission Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }

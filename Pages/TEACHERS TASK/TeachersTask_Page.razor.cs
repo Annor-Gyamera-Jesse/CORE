@@ -22,7 +22,7 @@ namespace CORE.Pages.TEACHERS_TASK
         public async Task OpenOnNoticeBoard()
         {
             var dialogOptions = new DialogOptions() { Draggable = true, ShowClose = true, CloseDialogOnEsc = true, Width = "600px", Resizable = false, Height = "301px" };
-            var dialogTitle = $"NOTICE BOARD";
+            var dialogTitle = $"PRINT CLASS TIME TABLE";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<ClassTimetable>(dialogTitle, null, dialogOptions);
         }

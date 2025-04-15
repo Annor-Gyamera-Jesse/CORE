@@ -2644,6 +2644,20 @@ namespace CORE.SERVICE
             }
         }
 
+        public async Task<Student> GetStudentByFullNameAsync(string fullName, string classId)
+        {
+            var query = @"
+        SELECT TOP 1 *
+        FROM SchoolManagement.Students
+        WHERE CONCAT(StudentFirstName, ' ', StudentLastName) = @FullName
+        AND ClassID = @ClassID";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                return await connection.QueryFirstOrDefaultAsync<Student>(query, new { FullName = fullName, ClassID = classId });
+            }
+        }
+
         /*School Fees Implimentation*/
         // Get all fee types
         public async Task<List<FeeType>> GetFeeTypesAsync()
