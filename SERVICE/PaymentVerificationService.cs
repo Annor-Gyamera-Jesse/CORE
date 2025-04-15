@@ -47,6 +47,20 @@ namespace CORE.SERVICE
             };
         }
 
+        public async Task<List<PaymentTransaction>> GetAllSuccessfulPaymentsAsync()
+        {
+            var response = await _httpClient.GetAsync($"{BaseUrl}transaction");
+            response.EnsureSuccessStatusCode();
+
+            var responseData = await response.Content.ReadAsStringAsync();
+            var result = JsonConvert.DeserializeObject<PaymentListResponse>(responseData);
+
+            var successfulTransactions = result.Data
+                .Where(tx => tx.Status?.ToLower() == "success")
+                .ToList();
+
+            return successfulTransactions;
+        }
 
     }
 }

@@ -41,4 +41,24 @@
         public string Email { get; set; }
         public string CustomerCode { get; set; }
     }
+
+    public class PaymentListResponse
+    {
+        public bool Status { get; set; }
+        public string Message { get; set; }
+        public List<PaymentTransaction> Data { get; set; }
+    }
+
+    public class PaymentTransaction
+    {
+        public string Reference { get; set; }
+        public string Status { get; set; }
+        public string PaidAt { get; set; }
+        public string Channel { get; set; }
+        public string Currency { get; set; }
+        public int Amount { get; set; }
+        public Customer Customer { get; set; }
+        public Authorization Authorization { get; set; }
+    }
+
 }

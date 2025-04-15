@@ -1751,6 +1751,16 @@ namespace CORE.SERVICE
             return totalStudents;
         }
 
+        public async Task<decimal> GetTotalBankTransferredAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            var query = @"
+        SELECT ISNULL(SUM(AmountTransferred), 0) 
+        FROM SchoolManagement.Bank";
+            return await connection.ExecuteScalarAsync<decimal>(query);
+        }
+
+
         public async Task<int> GetTotalTeachersCount()
         {
             int totalStudents = 0;
