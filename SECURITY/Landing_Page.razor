@@ -4,6 +4,7 @@
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
+@inject PaymentVerificationService PaymentService
 @inject NotificationMessageService Notify
 
 <RadzenNotification />
@@ -16,6 +17,7 @@
         flex-direction: column;
         gap: 30px;
         align-items: center;
+        animation: fadeIn 1.2s ease-in-out;
     }
 
     .card-container {
@@ -26,37 +28,35 @@
     }
 
     .dashboard-card {
-        width: 300px;
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(15px);
-        border-radius: 20px;
-        padding: 25px;
-        text-align: center;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        width: 280px;
+        background: linear-gradient(145deg, #1e1e2f, #23233e);
         color: white;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        transition: 0.3s ease;
     }
 
         .dashboard-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
         }
 
         .dashboard-card i {
-            font-size: 3rem;
-            margin-bottom: 12px;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
         }
 
         .dashboard-card h1 {
-            font-size: 1.6rem;
+            font-size: 1.4rem;
             margin: 0;
         }
 
         .dashboard-card h2 {
-            font-size: 2.2rem;
+            font-size: 2.3rem;
             margin: 10px 0 0;
-            font-weight: bold;
+            font-weight: 700;
         }
 
     .chart-container {
@@ -64,20 +64,22 @@
         padding: 25px;
         border-radius: 20px;
         box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.1);
-        width: 80%;
+        width: 85%;
     }
 
         .chart-container h2 {
             text-align: center;
             margin-bottom: 15px;
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             color: #333;
         }
+
 </style>
 
 @if (!isLoading)
 {
     <div class="dashboard-container">
+        <!-- Summary Cards -->
         <div class="card-container">
             <div class="dashboard-card" style="background: linear-gradient(135deg, #667eea, #764ba2);">
                 <i class="fas fa-users"></i>
@@ -85,61 +87,97 @@
                 <h2>@totalStudentsCount</h2>
             </div>
 
-            <div class="dashboard-card" style="background: linear-gradient(135deg, #ff758c, #ff7eb3);">
+            <div class="dashboard-card" style="background: linear-gradient(135deg, #00c6fb, #005bea);">
                 <i class="fas fa-chalkboard-teacher"></i>
                 <h1>Total Teachers</h1>
                 <h2>@totalTeachersCount</h2>
             </div>
 
-            <div class="dashboard-card" style="background: linear-gradient(135deg, #00c6fb, #005bea);">
-                <i class="fas fa-user-graduate"></i>
+            <div class="dashboard-card" style="background: linear-gradient(135deg, #ff758c, #ff7eb3);">
+                <i class="fas fa-user-tie"></i>
                 <h1>Total Staff</h1>
                 <h2>@totalStaffsCount</h2>
             </div>
+
+            <div class="dashboard-card" style="background: linear-gradient(135deg, #42e695, #3bb2b8);">
+                <i class="fas fa-credit-card"></i>
+                <h1>Total Online Transactions</h1>
+                <h2>GHS @totalTransactionAmount</h2>
+            </div>
         </div>
 
+        <!-- Charts Section -->
         <div class="chart-container">
-            <h2>Data Overview</h2>
-            <RadzenChart Style="height: 400px;">
-                <RadzenColumnSeries Data="@chartData" CategoryProperty="Category" ValueProperty="Value" />
+            <h2>Financial & Academic Summary</h2>
+
+            <RadzenChart Style="height: 350px;">
+                <RadzenPieSeries Data="@chartData" CategoryProperty="Category" ValueProperty="Value" />
+            </RadzenChart>
+
+            <RadzenChart Style="height: 300px;" Class="mt-4">
+                <RadzenLineSeries Data="@lineChartData" CategoryProperty="Category" ValueProperty="Value" />
                 <RadzenCategoryAxis />
                 <RadzenValueAxis />
             </RadzenChart>
         </div>
     </div>
 }
+else
+{
+    <LoadingSpinner Visible="true" />
+}
+
 
 @code {
     private int totalStudentsCount;
     private int totalTeachersCount;
     private int totalStaffsCount;
+    private decimal totalTransactionAmount;
     private bool isLoading = true;
-    private List<ChartData> chartData = new List<ChartData>();
+
+    private List<ChartData> chartData = new();
+    private List<ChartData> lineChartData = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             isLoading = true;
+
             totalStudentsCount = await authService.GetTotalStudentsCount();
             totalTeachersCount = await authService.GetTotalTeachersCount();
             totalStaffsCount = await authService.GetStaffsCount();
 
-            chartData = new List<ChartData>
+            var transactions = await PaymentService.GetAllSuccessfulPaymentsAsync();
+            totalTransactionAmount = transactions.Sum(x => x.Amount) / 100.0m;
+
+            chartData = new()
             {
                 new ChartData { Category = "Students", Value = totalStudentsCount },
                 new ChartData { Category = "Teachers", Value = totalTeachersCount },
-                new ChartData { Category = "Staff", Value = totalStaffsCount }
+                new ChartData { Category = "Staff", Value = totalStaffsCount },
+                new ChartData { Category = "Transactions", Value = (int)totalTransactionAmount }
             };
+
+            // Simulate monthly trend (example)
+            lineChartData = transactions
+              .GroupBy(tx => DateTime.Parse(tx.PaidAt).ToString("MMM")) // e.g., "Jan", "Feb"
+             .Select(g => new ChartData
+            {
+             Category = g.Key,
+             Value = g.Sum(x => x.Amount) / 100 // converting from pesewas to GHS
+            })
+           .OrderBy(data => DateTime.ParseExact(data.Category, "MMM", null).Month) // Optional: order by month
+            .ToList();
+
         }
         catch (Exception ex)
         {
-            Notify.ShowNotification("", $"Error: {ex.Message}", NotificationSeverity.Error);
+            Notify.ShowNotification("Dashboard Error", $"Error loading dashboard: {ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
             isLoading = false;
-            StateHasChanged();
         }
     }
 
