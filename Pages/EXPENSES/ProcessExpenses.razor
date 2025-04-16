@@ -1,6 +1,7 @@
 ﻿@page "/pages/expenses/process-expenses"
 @using CORE.MODEL
 @using CORE.MODEL.Expenses
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService ExpenseService
 @inject IJSRuntime JSRuntime
@@ -13,158 +14,153 @@
 
 <RadzenNotification />
 
+
 <style>
-    .header {
-        margin-bottom: 20px;
-        text-align: center;
-        background-color: #4A90E2;
-        color: white;
-        padding: 20px 0;
-        border-radius: 8px;
-    }
-
-    .form-container {
-        margin: 20px 0;
-    }
-
-    .card {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-        padding: 20px;
-    }
-
+    /* PRINT STUDENT REPOR */
     .header-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     }
 
     .right-align {
-        margin-left: auto;
+    margin-left: auto;
     }
-
+    /* Adjust the header height */
     .compact-header {
-        height: 60px;
-        padding: 5px 15px;
+    height: 60px; /* Adjust the height to your preference */
+    padding: 5px 15px; /* Reduce padding */
     }
 
-        .compact-header .rz-header-title {
-            font-size: 18px;
-        }
+    /* Additional styling if needed */
+    .compact-header .rz-header-title {
+    font-size: 18px; /* Make the title smaller */
+    }
 </style>
 
-<RadzenHeader title="Process Expenses" class="header-container compact-header">
-    <RadzenFieldset Text="Manage Category" class="right-align">
-        <Expenses_Tool_Componet OnEditCategoriesDialog="OnEditCategoriesDialogClick" OnManagePaymentMethodsDialog="OnManagePaymentMethodsDialogCLick" />
-    </RadzenFieldset>
-</RadzenHeader>
+<LoadingSpinner Visible="isLoading" />
 
-<div class="row form-container">
-    <div class="col-md-6">
-        <div class="card">
-            <h4>Add New Expense</h4>
-            <RadzenFieldset>
-                <RadzenDropDown @bind-Value="newExpense.CategoryID" Data="@categories" TextProperty="CategoryName" ValueProperty="CategoryID" Placeholder="Select Category" />
-                <RadzenTextBox @bind-Value="newExpenseAmount" Placeholder="Amount" />
-                <RadzenDatePicker @bind-Value="newExpense.ExpenseDate" Placeholder="Expense Date" />
-                <RadzenTextBox @bind-Value="newExpense.Description" Placeholder="Description" />
-                <RadzenButton Text="Add Expense" Click="@OnAddExpense" />
+@if (!isLoading)
+{
+    <RadzenHeader title="School Fees Payment" class="header-container compact-header">
+        <RadzenFieldset Text="Manage Category" class="right-align">
+            <Expenses_Tool_Componet OnEditCategoriesDialog="OnEditCategoriesDialogClick" OnManagePaymentMethodsDialog="OnManagePaymentMethodsDialogCLick" />
+        </RadzenFieldset>
+    </RadzenHeader>
+
+    <h3 class="text-center text-xl font-bold mb-4">Expenses Management</h3>
+
+    <div class="row">
+        <div class="col-md-6">
+            <RadzenFieldset Text="Expense Categories">
+                <RadzenListBox @bind-Value="selectedCategoryId"
+                Data="@categories"
+                TextProperty="CategoryName"
+                ValueProperty="CategoryID"
+                Style="height: 300px; width:100%" />
+            </RadzenFieldset>
+        </div>
+
+        <div class="col-md-6">
+            <RadzenFieldset Text="Make Payment">
+                <RadzenDropDown Data="@paymentMethods"
+                @bind-Value="selectedPaymentMethodId"
+                TextProperty="MethodName"
+                ValueProperty="PaymentMethodID"
+                Placeholder="Select Payment Method"
+                Style="width:100%;" />
+
+
+                <RadzenNumeric TValue="decimal" @bind-Value="amount" Placeholder="Amount" Style="width:100%; margin-top: 10px;" />
+
+                <RadzenTextBox @bind-Value="description" Placeholder="Description" Style="width:100%; margin-top: 10px;" />
+
+                <RadzenButton Text="Save" Click="@SaveExpense" Style="margin-top: 15px;" Icon="save" ButtonStyle="ButtonStyle.Primary" />
             </RadzenFieldset>
         </div>
     </div>
-
-    <div class="col-md-6">
-        <div class="card">
-            <h4>Record Payment</h4>
-            <RadzenFieldset>
-                <RadzenDropDown @bind-Value="newPayment.ExpenseID" Data="@expenses" TextProperty="ExpenseID" ValueProperty="ExpenseID" Placeholder="Select Expense" />
-                <RadzenDropDown @bind-Value="newPayment.PaymentMethodID" Data="@paymentMethods" TextProperty="MethodName" ValueProperty="PaymentMethodID" Placeholder="Select Payment Method" />
-                <RadzenTextBox @bind-Value="newPaymentAmountPaid" Placeholder="Amount Paid" />
-                <RadzenDatePicker @bind-Value="newPayment.PaymentDate" Placeholder="Payment Date" />
-                <RadzenButton Text="Record Payment" Click="@OnAddPayment" />
-            </RadzenFieldset>
-        </div>
-    </div>
-</div>
+}
 
 @code {
-    private List<ExpenseCategory> categories = new List<ExpenseCategory>();
-    private List<Expense> expenses = new List<Expense>();
-    private List<PaymentMethods> paymentMethods = new List<PaymentMethods>();
-
-    private Expense newExpense = new Expense { ExpenseDate = DateTime.Now };
-    private ExpensePayment newPayment = new ExpensePayment { PaymentDate = DateTime.Now };
-
-    private string newExpenseAmount = string.Empty;
-    private string newPaymentAmountPaid = string.Empty;
-
-    private int userId;
+    List<ExpenseCategory> categories = new();
+    List<PaymentMethods> paymentMethods = new();
+    int? selectedCategoryId;
+    int? selectedPaymentMethodId;
+    decimal amount;
+    string description;
+    private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
-        var user = await ExpenseService.GetUserByUsernameAsync(username);
-        if (user != null)
+        try
         {
-            userId = user.UserID;
+            isLoading = true;
+            categories = await ExpenseService.GetExpenseCategoriesAsync();
+            paymentMethods = await ExpenseService.GetPaymentMethodsExpenesAsync();
         }
-
-        categories = await ExpenseService.GetExpenseCategoriesAsync(userId);
-        expenses = await ExpenseService.GetExpensesAsync(userId);
-        paymentMethods = await ExpenseService.GetPaymentMethodsAsync(userId);
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
-    private async Task OnAddExpense()
+    private async Task SaveExpense()
     {
-        if (decimal.TryParse(newExpenseAmount, out decimal amount))
+        try
         {
-            newExpense.Amount = amount;
-        }
-        else
-        {
-            Notify.ShowNotification("Error", "Invalid amount format.", NotificationSeverity.Error);
-            return;
-        }
+            isLoading = true;
+            var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+            var user = await ExpenseService.GetUserByUsernameAsync(username);
+            var userId = user?.UserID ?? 0;
 
-        newExpense.UserID = userId;
-        await ExpenseService.AddExpenseAsync(newExpense);
-        expenses = await ExpenseService.GetExpensesAsync(userId);
-        newExpense = new Expense { ExpenseDate = DateTime.Now };
-        newExpenseAmount = string.Empty;
-        Notify.ShowNotification("Success", "Expense added successfully.", NotificationSeverity.Success);
+            var paymentMethod = paymentMethods.FirstOrDefault(p => p.PaymentMethodID == selectedPaymentMethodId);
+            var category = categories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
+
+            if (category == null || paymentMethod == null || amount <= 0)
+            {
+                Notify.ShowNotification("", "Please fill all the fields correctly.", NotificationSeverity.Info);
+                return;
+            }
+
+            var expense = new Expense
+                {
+                    UserID = userId,
+                    CategoryID = category.CategoryID,
+                    Amount = amount,
+                    Description = description,
+                    ExpenseDate = DateTime.Now
+                };
+
+            var success = await ExpenseService.ProcessExpensePaymentAsync(expense, paymentMethod.PaymentMethodID);
+
+            if (success)
+            {
+                Notify.ShowNotification("", "Payment and expense logged successfully.", NotificationSeverity.Success);
+                amount = 0;
+                description = "";
+                selectedPaymentMethodId = null;
+                selectedCategoryId = null;
+            }
+            else
+            {
+                Notify.ShowNotification("", "Something went wrong while processing payment.", NotificationSeverity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
-    private async Task OnAddPayment()
-    {
-        if (decimal.TryParse(newPaymentAmountPaid, out decimal amountPaid))
-        {
-            newPayment.AmountPaid = amountPaid;
-        }
-        else
-        {
-            Notify.ShowNotification("Error", "Invalid amount format.", NotificationSeverity.Error);
-            return;
-        }
 
-        // Ensure the UserID is set
-        var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
-        var user = await ExpenseService.GetUserByUsernameAsync(username);
-        if (user != null)
-        {
-            newPayment.UserID = user.UserID;
-            Console.WriteLine($"UserID set to: {newPayment.UserID}"); // Debugging
-        }
-        else
-        {
-            Notify.ShowNotification("Error", "User not found.", NotificationSeverity.Error);
-            return;
-        }
-
-        await ExpenseService.AddExpensePaymentAsync(newPayment);
-        newPayment = new ExpensePayment { PaymentDate = DateTime.Now };
-        newPaymentAmountPaid = string.Empty;
-        Notify.ShowNotification("Success", "Payment recorded successfully.", NotificationSeverity.Success);
-    }
 
     async void OnEditCategoriesDialogClick() => await OnEditCategories();
     async void OnManagePaymentMethodsDialogCLick() => await OnManagePaymentMethods();

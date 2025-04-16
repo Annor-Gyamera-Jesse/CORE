@@ -2,22 +2,23 @@
 @* ToolComponent Page *@
 
 <style>
+    .toolset-container {
+        display: flex;
+        gap: 10px; /* Adjust the spacing between buttons */
+    }
 
     .toolset-btn {
-        margin-bottom: 5px;
-        width: 100%;
-        font-size: 14px
+        font-size: 14px;
+        flex: 1; /* Makes both buttons take equal space */
     }
 </style>
 
 <LoadingSpinner Visible="isLoading" />
 @if (!isLoading)
 {
-    <div class="row mt-2">
-        <RadzenButton Text="Edit Categories" Icon="edit" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnEditCategoriesDialog />        
-    </div>
-    <div class="row mt-2">        
-        <RadzenButton Text="Edit PaymentMethod" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnManagePaymentMethodsDialog />
+    <div class="toolset-container mt-2">
+        <RadzenButton Text="Add Categories" Icon="edit" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnEditCategoriesDialog />             
+        <RadzenButton Text="Payment Method" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Dark" Click=@OnManagePaymentMethodsDialog />
     </div>
 }
 @code {

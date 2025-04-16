@@ -1,5 +1,6 @@
 ﻿@page "/schoolattendance"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService authService
 @inject IJSRuntime JSRuntime
@@ -19,7 +20,10 @@
             font-size: 18px; /* Make the title smaller */
         }
 </style>
+<LoadingSpinner Visible="isLoading" />
 
+@if (!isLoading)
+{
 <RadzenFieldset>
     <ChildContent>
         <RadzenLabel Text="Select Class" />
@@ -58,6 +62,7 @@
         }
     </RadzenCard>
 }
+}
 
 @code {
     List<Class> classData;
@@ -66,11 +71,13 @@
     string message = "";
     string messageClass = "";
     private int userId;
+    private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            isLoading = true;
             var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
             var user = await authService.GetUserByUsernameAsync(username);
             if (user != null)
@@ -84,17 +91,26 @@
         {
             Console.WriteLine($"An error occurred: {ex.Message}");
         }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task TakeAttendance()
     {
         try
         {
+            isLoading = true;
             students = await authService.GetStudentsByClassAsync(selectedClass);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"An error occurred while taking attendance: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
@@ -103,6 +119,7 @@
     {
         try
         {
+            isLoading = true;
             await authService.SaveAttendanceAsync(students, selectedClass, userId);
 
             message = "Attendance successfully confirmed!";
@@ -112,6 +129,10 @@
         {
             message = $"An error occurred while confirming attendance: {ex.Message}";
             messageClass = "error-message";
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }
