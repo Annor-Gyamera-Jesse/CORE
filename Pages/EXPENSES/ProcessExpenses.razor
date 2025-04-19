@@ -62,7 +62,7 @@
         </div>
 
         <div class="col-md-6">
-            <RadzenFieldset Text="Make Payment">
+            <RadzenLabel Text="Make Payment" Style="margin-top: 10px;" />
                 <RadzenDropDown Data="@paymentMethods"
                 @bind-Value="selectedPaymentMethodId"
                 TextProperty="MethodName"
@@ -70,13 +70,12 @@
                 Placeholder="Select Payment Method"
                 Style="width:100%;" />
 
-
+            <RadzenLabel Text="Amount" Style="margin-top: 10px;" />
                 <RadzenNumeric TValue="decimal" @bind-Value="amount" Placeholder="Amount" Style="width:100%; margin-top: 10px;" />
-
+            <RadzenLabel Text="Description" Style="margin-top: 10px;" />
                 <RadzenTextBox @bind-Value="description" Placeholder="Description" Style="width:100%; margin-top: 10px;" />
 
-                <RadzenButton Text="Save" Click="@SaveExpense" Style="margin-top: 15px;" Icon="save" ButtonStyle="ButtonStyle.Primary" />
-            </RadzenFieldset>
+                <RadzenButton Text="Save" Click="@SaveExpense" Style="margin-top: 15px;" Icon="save" ButtonStyle="ButtonStyle.Primary" />            
         </div>
     </div>
 }

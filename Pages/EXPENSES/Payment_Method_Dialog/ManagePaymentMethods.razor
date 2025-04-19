@@ -12,82 +12,114 @@
 <RadzenNotification />
 
 <style>
-    .header {
-        margin-bottom: 20px;
+    .page-title {
         text-align: center;
-        background-color: #4A90E2;
-        color: white;
-        padding: 20px 0;
-        border-radius: 8px;
-    }
-
-    .form-container {
-        margin: 20px 0;
-    }
-
-    .card {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
+        font-size: 32px;
+        font-weight: bold;
+        color: #fff;
+        background: linear-gradient(90deg, #4A90E2, #007ACC);
         padding: 20px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
 
-    .table-container {
-        margin-top: 20px;
+    .card-wrapper {
+        background-color: #ffffff;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-spacing {
+        margin-bottom: 15px;
+    }
+
+    .grid-header {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 15px;
     }
 
     .action-buttons {
         display: flex;
-        gap: 5px;
+        gap: 10px;
+    }
+
+    .responsive-grid {
+        overflow-x: auto;
+    }
+
+    .save-button {
+        margin-top: 15px;
+        width: 100%;
+    }
+
+    .fieldset {
+        border-left: 5px solid #4A90E2;
+        padding-left: 15px;
     }
 </style>
 
 <div class="container">
-    <div class="row header">
-        <div class="col-md-12">
-            <h1>Manage Payment Methods</h1>
-        </div>
-    </div>
+    <div class="page-title">Manage Payment Methods</div>
 
-    <div class="row form-container">
-        <div class="col-md-6">
-            <div class="card">
-                <h4>Add/Edit Payment Method</h4>
-                <RadzenFieldset>
-                    <RadzenTextBox @bind-Value="currentPaymentMethod.MethodName" Placeholder="Method Name" Style="width: 100%;" />
-                    <RadzenTextBox @bind-Value="currentPaymentMethod.Description" Placeholder="Description" Style="width: 100%;" />
-                    <RadzenTextBox @bind-Value="currentPaymentMethod.BankNumber" Placeholder="BANK NUMBER" Style="width: 100%;" />
-                    <RadzenButton Text="Save Payment Method" Click="@OnSavePaymentMethod" Style="margin-top: 10px;" />
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card-wrapper">
+                <RadzenFieldset Text="Add / Edit Payment Method" Style="margin-bottom: 0;" class="fieldset">
+                    <div class="form-spacing">
+                        <RadzenTextBox @bind-Value="currentPaymentMethod.MethodName" Placeholder="Enter Method Name" Style="width: 100%;" />
+                        <RadzenRequiredValidator Component="currentPaymentMethod.MethodName" Text="Method name is required." />
+                    </div>
+
+                    <div class="form-spacing">
+                        <RadzenTextBox @bind-Value="currentPaymentMethod.Description" Placeholder="Enter Description" Style="width: 100%;" />
+                    </div>
+
+                    <div class="form-spacing">
+                        <RadzenTextBox @bind-Value="currentPaymentMethod.BankNumber" Placeholder="Enter Bank Number" Style="width: 100%;" />
+                    </div>
+
+                    <RadzenButton Text="Save Payment Method"
+                                  Icon="save"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Style="width: 100%; margin-top: 10px;"
+                                  Click="@OnSavePaymentMethod" />
                 </RadzenFieldset>
             </div>
         </div>
-    </div>
 
-    <div class="row table-container">
-        <div class="col-md-12">
-            <div class="card">
-                <RadzenGrid Data="@paymentMethods" TItem="PaymentMethods" AllowPaging="true" PageSize="10">
-                    <Columns>
-                        <RadzenGridColumn TItem="PaymentMethods" Property="MethodName" Title="Method Name" />
-                        <RadzenGridColumn TItem="PaymentMethods" Property="Description" Title="Description" />
-                        <RadzenGridColumn TItem="PaymentMethods" Property="Bank Number" Title="Bank Number" />
-                        <RadzenGridColumn TItem="PaymentMethods" Title="Actions">
-                            <Template Context="method">
-                                <div class="action-buttons">
-                                    <RadzenButton Icon="edit" IconOnly="true" Click="@(args => OnEditPaymentMethod(method))" Style="margin-right: 5px;" />
-                                    <RadzenButton Icon="delete" IconOnly="true" Click="@(args => OnDeletePaymentMethod(method))" />
-                                </div>
-                            </Template>
-                        </RadzenGridColumn>
-                    </Columns>
-                </RadzenGrid>
+        <div class="col-md-7">
+            <div class="card-wrapper">
+                <div class="grid-header">Your Payment Methods</div>
+                <div class="responsive-grid">
+                    <RadzenGrid Data="@paymentMethods" TItem="PaymentMethods" AllowPaging="true" PageSize="3" Responsive="true" Style="min-width: 100%;">
+                        <Columns>
+                            <RadzenGridColumn TItem="PaymentMethods" Property="MethodName" Title="Method Name" />
+                            <RadzenGridColumn TItem="PaymentMethods" Property="Description" Title="Description" />
+                            <RadzenGridColumn TItem="PaymentMethods" Property="BankNumber" Title="Bank Number" />
+                            <RadzenGridColumn TItem="PaymentMethods" Title="Actions" Width="150px">
+                                <Template Context="method">
+                                    <div class="action-buttons">
+                                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small"
+                                                      Click="@(args => OnEditPaymentMethod(method))" />
+                                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
+                                                      Click="@(args => OnDeletePaymentMethod(method))" />
+                                    </div>
+                                </Template>
+                            </RadzenGridColumn>
+                        </Columns>
+                    </RadzenGrid>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 @code {
-    private List<PaymentMethods> paymentMethods = new List<PaymentMethods>();
-    private PaymentMethods currentPaymentMethod = new PaymentMethods();
+    private List<PaymentMethods> paymentMethods = new();
+    private PaymentMethods currentPaymentMethod = new();
     private int userId;
 
     protected override async Task OnInitializedAsync()
@@ -116,13 +148,11 @@
             return;
         }
 
-        // Ensure the UserID is set
         var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
         var user = await PaymentMethodService.GetUserByUsernameAsync(username);
         if (user != null)
         {
             currentPaymentMethod.UserID = user.UserID;
-            Console.WriteLine($"UserID: {currentPaymentMethod.UserID}"); // Debugging
         }
         else
         {
