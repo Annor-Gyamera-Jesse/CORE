@@ -15,6 +15,7 @@
     {
         public int TransactionID { get; set; }
         public int BankID { get; set; }
+        public string BankName { get; set; }
         public string TransactionType { get; set; }
         public decimal Amount { get; set; }
         public DateTime TransactionDate { get; set; }
@@ -27,6 +28,7 @@
         public int LogID { get; set; }
         public int? PaymentID { get; set; }
         public int? BankID { get; set; }
+        public string BankName { get; set; }
         public string PaymentType { get; set; }
         public decimal Amount { get; set; }
         public DateTime TransactionDate { get; set; }

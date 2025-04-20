@@ -13,72 +13,108 @@
 <RadzenNotification />
 
 <style>
-    .header {
-        margin-bottom: 20px;
+    .page-title {
         text-align: center;
-        background-color: #4A90E2;
-        color: white;
-        padding: 20px 0;
-        border-radius: 8px;
-    }
-
-    .form-container {
-        margin: 20px 0;
-    }
-
-    .card {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
+        font-size: 32px;
+        font-weight: bold;
+        color: #fff;
+        background: linear-gradient(90deg, #4A90E2, #007ACC);
         padding: 20px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
 
-    .table-container {
-        margin-top: 20px;
+    .card-wrapper {
+        background-color: #ffffff;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-spacing {
+        margin-bottom: 15px;
+    }
+
+    .grid-header {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 15px;
     }
 
     .action-buttons {
         display: flex;
-        gap: 5px;
+        gap: 10px;
+    }
+
+    .responsive-grid {
+        overflow-x: auto;
+    }
+
+    .save-button {
+        margin-top: 15px;
+        width: 100%;
+    }
+
+    .fieldset {
+        border-left: 5px solid #4A90E2;
+        padding-left: 15px;
     }
 </style>
 
 <div class="container">
-    <div class="row header">
-        <div class="col-md-12">
-            <h1>Manage Expense Categories</h1>
-        </div>
-    </div>
+    <div class="page-title">Manage Expense Categories</div>
 
-    <div class="row form-container">
-        <div class="col-md-6">
-            <div class="card">
-                <h4>Add/Edit Category</h4>
-                <RadzenFieldset>
-                    <RadzenTextBox @bind-Value="currentCategory.CategoryName" Placeholder="Category Name" />
-                    <RadzenTextBox @bind-Value="currentCategory.Description" Placeholder="Description" />
-                    <RadzenButton Text="Save Category" Click="@OnSaveCategory" />
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card-wrapper">
+                <RadzenFieldset Text="Add / Edit Category" Style="margin-bottom: 0;" class="fieldset">
+                    <div class="form-spacing">
+                        <RadzenTextBox @bind-Value="currentCategory.CategoryName" Placeholder="Enter Category Name" Style="width: 100%;" />
+                        <RadzenRequiredValidator Component="currentCategory.CategoryName" Text="Category name is required." />
+                    </div>
+
+                    <div class="form-spacing">
+                        <RadzenTextBox @bind-Value="currentCategory.Description" Placeholder="Enter Description" Style="width: 100%;" />
+                    </div>
+
+                    <RadzenButton Text="Save Category"
+                                  Icon="save"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Style="width: 100%; margin-top: 10px;"
+                                  Click="@OnSaveCategory" />
                 </RadzenFieldset>
             </div>
         </div>
-    </div>
 
-    <div class="row table-container">
-        <div class="col-md-12">
-            <div class="card">
-                <RadzenGrid Data="@categories" TItem="ExpenseCategory" AllowPaging="true" PageSize="10">
-                    <Columns>
-                        <RadzenGridColumn TItem="ExpenseCategory" Property="CategoryName" Title="Category Name" />
-                        <RadzenGridColumn TItem="ExpenseCategory" Property="Description" Title="Description" />
-                        <RadzenGridColumn TItem="ExpenseCategory" Title="Actions">
-                            <Template Context="category">
-                                <div class="action-buttons">
-                                    <RadzenButton Icon="edit" Click="@(args => OnEditCategory(category))" Style="margin-right: 5px;" />
-                                    <RadzenButton Icon="delete" Click="@(args => OnDeleteCategory(category))" />
-                                </div>
-                            </Template>
-                        </RadzenGridColumn>
-                    </Columns>
-                </RadzenGrid>
+        <div class="col-md-7">
+            <div class="card-wrapper">
+                <div class="grid-header">Your Categories</div>
+                <div class="responsive-grid">
+                  <RadzenGrid Data="@categories"
+            TItem="ExpenseCategory"
+            AllowPaging="true"
+            PageSize="3"
+            AllowSorting="true"                        
+            Responsive="true"
+            Style="min-width: 100%;">
+    <Columns>
+        <RadzenGridColumn TItem="ExpenseCategory" Property="CategoryName" Title="Category" />
+        <RadzenGridColumn TItem="ExpenseCategory" Property="Description" Title="Description" />
+        <RadzenGridColumn TItem="ExpenseCategory" Title="Actions" Width="150px">
+            <Template Context="category">
+                <div class="action-buttons">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small"
+                                  Click="@(args => OnEditCategory(category))" />
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
+                                  Click="@(args => OnDeleteCategory(category))" />
+                </div>
+            </Template>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+
+                </div>
             </div>
         </div>
     </div>

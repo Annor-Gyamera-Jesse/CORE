@@ -17,7 +17,7 @@
     <RadzenTabs>
         <Tabs>
             <RadzenTabsItem Text="Transaction Logs">
-                <RadzenDataGrid TItem="TransactionLog" Data="@transactionLogs" PageSize="10">
+                    <RadzenDataGrid TItem="TransactionLog" Data="@transactionLogs" AllowPaging="true" PageSize="10">
                     <Columns>
                         <RadzenDataGridColumn TItem="TransactionLog" Property="TransactionID" Title="Transaction ID" />
                         <RadzenDataGridColumn TItem="TransactionLog" Property="TransactionType" Title="Type" />
@@ -31,10 +31,11 @@
             </RadzenTabsItem>
 
             <RadzenTabsItem Text="Bank Transaction Logs">
-                <RadzenDataGrid TItem="BankTransactionLog" Data="@bankTransactionLogs" PageSize="10">
+                    <RadzenDataGrid TItem="BankTransactionLog" Data="@bankTransactionLogs" AllowPaging="true" PageSize="10">
                     <Columns>
                         <RadzenDataGridColumn TItem="BankTransactionLog" Property="TransactionID" Title="Transaction ID" />
                         <RadzenDataGridColumn TItem="BankTransactionLog" Property="BankID" Title="Bank ID" />
+                         <RadzenDataGridColumn TItem="BankTransactionLog" Property="BankName" Title="Bank Name" />
                         <RadzenDataGridColumn TItem="BankTransactionLog" Property="TransactionType" Title="Type" />
                         <RadzenDataGridColumn TItem="BankTransactionLog" Property="Amount" Title="Amount" />
                         <RadzenDataGridColumn TItem="BankTransactionLog" Property="TransactionDate" Title="Date" />
@@ -45,11 +46,12 @@
             </RadzenTabsItem>
 
             <RadzenTabsItem Text="Payment Logs">
-                <RadzenDataGrid TItem="PaymentLog" Data="@paymentLogs" PageSize="10">
+                <RadzenDataGrid TItem="PaymentLog" Data="@paymentLogs" AllowPaging="true" PageSize="10">
                     <Columns>
                         <RadzenDataGridColumn TItem="PaymentLog" Property="LogID" Title="Log ID" />
                         <RadzenDataGridColumn TItem="PaymentLog" Property="PaymentID" Title="Payment ID" />
                         <RadzenDataGridColumn TItem="PaymentLog" Property="BankID" Title="Bank ID" />
+                            <RadzenDataGridColumn TItem="PaymentLog" Property="BankName" Title="Bank Name" />
                         <RadzenDataGridColumn TItem="PaymentLog" Property="PaymentType" Title="Type" />
                         <RadzenDataGridColumn TItem="PaymentLog" Property="Amount" Title="Amount" />
                         <RadzenDataGridColumn TItem="PaymentLog" Property="TransactionDate" Title="Date" />

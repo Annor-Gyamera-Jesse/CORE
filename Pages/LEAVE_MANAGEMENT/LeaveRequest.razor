@@ -17,15 +17,25 @@
     <PageTitle>Process Leave</PageTitle>
 
     <RadzenRow>
+        
         <RadzenColumn Width="25%">
+            <RadzenFieldset Text="Leave Processing">
+            <RadzenHeading Size="H4">Leave Processing</RadzenHeading>
+            <p>Process leave requests for teachers and staff.</p
             <RadzenListBox TValue="int" Data="@allPeople"
             TextProperty="FullName" ValueProperty="ID"
             Value="@selectedPersonId"
             Change="@OnPersonSelected"
             Style="height: 500px; width:auto" />
+            </RadzenFieldset>
         </RadzenColumn>
+        
 
+       
         <RadzenColumn Width="25%" Style="display: flex; flex-direction: column; align-items: center; justify-content: start;">
+             <RadzenFieldset Text="Leave History">
+            <RadzenHeading Size="H4">Leave History</RadzenHeading>
+            <p>View leave history for the selected person.</p>
             @if (selectedPerson != null)
             {
                 <RadzenCard Style="text-align: center; padding: 10px; width: 100%;">
@@ -42,6 +52,7 @@
 
                
             }
+            
             <RadzenCard Style="margin-top: 10px; width: 100%;">
                 @if (leaveHistory != null && leaveHistory.Any())
                 {
@@ -59,10 +70,14 @@
                     </RadzenCard>
                 }
             </RadzenCard>
+            </RadzenFieldset>
+        </RadzenColumn>        
 
-        </RadzenColumn>
-
+        
         <RadzenColumn Width="50%">
+            <RadzenFieldset Text="Leave Type Selection" >
+            <RadzenHeading Size="H4">Leave Type Selection</RadzenHeading>
+            <p>Select the type of leave for the selected person.</p>
             <RadzenCard Style="margin-bottom: 20px">
                 <RadzenHeading Size="H4">Select Leave Type</RadzenHeading>
                 <RadzenRow>
@@ -92,8 +107,10 @@
                 Icon="check"
                 Click="@OnSubmit" />
             </RadzenFieldset>
-        </RadzenColumn>
+            </RadzenFieldset>
+        </RadzenColumn>        
     </RadzenRow>
+    
 }
 
 @code {

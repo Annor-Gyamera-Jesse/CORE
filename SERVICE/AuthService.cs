@@ -4232,6 +4232,95 @@ VALUES
             return result;
         }
 
+        // For Expense Category List
+        public async Task<List<ExpenseCategory>> GetExpenseCategoriesAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            var query = "SELECT * FROM SchoolManagement.ExpenseCategories";
+            var result = await connection.QueryAsync<ExpenseCategory>(query);
+            return result.ToList();
+        }
+
+        // For Payment Method List
+        public async Task<List<PaymentMethods>> GetPaymentMethodsExpenesAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            var query = "SELECT * FROM SchoolManagement.PaymentMethods";
+            var result = await connection.QueryAsync<PaymentMethods>(query);
+            return result.ToList();
+        }
+
+        // Save Expense
+        public async Task SaveExpenseAsync(Expense expense)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var query = @"
+        INSERT INTO SchoolManagement.Expenses (UserID, CategoryID, Amount, ExpenseDate, Description)
+        VALUES (@UserID, @CategoryID, @Amount, @ExpenseDate, @Description)";
+            await connection.ExecuteAsync(query, expense);
+        }
+
+        public async Task<bool> ProcessExpensePaymentAsync(Expense expense, int paymentMethodId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+
+                // Step 1: Get BankID from payment method
+                string getBankQuery = @"
+                 SELECT b.BankID, b.AmountTransferred 
+                 FROM SchoolManagement.Bank b 
+                 JOIN SchoolManagement.PaymentMethods pm ON b.MethodName = pm.MethodName
+                 WHERE pm.PaymentMethodID = @PaymentMethodId";
+
+                var bankInfo = await connection.QueryFirstOrDefaultAsync<(int BankID, decimal AmountTransferred)>(
+                    getBankQuery, new { PaymentMethodId = paymentMethodId });
+
+                if (bankInfo.BankID == 0)
+                {
+                    await LogsBankTransactionAsync(null, "Withdrawal", expense.Amount, "Failed", "Invalid Payment Method or BankID not found.");
+                    return false;
+                }
+
+                // Step 2: Check if bank has enough balance
+                if (bankInfo.AmountTransferred < expense.Amount)
+                {
+                    await LogsBankTransactionAsync(bankInfo.BankID, "Withdrawal", expense.Amount, "Failed", "Insufficient funds.");
+                    return false;
+                }
+
+                // Step 3: Deduct the amount from the bank
+                string deductQuery = "UPDATE SchoolManagement.Bank SET AmountTransferred = AmountTransferred - @Amount WHERE BankID = @BankID";
+                int rowsAffected = await connection.ExecuteAsync(deductQuery, new { Amount = expense.Amount, BankID = bankInfo.BankID });
+
+                if (rowsAffected == 0)
+                {
+                    await LogsBankTransactionAsync(bankInfo.BankID, "Withdrawal", expense.Amount, "Failed", "No rows affected.");
+                    return false;
+                }
+
+                // Step 4: Log the successful bank transaction
+                await LogsBankTransactionAsync(bankInfo.BankID, "Withdrawal", expense.Amount, "Success", null);
+
+                // Step 5: Log the payment
+                await LogPaymentAsync(null, bankInfo.BankID, "Expense", expense.Amount, "Success", null, paymentMethodId);
+
+                // Step 6: Save the actual expense
+                string insertExpenseQuery = @"
+                   INSERT INTO SchoolManagement.Expenses (UserID, CategoryID, Amount, ExpenseDate, Description)
+                   VALUES (@UserID, @CategoryID, @Amount, @ExpenseDate, @Description)";
+                await connection.ExecuteAsync(insertExpenseQuery, expense);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await LogsBankTransactionAsync(null, "Withdrawal", expense.Amount, "Failed", ex.Message);
+                return false;
+            }
+        
+        }
+
     }
 
 }
