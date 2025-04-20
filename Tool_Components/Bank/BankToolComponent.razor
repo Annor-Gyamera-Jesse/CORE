@@ -1,0 +1,25 @@
+﻿@using CORE.Pages.LOADING_COMPONENT
+@* ToolComponent Page *@
+
+<style>
+
+    .toolset-btn {
+        margin-bottom: 5px;
+        width: 100%;
+        font-size: 14px
+    }
+</style>
+
+
+<LoadingSpinner Visible="isLoading" />
+@if (!isLoading)
+{
+    <div class="row mt-2">
+        <RadzenButton Text="DEPOSIT" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Primary" Click=@OnDEPOSITDialog />
+    </div>
+}
+@code {
+    private bool isLoading = false;
+    [Parameter] public Action OnDEPOSITDialog { get; set; }    
+
+}

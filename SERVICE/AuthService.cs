@@ -4321,6 +4321,121 @@ VALUES
         
         }
 
+        /*Bank Deposit*/
+        public async Task<bool> InsertBankDepositAsync(BankDeposit deposit, int userId)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            var systemTransferId = new Random().Next(100000, 999999);
+            var query = @"
+INSERT INTO SchoolManagement.Bank (
+    PaymentMethodID,
+    BankNumber,
+    MethodName,
+    AmountTransferred,
+    SystemTransferID,
+    AmountInHand,
+    Remarks,
+    UserID
+)
+VALUES (
+    @PaymentMethodID,
+    @BankNumber,
+    @MethodName,
+    @AmountTransferred,
+    @SystemTransferID,
+    @AmountTransferred,
+    @Remarks,
+    @UserID
+)";
+
+            var result = await connection.ExecuteAsync(query, new
+            {
+                deposit.PaymentMethodID,
+                deposit.BankNumber,
+                deposit.MethodName,
+                deposit.AmountTransferred,
+                SystemTransferID = systemTransferId,
+                deposit.Remarks,
+                UserID = userId
+            });
+
+            return result > 0;
+        }
+
+        public async Task<List<PaymentMethods>> GetAllPaymentMethodsAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            var sql = @"
+        SELECT 
+            PaymentMethodID, 
+            MethodName, 
+            BankNumber -- ensure this column is retrieved
+        FROM 
+            SchoolManagement.PaymentMethods";
+
+            var result = await connection.QueryAsync<PaymentMethods>(sql);
+            return result.ToList();
+        }
+
+        public async Task<bool> LogManualDepositAsync(BankDeposit deposit, int userId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+
+                // Step 1: Generate a unique SystemTransferID
+                var systemTransferId = new Random().Next(100000, 999999);
+
+                // Step 2: Insert into Bank table
+                string insertBankQuery = @"
+            INSERT INTO SchoolManagement.Bank (
+                PaymentMethodID,
+                BankNumber,
+                MethodName,
+                AmountTransferred,
+                SystemTransferID,
+                AmountInHand,
+                Remarks,
+                UserID
+            )
+            VALUES (
+                @PaymentMethodID,
+                @BankNumber,
+                @MethodName,
+                @AmountTransferred,
+                @SystemTransferID,
+                @AmountTransferred,
+                @Remarks,
+                @UserID
+            );
+            SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                int bankId = await connection.ExecuteScalarAsync<int>(insertBankQuery, new
+                {
+                    deposit.PaymentMethodID,
+                    deposit.BankNumber,
+                    deposit.MethodName,
+                    deposit.AmountTransferred,
+                    SystemTransferID = systemTransferId,
+                    deposit.Remarks,
+                    UserID = userId
+                });
+
+                // Step 3: Log the transaction in BankTransactionLogs
+                await LogsBankTransactionAsync(bankId, "Deposit", deposit.AmountTransferred, "Success Manual Deposit", "");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await LogsBankTransactionAsync(null, "Deposit", deposit.AmountTransferred, "Failed", ex.Message);
+                return false;
+            }
+        }
+
+
+
     }
 
 }
