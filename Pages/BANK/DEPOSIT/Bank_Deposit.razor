@@ -1,0 +1,138 @@
+﻿@page "/deposit"
+@using CORE.MODEL
+@using CORE.MODEL.Bank
+@using CORE.MODEL.Expenses
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@inject AuthService authService
+@inject NotificationService Notify
+@inject IJSRuntime jsRuntime
+
+<RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <RadzenCard Style="padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 14px rgba(0,0,0,0.1); max-width: 900px; margin: auto;">
+
+        <RadzenTemplateForm Data="@depositModel" TItem="BankDeposit" Submit="@SaveDeposit">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <RadzenDropDown @bind-Value="depositModel.PaymentMethodID"
+                                Data="@paymentMethods"
+                                TextProperty="MethodName"
+                                ValueProperty="PaymentMethodID"
+                                Placeholder="Select Payment Method"
+                                Style="width:100%"
+                                Change="@OnPaymentMethodChanged" />
+
+                <RadzenTextBox @bind-Value="depositModel.BankNumber"
+                               Placeholder="Bank Number"
+                               Style="width:100%"
+                               ReadOnly="true" />
+
+                <RadzenTextBox @bind-Value="depositModel.MethodName"
+                               Placeholder="Payment Method Name"
+                               Disabled="true"
+                               Style="width:100%" />
+
+                <RadzenNumeric @bind-Value="depositModel.AmountTransferred"
+                               Placeholder="Amount"
+                               Style="width:100%"
+                               Min="0" Step="0.01" />
+
+                <RadzenTextArea @bind-Value="depositModel.Remarks"
+                                Placeholder="Optional Remarks"
+                                Style="width:100%" Rows="3"
+                                class="md:col-span-2" />
+
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <RadzenButton Text="Save Deposit"
+                              Icon="save"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Type="Submit"
+                              Style="min-width: 160px; border-radius: 8px;" />
+            </div>
+        </RadzenTemplateForm>
+    </RadzenCard>
+}
+
+@code {
+    private BankDeposit depositModel = new();
+    private List<PaymentMethods> paymentMethods = new();
+    private int userId;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+            var user = await authService.GetUserByUsernameAsync(username);
+            if (user != null)
+            {
+                userId = user.UserID;
+            }
+
+            paymentMethods = await authService.GetAllPaymentMethodsAsync();
+        }
+        catch (Exception ex)
+        {
+            Notify.Notify(NotificationSeverity.Error, "Error", $"An error occurred while initializing: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OnPaymentMethodChanged(object value)
+    {
+        var selectedId = Convert.ToInt32(value);
+        var selectedMethod = paymentMethods.FirstOrDefault(pm => pm.PaymentMethodID == selectedId);
+        if (selectedMethod != null)
+        {
+            depositModel.MethodName = selectedMethod.MethodName;
+            depositModel.BankNumber = selectedMethod.BankNumber; // auto-set bank number
+        }
+    }
+
+    private async Task SaveDeposit()
+    {
+        try
+        {
+            isLoading = true;
+            if (userId == 0)
+            {
+                Notify.Notify(NotificationSeverity.Warning, "Warning", "User not found or logged in.");
+                return;
+            }
+
+            depositModel.UserID = userId;
+
+            bool saved = await authService.LogManualDepositAsync(depositModel, userId);
+
+            if (saved)
+            {
+                Notify.Notify(NotificationSeverity.Success, "Success", "Deposit saved successfully!");
+                depositModel = new(); // Clear form
+            }
+            else
+            {
+                Notify.Notify(NotificationSeverity.Error, "Error", "Could not save deposit.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Notify.Notify(NotificationSeverity.Error, "Exception", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
+

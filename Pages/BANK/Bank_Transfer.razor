@@ -3,8 +3,10 @@
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
+@using CORE.Tool_Components.Bank
 @inject AuthService bankService
 @inject NotificationMessageService NotificationService
+@inherits Bank_TransferCodeBehind
 
 <RadzenNotification />
 
@@ -50,9 +52,40 @@
     padding: 6px 12px;
     border-radius: 6px;
     }
+
+    /* PRINT STUDENT REPOR */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
+
+    .custom-background {
+        background-color: green !important;
+    }
 </style>
 
 <LoadingSpinner Visible="isLoading" />
+
+ <RadzenHeader title="Bank Manual Deposit" class="header-container compact-header">
+ <RadzenFieldset Text="ACTION" class="right-align">
+    <BankToolComponent OnDEPOSITDialog="DepositDialog" />
+ </RadzenFieldset>
+ </RadzenHeader>
 
 @if (!isLoading)
 {
@@ -171,4 +204,6 @@
             isLoading = false;
         }
     }
+
+    async void DepositDialog() => await OpenManualDepositDialog();
 }
