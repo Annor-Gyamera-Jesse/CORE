@@ -1,5 +1,6 @@
 @using CORE.SECURITY
-<CascadingAuthenticationState>
+@inject NavigationManager Navigation
+@* <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
@@ -16,6 +17,27 @@
             <PageTitle>Not found</PageTitle>
             <LayoutView Layout="@typeof(MainLayout)">
                 <p role="alert">Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState> *@
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(Program).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @* Redirect unauthorized users to login *@
+                    @if (!Navigation.Uri.Contains("login"))
+                    {
+                        Navigation.NavigateTo("/login", true);
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+        </Found>
+        <NotFound>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p>Sorry, there's nothing at this address.</p>
             </LayoutView>
         </NotFound>
     </Router>
