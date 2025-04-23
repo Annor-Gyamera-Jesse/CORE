@@ -35,9 +35,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        isLoading = true; // Show loading spinner at the beginning of initialization
+        
         try
         {
+            isLoading = true; // Show loading spinner at the beginning of initialization
             await Task.Delay(500); // Optional delay for demonstration purposes
             var authState = await AuthState!;
 

@@ -51,7 +51,7 @@ namespace CORE.SERVICE.MainLayout
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                var query = "UPDATESchoolManagementSecurity.MainMenu SET Text = @Text, Path = @Path, Icon = @Icon WHERE MenuID = @MenuID";
+                var query = "UPDATE SchoolManagementSecurity.MainMenu SET Text = @Text, Path = @Path, Icon = @Icon WHERE MenuID = @MenuID";
                 await connection.ExecuteAsync(query, menuItem);
             }
         }
