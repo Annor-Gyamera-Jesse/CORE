@@ -1,0 +1,95 @@
+﻿@page "/attendance-report"
+@using System.Text
+@using CORE.MODEL.Term
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService authService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+
+<RadzenNotification />
+
+<div class="card p-4 mx-auto" style="max-width:600px;">    
+
+    <RadzenDropDown Data="@classList"
+                    @bind-Value="selectedClass"
+                    Placeholder="Select Class"
+                    Style="width:100%; margin-bottom:1rem;" />
+
+    <RadzenDropDown Data="@termList"
+                    TextProperty="Term"
+                    ValueProperty="TermID"
+                    @bind-Value="selectedTermId"
+                    Placeholder="Select Term"
+                    Style="width:100%; margin-bottom:1rem;" />
+
+    <RadzenDatePicker @bind-Value="selectedDate"
+                      Placeholder="Pick a Date"
+                      Style="width:100%; margin-bottom:1rem;" />
+
+    <RadzenButton Text="Generate Report"
+                  Icon="save_alt"
+                  Disabled="@IsGenerateDisabled"
+                  Click="GenerateAttendanceReport"
+                  Style="width:100%;" />
+</div>
+
+@code {
+    private string selectedClass;
+    private int? selectedTermId;
+    private DateTime? selectedDate;
+
+    private IEnumerable<string> classList = Enumerable.Empty<string>();
+    private IEnumerable<SchoolTerm> termList = Enumerable.Empty<SchoolTerm>();
+
+    private bool IsGenerateDisabled =>
+        string.IsNullOrEmpty(selectedClass)
+        || selectedTermId == null
+        || selectedDate == null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        classList = await authService.GetExamsAllClassesAsync();
+        termList = await authService.GetAllTermsAsync();
+    }
+
+    private async Task GenerateAttendanceReport()
+    {
+        if (IsGenerateDisabled)
+        {
+            Notify.ShowNotification("Please select class, term and date.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        var data = (await authService
+            .GetAttendanceByClassTermDateAsync(selectedClass, selectedTermId.Value, selectedDate.Value))
+            .ToList();
+
+        if (!data.Any())
+        {
+            Notify.ShowNotification("No attendance data found.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        // build CSV: FirstName,LastName,ClassID,Date,Term,Present/Absent
+        var sb = new StringBuilder();
+        sb.AppendLine("FirstName,LastName,ClassID,Date,Term,Present");
+        foreach (var a in data)
+        {
+            var status = a.EnableSwitch ? "Present" : "Absent";
+            sb.AppendLine($"{a.StudentFirstName},{a.StudentLastName},{a.ClassID},{a.AttendanceDate:yyyy-MM-dd},{a.Term},{status}");
+        }
+
+        var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+        var base64 = Convert.ToBase64String(bytes);
+        var fname = $"{selectedClass}_{selectedTermId}_{selectedDate:yyyyMMdd}_Attendance.pdf";
+
+        await JSRuntime.InvokeVoidAsync(
+          "downloadExcel_Export_Attendance_Report_Per_Class_Pdf",
+          fname,
+          base64
+        );
+
+        Notify.ShowNotification("Attendance report generated.", "", NotificationSeverity.Success);
+    }
+}

@@ -1,9 +1,12 @@
 ﻿@page "/schoolattendance"
 @using CORE.MODEL
+@using CORE.MODEL.Term
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
+@using CORE.Tool_Components.STUDENT_ATTENDANCE
 @inject AuthService authService
 @inject IJSRuntime JSRuntime
+@inherits Students_AttendanceCodeBehind
 
 <style>
     .right-align {
@@ -19,6 +22,30 @@
         .compact-header .rz-header-title {
             font-size: 18px; /* Make the title smaller */
         }
+    /* PRINT STUDENT REPOR */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
+
+    .custom-background {
+        background-color: green !important;
+    }
 </style>
 <LoadingSpinner Visible="isLoading" />
 
@@ -29,9 +56,17 @@
         <RadzenLabel Text="Select Class" />
         <RadzenDropDown Data="@classData" TextProperty="ClassID" ValueProperty="ClassID" @bind-Value="selectedClass" />
         <RadzenButton Text="Take Attendance" Click="@TakeAttendance" />
-        <RadzenFieldset Text="EXPORT STUDENT REPORT" class="right-align">
+            <RadzenLabel Text="Select Term" Style="margin-left:20px" />
+            <RadzenDropDown Data="@terms" TextProperty="Term" ValueProperty="TermID" @bind-Value="selectedTermId" Style="width:200px" />
 
+            <RadzenLabel Text="Select Date" Style="margin-left:20px" />
+            <RadzenDatePicker @bind-Value="selectedDate" Name="dates" Style="width:200px" />
+
+            <RadzenHeader title="EXPORT ATTENDANCE" class="header-container compact-header">
+        <RadzenFieldset Text="EXPORT ATTENDANCE" class="right-align" Icon="print">
+                    <StudentsAttendanceToolComponent OnOpenClassAttendanceExportDialog="OpenClassAttendanceExportDialog" OnOpenPerStudentExportDialog="OpenPerStudentExportDialog" />
         </RadzenFieldset>
+        </RadzenHeader>
     </ChildContent>
 </RadzenFieldset>
 
@@ -72,6 +107,11 @@
     string messageClass = "";
     private int userId;
     private bool isLoading = false;
+    List<SchoolTerm> terms;
+    int selectedTermId;
+
+    DateTime selectedDate = DateTime.Today;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -86,6 +126,8 @@
             }
 
             classData = await authService.GetAllClassAsync();
+            terms = (await authService.GetAllTermsAsync()).ToList();
+            if (terms.Any()) selectedTermId = terms.First().TermID;
         }
         catch (Exception ex)
         {
@@ -120,7 +162,7 @@
         try
         {
             isLoading = true;
-            await authService.SaveAttendanceAsync(students, selectedClass, userId);
+            await authService.SaveAttendanceAsync(students, selectedClass, userId, selectedTermId,selectedDate);
 
             message = "Attendance successfully confirmed!";
             messageClass = "success-message";
@@ -135,4 +177,7 @@
             isLoading = false;
         }
     }
+
+    async void OpenPerStudentExportDialog() => await OpenAttendancePerStudentDialog();
+    async void OpenClassAttendanceExportDialog() => await OpenAttendanceByClassDialog();    
 }

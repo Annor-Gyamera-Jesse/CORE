@@ -17,6 +17,7 @@ using CORE.MODEL.Bank.Transaction_Logs;
 using CORE.MODEL.Set_Exams;
 using CORE.MODEL.LeaveManagement;
 using CORE.MODEL.LeaveStatus;
+using CORE.MODEL.Students_Attendance;
 
 namespace CORE.SERVICE
 {
@@ -1254,7 +1255,7 @@ namespace CORE.SERVICE
             return null;
         }
 
-        public async Task SaveAttendanceAsync(List<Student> students, string classID, int userID)
+        public async Task SaveAttendanceAsync(List<Student> students,string classID,int userID, int termID, DateTime attendanceDate)
         {
             try
             {
@@ -1262,18 +1263,23 @@ namespace CORE.SERVICE
                 {
                     await connection.OpenAsync();
 
+                    const string query = @"
+                       INSERT INTO SchoolManagement.StudentsAttendance
+                       (StudentFirstName, StudentLastName, ClassID, EnableSwitch, UserID, TermID, AttendanceDate)
+                        VALUES
+                          (@StudentFirstName, @StudentLastName, @ClassID, @EnableSwitch, @UserID, @TermID, @AttendanceDate)";
+
                     foreach (var student in students)
                     {
-                        var query = "INSERT INTO SchoolManagement.StudentsAttendance (StudentFirstName, StudentLastName, ClassID, EnableSwitch, UserID) " +
-                                    "VALUES (@StudentFirstName, @StudentLastName, @ClassID, @EnableSwitch, @UserID)";
-
                         var parameters = new
                         {
                             StudentFirstName = student.StudentFirstName,
                             StudentLastName = student.StudentLastName,
                             ClassID = classID,
                             EnableSwitch = student.EnableSwitch,
-                            UserID = userID
+                            UserID = userID,
+                            TermID = termID,
+                            AttendanceDate = attendanceDate.Date
                         };
 
                         await connection.ExecuteAsync(query, parameters);
@@ -1291,6 +1297,7 @@ namespace CORE.SERVICE
                 throw;
             }
         }
+
 
         //---------End Of Students Attendance---------------//
 
@@ -4432,10 +4439,39 @@ VALUES (
                 await LogsBankTransactionAsync(null, "Deposit", deposit.AmountTransferred, "Failed", ex.Message);
                 return false;
             }
+        }        
+
+        public async Task<IEnumerable<SchoolTerm>> GetAllTermsAsync()
+        {
+            using var conn = new SqlConnection(connectionString);
+            await conn.OpenAsync();
+            const string sql = "SELECT TermID, Term FROM SchoolManagement.SchoolTerm ORDER BY TermID";
+            return await conn.QueryAsync<SchoolTerm>(sql);
         }
 
+        public async Task<IEnumerable<StudentsAttendance>> GetAttendanceByClassTermDateAsync(
+            string classId, int termId, DateTime date)
+        {
+            using var conn = new SqlConnection(connectionString);
+            await conn.OpenAsync();
+            const string sql = @"
+            SELECT 
+              a.StudentFirstName,
+              a.StudentLastName,
+              a.ClassID,
+              a.EnableSwitch,
+              a.AttendanceDate,
+              t.Term
+            FROM SchoolManagement.StudentsAttendance a
+            JOIN SchoolManagement.SchoolTerm t
+              ON a.TermID = t.TermID
+            WHERE a.ClassID = @ClassID
+              AND a.TermID = @TermID
+              AND a.AttendanceDate = @Date;";
 
-
+            return await conn.QueryAsync<StudentsAttendance>(sql,
+                new { ClassID = classId, TermID = termId, Date = date.Date });
+        }
     }
 
 }
