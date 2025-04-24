@@ -162,14 +162,14 @@
         try
         {
             isLoading = true;
-            await authService.SaveAttendanceAsync(students, selectedClass, userId, selectedTermId,selectedDate);
+            await authService.SaveAttendanceAsync(students, selectedClass, userId, selectedTermId, selectedDate);
 
             message = "Attendance successfully confirmed!";
             messageClass = "success-message";
         }
         catch (Exception ex)
         {
-            message = $"An error occurred while confirming attendance: {ex.Message}";
+            message = $"An error occurred: {ex.Message}";
             messageClass = "error-message";
         }
         finally
@@ -177,6 +177,7 @@
             isLoading = false;
         }
     }
+
 
     async void OpenPerStudentExportDialog() => await OpenAttendancePerStudentDialog();
     async void OpenClassAttendanceExportDialog() => await OpenAttendanceByClassDialog();    
