@@ -33,5 +33,14 @@ namespace CORE.MODEL
 
     }
 
+    public class StudentLookupDto
+    {
+        public int StudentID { get; set; }
+        public string DisplayText => $"{StudentFirstName} {StudentLastName} – {ClassID}";
+        public string StudentFirstName { get; set; }
+        public string StudentLastName { get; set; }
+        public string ClassID { get; set; }
+    }
+
 }
 

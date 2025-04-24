@@ -4441,6 +4441,7 @@ VALUES (
             }
         }        
 
+        /*Atendance Print per class and student*/
         public async Task<IEnumerable<SchoolTerm>> GetAllTermsAsync()
         {
             using var conn = new SqlConnection(connectionString);
@@ -4472,6 +4473,52 @@ VALUES (
             return await conn.QueryAsync<StudentsAttendance>(sql,
                 new { ClassID = classId, TermID = termId, Date = date.Date });
         }
+
+        // 1) Search students by name fragment
+        public async Task<IEnumerable<StudentLookupDto>> SearchAllStudentsAsync(string term)
+        {
+            using var conn = new SqlConnection(connectionString);
+            await conn.OpenAsync();
+            const string sql = @"
+      SELECT StudentID, StudentFirstName, StudentLastName, ClassID
+      FROM SchoolManagement.Students
+      WHERE StudentFirstName LIKE @p OR StudentLastName LIKE @p
+      ORDER BY StudentLastName";
+            return await conn.QueryAsync<StudentLookupDto>(
+              sql, new { p = $"%{term}%" });
+        }
+
+        // 2) Fetch attendance by student
+        public async Task<IEnumerable<StudentsAttendance>> GetAttendanceByStudentAsync(
+      string firstName, string lastName, string classId)
+        {
+            using var conn = new SqlConnection(connectionString);
+            await conn.OpenAsync();
+
+            const string sql = @"
+      SELECT 
+        a.AttendanceDate,
+        a.EnableSwitch,
+        a.TermID,
+        t.Term
+      FROM SchoolManagement.StudentsAttendance AS a
+      INNER JOIN SchoolManagement.SchoolTerm AS t
+        ON a.TermID = t.TermID
+      WHERE a.StudentFirstName = @FirstName
+        AND a.StudentLastName  = @LastName
+        AND a.ClassID          = @ClassID
+      ORDER BY a.AttendanceDate;";
+
+            return await conn.QueryAsync<StudentsAttendance>(
+                sql,
+                new
+                {
+                    FirstName = firstName,
+                    LastName = lastName,
+                    ClassID = classId
+                });
+        }
+
     }
 
 }

@@ -1,5 +1,136 @@
-﻿<h3>Per_Student_Attendance_Export</h3>
+﻿@page "/student-lookup"
+@using System.Text
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService authService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+
+<RadzenNotification />
+
+<LoadingSpinner Visible="isLoading" />
+
+<div class="card p-4 mx-auto" style="max-width:600px;"
+     hidden="@isLoading">
+    <h3>Lookup Student Attendance</h3>
+
+    <RadzenTextBox Placeholder="Type name to search..."
+                   Style="width:100%; margin-bottom:1rem;"
+                   Change="OnSearchChanged" />
+
+    <RadzenDropDown Data="@searchResults"
+                    TextProperty="DisplayText"
+                    ValueProperty="StudentID"
+                    @bind-Value="selectedStudentId"
+                    Placeholder="Select a Student"
+                    Style="width:100%; margin-bottom:1rem;" />
+
+    <RadzenButton Text="Generate Student Report"
+                  Icon="print"
+                  Disabled="@IsActionDisabled"
+                  Click="GenerateStudentReport"
+                  Style="width:100%;" />
+</div>
 
 @code {
+    private IEnumerable<StudentLookupDto> searchResults = Enumerable.Empty<StudentLookupDto>();
+    private int? selectedStudentId;
+    private bool isLoading = true;
+    private bool IsActionDisabled => selectedStudentId == null;
 
+    protected override async Task OnInitializedAsync()
+    {
+        // nothing to preload—just clear spinner
+        isLoading = false;
+    }
+
+    private async Task OnSearchChanged(object value)
+    {
+        // show spinner during search only
+        isLoading = true;
+        try
+        {
+            var term = (value as string)?.Trim();
+            searchResults = string.IsNullOrEmpty(term)
+                ? Enumerable.Empty<StudentLookupDto>()
+                : await authService.SearchAllStudentsAsync(term);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error searching students: {ex.Message}", "",
+                                     NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task GenerateStudentReport()
+    {
+        isLoading = true;
+        try
+        {
+            if (selectedStudentId == null)
+            {
+                Notify.ShowNotification("Select a student first.", "",
+                                         NotificationSeverity.Warning);
+                return;
+            }
+
+            var student = searchResults
+                .FirstOrDefault(s => s.StudentID == selectedStudentId.Value);
+            if (student == null)
+            {
+                Notify.ShowNotification("Student not found.", "",
+                                         NotificationSeverity.Error);
+                return;
+            }
+
+            var attendance = (await authService.GetAttendanceByStudentAsync(
+                student.StudentFirstName,
+                student.StudentLastName,
+                student.ClassID
+            )).ToList();
+
+            if (!attendance.Any())
+            {
+                Notify.ShowNotification("No attendance records.", "",
+                                         NotificationSeverity.Warning);
+                return;
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("Date,Term,Present");
+            foreach (var a in attendance)
+            {
+                var status = a.EnableSwitch ? "Present" : "Absent";
+                sb.AppendLine($"{a.AttendanceDate:yyyy-MM-dd},{a.Term},{status}");
+            }
+
+            var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+            var base64 = Convert.ToBase64String(bytes);
+            var nameOnly = $"{student.StudentFirstName}_{student.StudentLastName}";
+            var fileName = $"{nameOnly}_Attendance.pdf";
+
+            await JSRuntime.InvokeVoidAsync(
+                "downloadExcel_Export_Per_Student_Attendance_Pdf",
+                fileName,
+                base64);
+
+            Notify.ShowNotification("Report generated.", "",
+                                     NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error: {ex.Message}", "",
+                                     NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 }
