@@ -1,5 +1,4 @@
-﻿@page "/student-lookup"
-@using System.Text
+﻿@using System.Text
 @using CORE.MODEL
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
@@ -12,9 +11,7 @@
 
 <LoadingSpinner Visible="isLoading" />
 
-<div class="card p-4 mx-auto" style="max-width:600px;"
-     hidden="@isLoading">
-    <h3>Lookup Student Attendance</h3>
+<div class="card p-4 mx-auto" style="max-width:600px;" hidden="@isLoading">
 
     <RadzenTextBox Placeholder="Type name to search..."
                    Style="width:100%; margin-bottom:1rem;"
@@ -118,7 +115,11 @@
             await JSRuntime.InvokeVoidAsync(
                 "downloadExcel_Export_Per_Student_Attendance_Pdf",
                 fileName,
-                base64);
+                base64,
+                student.StudentFirstName,
+                student.StudentLastName
+            );
+
 
             Notify.ShowNotification("Report generated.", "",
                                      NotificationSeverity.Success);

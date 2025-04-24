@@ -1,4 +1,10 @@
-﻿window.downloadExcel_Export_Per_Student_Attendance_Pdf = function (fileName, base64Csv) {
+﻿// before: function(fileName, base64Csv)
+window.downloadExcel_Export_Per_Student_Attendance_Pdf = function (
+    fileName,
+    base64Csv,
+    firstName,
+    lastName
+) {
     const { jsPDF } = window.jspdf;
 
     // Decode & parse CSV
@@ -26,13 +32,14 @@
     doc.text('STUDENT ATTENDANCE REPORT', W / 2, y, { align: 'center' });
     y += 10;
 
-    // Student meta from first row (Adding student name)
-    const [firstDate, firstTerm] = rows[0];
-    const studentName = `${rows[0][3]} ${rows[0][4]}`; // Assuming first and last name are in column 3 and 4
+    // Student name and meta
+    const studentName = `${firstName} ${lastName}`;
+    doc.setFontSize(12).setFont('helvetica', 'bold');
+    doc.text(`Student: ${studentName}`, 20, y);
     doc.setFontSize(11).setFont('helvetica', 'normal');
-    doc.text(`Student: ${studentName}`, 20, y); // Displaying student's name
-    doc.text(`Date Range: ${rows[0][0]} – ${rows[rows.length - 1][0]}`, 20, y + 7);
-    doc.text(`Term: ${firstTerm}`, W - 60, y + 7);
+    const fromDate = rows[0][0];
+    const toDate = rows[rows.length - 1][0];
+    doc.text(`Date Range: ${fromDate} – ${toDate}`, 20, y + 7);
     y += 20;
 
     // Table header
