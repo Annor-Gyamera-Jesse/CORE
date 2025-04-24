@@ -1,5 +1,6 @@
 ﻿@using System.Text
 @using CORE.MODEL
+@using CORE.MODEL.Term
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
@@ -24,6 +25,13 @@
                     Placeholder="Select a Student"
                     Style="width:100%; margin-bottom:1rem;" />
 
+    <RadzenDropDown Data="@terms"
+                    TextProperty="Term"
+                    ValueProperty="TermID"
+                    @bind-Value="selectedTermId"
+                    Placeholder="Select a Term"
+                    Style="width:100%; margin-bottom:1rem;" />
+
     <RadzenButton Text="Generate Student Report"
                   Icon="print"
                   Disabled="@IsActionDisabled"
@@ -33,19 +41,30 @@
 
 @code {
     private IEnumerable<StudentLookupDto> searchResults = Enumerable.Empty<StudentLookupDto>();
+    private IEnumerable<SchoolTerm> terms = Enumerable.Empty<SchoolTerm>();
     private int? selectedStudentId;
+    private int? selectedTermId;
     private bool isLoading = true;
-    private bool IsActionDisabled => selectedStudentId == null;
+    private bool IsActionDisabled => selectedStudentId == null || selectedTermId == null;
 
     protected override async Task OnInitializedAsync()
     {
-        // nothing to preload—just clear spinner
-        isLoading = false;
+        try
+        {
+            terms = await authService.GetAllTermsAsync();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error fetching terms: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task OnSearchChanged(object value)
     {
-        // show spinner during search only
         isLoading = true;
         try
         {
@@ -56,8 +75,7 @@
         }
         catch (Exception ex)
         {
-            Notify.ShowNotification($"Error searching students: {ex.Message}", "",
-                                     NotificationSeverity.Error);
+            Notify.ShowNotification($"Error searching students: {ex.Message}", "", NotificationSeverity.Error);
         }
         finally
         {
@@ -65,24 +83,22 @@
         }
     }
 
+
     private async Task GenerateStudentReport()
     {
         isLoading = true;
         try
         {
-            if (selectedStudentId == null)
+            if (selectedStudentId == null || selectedTermId == null)
             {
-                Notify.ShowNotification("Select a student first.", "",
-                                         NotificationSeverity.Warning);
+                Notify.ShowNotification("Select both a student and a term.", "", NotificationSeverity.Warning);
                 return;
             }
 
-            var student = searchResults
-                .FirstOrDefault(s => s.StudentID == selectedStudentId.Value);
+            var student = searchResults.FirstOrDefault(s => s.StudentID == selectedStudentId.Value);
             if (student == null)
             {
-                Notify.ShowNotification("Student not found.", "",
-                                         NotificationSeverity.Error);
+                Notify.ShowNotification("Student not found.", "", NotificationSeverity.Error);
                 return;
             }
 
@@ -90,12 +106,13 @@
                 student.StudentFirstName,
                 student.StudentLastName,
                 student.ClassID
-            )).ToList();
+            ))
+            .Where(a => a.TermID == selectedTermId.Value) // Filter by selected term
+            .ToList();
 
             if (!attendance.Any())
             {
-                Notify.ShowNotification("No attendance records.", "",
-                                         NotificationSeverity.Warning);
+                Notify.ShowNotification("No attendance records for the selected term.", "", NotificationSeverity.Warning);
                 return;
             }
 
@@ -110,7 +127,7 @@
             var bytes = Encoding.UTF8.GetBytes(sb.ToString());
             var base64 = Convert.ToBase64String(bytes);
             var nameOnly = $"{student.StudentFirstName}_{student.StudentLastName}";
-            var fileName = $"{nameOnly}_Attendance.pdf";
+            var fileName = $"{nameOnly}_Attendance_Term{selectedTermId}.pdf";
 
             await JSRuntime.InvokeVoidAsync(
                 "downloadExcel_Export_Per_Student_Attendance_Pdf",
@@ -120,14 +137,11 @@
                 student.StudentLastName
             );
 
-
-            Notify.ShowNotification("Report generated.", "",
-                                     NotificationSeverity.Success);
+            Notify.ShowNotification("Report generated.", "", NotificationSeverity.Success);
         }
         catch (Exception ex)
         {
-            Notify.ShowNotification($"Error: {ex.Message}", "",
-                                     NotificationSeverity.Error);
+            Notify.ShowNotification($"Error: {ex.Message}", "", NotificationSeverity.Error);
         }
         finally
         {
