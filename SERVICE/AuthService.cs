@@ -1255,7 +1255,7 @@ namespace CORE.SERVICE
             return null;
         }
 
-        public async Task SaveAttendanceAsync(List<Student> students,string classID,int userID, int termID, DateTime attendanceDate)
+        public async Task SaveAttendanceAsync(List<Student> students, string classID, int userID, int termID, DateTime attendanceDate)
         {
             try
             {
@@ -1263,11 +1263,39 @@ namespace CORE.SERVICE
                 {
                     await connection.OpenAsync();
 
-                    const string query = @"
-                       INSERT INTO SchoolManagement.StudentsAttendance
-                       (StudentFirstName, StudentLastName, ClassID, EnableSwitch, UserID, TermID, AttendanceDate)
-                        VALUES
-                          (@StudentFirstName, @StudentLastName, @ClassID, @EnableSwitch, @UserID, @TermID, @AttendanceDate)";
+                    // Step 1: Check if the attendance date is in the future
+                    if (attendanceDate > DateTime.Now)
+                    {
+                        throw new InvalidOperationException("Attendance cannot be taken for a future date.");
+                    }
+
+                    // Step 2: Check if attendance has already been taken for the class and date
+                    const string checkAttendanceQuery = @"
+                SELECT COUNT(*)
+                FROM SchoolManagement.StudentsAttendance
+                WHERE ClassID = @ClassID AND AttendanceDate = @AttendanceDate AND TermID = @TermID";
+
+                    var checkParams = new
+                    {
+                        ClassID = classID,
+                        AttendanceDate = attendanceDate.Date,
+                        TermID = termID
+                    };
+
+                    var existingAttendanceCount = await connection.ExecuteScalarAsync<int>(checkAttendanceQuery, checkParams);
+
+                    if (existingAttendanceCount > 0)
+                    {
+                        // If attendance already exists, notify user and prevent further action
+                        throw new InvalidOperationException("Attendance has already been taken for this class on the selected date.");
+                    }
+
+                    // Step 3: Insert attendance for students if no existing records are found
+                    const string insertAttendanceQuery = @"
+                INSERT INTO SchoolManagement.StudentsAttendance
+                (StudentFirstName, StudentLastName, ClassID, EnableSwitch, UserID, TermID, AttendanceDate)
+                VALUES
+                   (@StudentFirstName, @StudentLastName, @ClassID, @EnableSwitch, @UserID, @TermID, @AttendanceDate)";
 
                     foreach (var student in students)
                     {
@@ -1282,9 +1310,14 @@ namespace CORE.SERVICE
                             AttendanceDate = attendanceDate.Date
                         };
 
-                        await connection.ExecuteAsync(query, parameters);
+                        await connection.ExecuteAsync(insertAttendanceQuery, parameters);
                     }
                 }
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Handle specific error like future attendance or already taken attendance
+                throw new Exception(ex.Message);  // Can pass the error message to notify user
             }
             catch (SqlException ex)
             {
@@ -1297,6 +1330,7 @@ namespace CORE.SERVICE
                 throw;
             }
         }
+
 
 
         //---------End Of Students Attendance---------------//
