@@ -1,7 +1,4 @@
-﻿window.download_Excel_Export_Lesson_Note = function (
-    fileName,
-    base64Csv
-) {
+﻿window.download_Excel_Export_Lesson_Note = function (fileName, base64Csv) {
     const { jsPDF } = window.jspdf;
 
     // Decode base64 CSV data
@@ -13,42 +10,50 @@
         return;
     }
 
-    const csvHeaders = lines[0]?.split(',').map(h => h.trim()) || []; // Extract column headers
-    const tableData = lines.slice(1).map(line => line.split(',').map(value => (value && value.trim()) || '-')); // Ensure no null or undefined values
+    const csvHeaders = lines[0].split(',').map(h => h.trim()); // Extract headers
+    const tableData = lines.slice(1).map(line => line.split(',').map(value => (value && value.trim()) || '-'));
 
     const doc = new jsPDF();
-    const W = doc.internal.pageSize.getWidth();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
     let y = 20;
 
     // Title
-    doc.setFontSize(18).setFont('helvetica', 'bold');
-    doc.text('LESSON NOTES REPORT', W / 2, y, { align: 'center' });
-    y += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text('LESSON NOTES REPORT', pageWidth / 2, y, { align: 'center' });
+    y += 12;
+
+    // Calculate dynamic column width
+    const availableWidth = pageWidth - (2 * margin);
+    const colWidth = availableWidth / csvHeaders.length;
 
     // Draw Table Headers
-    const columnWidths = [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30];
-    let currentX = 20;
-    doc.setFont('helvetica', 'bold');
-    csvHeaders.forEach((header, index) => {
-        doc.text(header, currentX + columnWidths[index] / 2, y, { align: 'center' });
-        currentX += columnWidths[index];
+    doc.setFontSize(10);
+    let currentX = margin;
+    csvHeaders.forEach(header => {
+        doc.text(header, currentX + colWidth / 2, y, { align: 'center' });
+        currentX += colWidth;
     });
     y += 6;
-    doc.setLineWidth(0.5).line(20, y, W - 20, y);
+    doc.setLineWidth(0.5).line(margin, y, pageWidth - margin, y);
     y += 6;
 
-    // Draw Rows
+    // Draw Table Rows
     doc.setFont('helvetica', 'normal');
     tableData.forEach(row => {
-        currentX = 20;
+        currentX = margin;
         row.forEach((cell, index) => {
-            const cellValue = (cell && cell.trim()) || '-'; // Ensure text is always a string
-            doc.text(cellValue.toString(), currentX + columnWidths[index] / 2, y, { align: 'center' });
-            currentX += columnWidths[index];
+            const cellValue = (cell && cell.trim()) || '-';
+            doc.text(cellValue.toString(), currentX + colWidth / 2, y, { align: 'center' });
+            currentX += colWidth;
         });
         y += 8;
-        if (y > doc.internal.pageSize.getHeight() - 30) {
-            doc.addPage(); y = 20; // Add a new page if needed
+
+        // Auto-add new page if needed
+        if (y > doc.internal.pageSize.getHeight() - 20) {
+            doc.addPage();
+            y = 20;
         }
     });
 
