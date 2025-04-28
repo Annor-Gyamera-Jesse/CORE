@@ -12,7 +12,7 @@ namespace CORE.Pages.LESSONS_NOTES
 
         public async Task OpenLessonNoteDialog()
         {
-            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "600px", Resizable = false, Height = "301px" };
+            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "600px", Resizable = false, Height = "401px" };
             var dialogTitle = $"PRINT LESSON";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<Lesson_Note_Export_Print>(dialogTitle, null, dialogOptions);
