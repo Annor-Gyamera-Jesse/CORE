@@ -26,6 +26,13 @@ namespace CORE.Pages.LESSON_NOTE
         public int UpdatedBy { get; set; }
         public DateTime UpdatedOn { get; set; } = DateTime.Now; // Initialize with current date/time
         public string ClassID { get; set; }
+        public int TermID { get; set; }
+        public DateTime LessonNoteDate { get; set; }
+        public DateTime Time_Period { get; set; }
+        public DateTime RecDateCreated { get; set; }
+        public DateTime WeekEnding { get; set; } 
+        public DateTime TimePeriod { get; set; }
+
     }
 
 }

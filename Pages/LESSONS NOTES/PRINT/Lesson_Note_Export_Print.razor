@@ -1,0 +1,133 @@
+﻿@page "/lesson-notes-report"
+@inject AuthService authService
+@inject IJSRuntime JSRuntime
+@inject NotificationMessageService Notify
+@using CORE.MODEL
+@using CORE.MODEL.Term
+@using CORE.Pages.LESSON_NOTE
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using System.Text
+@using System.Text.Json
+
+<RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <div class="card" style="max-width: 800px; margin: auto; padding: 20px;">
+        <h3>Generate Lesson Notes Report</h3>
+
+        <RadzenDropDown Data="@teacherList"
+                        TextProperty="FullName"
+                        ValueProperty="UserID"
+                        @bind-Value="selectedTeacherId"
+                        Placeholder="📚 Select Teacher"
+                        Style="width: 100%; margin-bottom: 20px;" />
+
+        <RadzenDropDown Data="@termList"
+                        TextProperty="Term"
+                        ValueProperty="TermID"
+                        @bind-Value="selectedTermId"
+                        Placeholder="📚 Select Term"
+                        Style="width: 100%; margin-bottom: 20px;" />
+
+        <div class="row">
+            <div class="col">
+                <RadzenDatePicker @bind-Value="selectedFromDate"
+                                  Placeholder="From Date"
+                                  Style="width: 100%;" />
+            </div>
+            <div class="col">
+                <RadzenDatePicker @bind-Value="selectedToDate"
+                                  Placeholder="To Date"
+                                  Style="width: 100%;" />
+            </div>
+        </div>
+
+
+        <RadzenButton Text="📄 Print"
+                      Icon="print"
+                      Click="@GenerateReportCsv"
+                      
+                      Style="width: 100%; background-color: #2196F3; color: white; margin-top: 20px;" />
+    </div>
+}
+
+@code {
+    private List<User> teacherList = new();
+    private List<SchoolTerm> termList = new();
+    private int? selectedTermId;
+    private int? selectedTeacherId;
+    private string selectedTeacherName;
+    private string selectedTerm;
+    private DateTime? selectedFromDate;
+    private DateTime? selectedToDate;
+    private List<LessonNote> lessonNotes = new();
+    private bool isLoading = false;
+
+    // private bool IsButtonDisabled =>
+    //     selectedTeacherId == null || string.IsNullOrEmpty(selectedTerm) || selectedFromDate == null || selectedToDate == null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            teacherList = (await authService.GetsAllTeachersForLessonNotePrintAsync()).ToList();
+            termList = (await authService.GetAllTermsForLessonNotePrintAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task GenerateReportCsv()
+    {
+        try
+        {
+            isLoading = true;
+            lessonNotes = (await authService.GetLessonNotesByTeacherTermDateRangeAsync(
+                selectedTeacherId.Value,
+                selectedTermId.Value,
+                selectedFromDate.Value.Date,
+                selectedToDate.Value.Date
+            )).ToList();
+
+            if (!lessonNotes.Any())
+            {
+                Notify.ShowNotification("No lesson notes found for selected criteria.", "", NotificationSeverity.Warning);
+                return;
+            }
+
+            var csvContent = new StringBuilder();
+            csvContent.AppendLine("SchoolCourse,Strand,SubStrand,ContentStandard,Indicator,TeachingLearningResources,TeachingLearningResourcePreparationNotes,SourcesLearningResources,LearnerExpectation,ImportantGradeExpectation,LearningOutcomes,FormofAssessment,LearnerEntryBehavior,SequenceofLesson,RecDateCreated,Status,UpdatedBy,UpdatedOn,Class,Week_Ending,Time_Period,LessonNoteDate,TermID");
+
+            foreach (var note in lessonNotes)
+            {
+                csvContent.AppendLine($"{note.SchoolCourse},{note.Strand},{note.SubStrand},{note.ContentStandard},{note.Indicator},{note.TeachingLearningResources},{note.TeachingLearningResourcePreparationNotes},{note.SourcesLearningResources},{note.LearnerExpectation},{note.ImportantGradeExpectation},{note.LearningOutcomes},{note.FormofAssessment},{note.LearnerEntryBehavior},{note.SequenceofLesson},{note.RecDateCreated},{note.Status},{note.UpdatedBy},{note.UpdatedOn},{note.ClassID},{note.WeekEnding},{note.TimePeriod},{note.LessonNoteDate},{note.TermID}");
+            }
+
+            var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(csvContent.ToString()));
+            selectedTeacherName = teacherList.FirstOrDefault(t => t.UserID == selectedTeacherId)?.FullName ?? "UnknownTeacher";
+            await JSRuntime.InvokeVoidAsync("download_Excel_Export_Lesson_Note", $"LessonNotes_{selectedTeacherName}_{selectedTerm}.pdf", base64);
+            Notify.ShowNotification("CSV downloaded successfully.", "", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+}
