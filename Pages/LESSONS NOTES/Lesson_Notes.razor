@@ -193,6 +193,7 @@
 
 
 @page "/lessonnote"
+@using CORE.MODEL.Term
 @using CORE.Pages.LESSON_NOTE
 @using CORE.MODEL
 @using CORE.Pages.LOADING_COMPONENT
@@ -310,9 +311,23 @@
                 <RadzenDropDown Data="@classList" TextProperty="ClassID" ValueProperty="ClassID" TValue="string" @bind-Value="@classId" Style="width:100%;" />
              </RadzenFieldset>
         </div>
-
+            <div class="col-md-3">
+                
+                    <RadzenLabel Text="Select Term:" />
+                    <RadzenDropDown @bind-Value="lessonNote.TermID" Data="@termList" TextProperty="Term" ValueProperty="TermID" Style="width: 100%;" />
+            </div>
+                <div class="col-md-3">
+                    <RadzenLabel Text="Lesson Note Date:" />
+                    <RadzenDatePicker @bind-Value="lessonNote.LessonNoteDate" Style="width: 100%;" />
+                </div>
+              <div class="col-md-3">
+                    <RadzenLabel Text="Time Period:" />
+                    <RadzenDatePicker @bind-Value="lessonNote.Time_Period" Style="width: 100%;" />
+              </div>                
+            
 
     </div>
+
     <div class="container">
         <RadzenFieldset Text="Lesson Note" Style="border: none; padding: 20px;">
 
@@ -387,6 +402,7 @@
         "ImportantGradeExpectation", "LearningOutcomes", "FormofAssessment",
         "LearnerEntryBehavior", "SequenceofLesson"
     };
+    List<SchoolTerm> termList = new List<SchoolTerm>();
 
     List<DynamicField> selectedFields = new List<DynamicField>();
     string selectedField;
@@ -470,6 +486,9 @@
             // Assign UserId and ClassID to lessonNote object
             lessonNote.UserId = userId;
             lessonNote.ClassID = classId;
+            lessonNote.TermID = lessonNote.TermID;
+            lessonNote.LessonNoteDate = lessonNote.LessonNoteDate;
+            lessonNote.Time_Period = lessonNote.Time_Period;
 
             // Perform the database operation
             var result = await authService.AddLessonNoteAsync(lessonNote);
@@ -566,6 +585,7 @@
             // Fetch list of classes
             var classes = await authService.GetClassesAsync();
             classList = classes.Select(c => new Class { ClassID = c }).ToList();
+            termList = (await authService.GetAllTermsAsync()).ToList();
         }
         catch (Exception ex)
         {

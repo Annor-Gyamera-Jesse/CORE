@@ -1907,12 +1907,12 @@ namespace CORE.SERVICE
                  TeachingLearningResources, TeachingLearningResourcePreparationNotes, 
                  SourcesLearningResources, LearningGroup, LearnerExpectation, 
                  ImportantGradeExpectation, LearningOutcomes, FormofAssessment, 
-                 LearnerEntryBehavior, SequenceofLesson, Status, UpdatedBy, UpdatedOn) 
+                 LearnerEntryBehavior, SequenceofLesson, TermID, LessonNoteDate, Time_Period, Status, UpdatedBy, UpdatedOn) 
                 VALUES (@ClassID, @UserId, @SchoolCourse, @Strand, @SubStrand, @ContentStandard, 
                         @Indicator, @TeachingLearningResources, @TeachingLearningResourcePreparationNotes, 
                         @SourcesLearningResources, @LearningGroup, @LearnerExpectation, 
                         @ImportantGradeExpectation, @LearningOutcomes, @FormofAssessment, 
-                        @LearnerEntryBehavior, @SequenceofLesson, @Status, @UpdatedBy, @UpdatedOn)";
+                        @LearnerEntryBehavior, @SequenceofLesson, @TermID, @LessonNoteDate, @Time_Period, @Status, @UpdatedBy, @UpdatedOn)";
 
                     return await connection.ExecuteAsync(query, new
                     {
@@ -1933,6 +1933,9 @@ namespace CORE.SERVICE
                         lessonNote.FormofAssessment,
                         lessonNote.LearnerEntryBehavior,
                         lessonNote.SequenceofLesson,
+                        lessonNote.TermID,
+                        lessonNote.LessonNoteDate,
+                        lessonNote.Time_Period,
                         Status = 1, // Assuming you want to set a default status
                         UpdatedBy = lessonNote.UserId, // Assuming UpdatedBy is the same as UserId
                         UpdatedOn = DateTime.UtcNow
@@ -4552,6 +4555,46 @@ VALUES (
                     ClassID = classId
                 });
         }
+
+
+        /*Print Lesson Note*/
+        public async Task<IEnumerable<User>> GetsAllTeachersForLessonNotePrintAsync()
+        {
+            using var con = new SqlConnection(connectionString);
+            await con.OpenAsync();
+            const string sql = @"
+        SELECT UserID, FullName 
+        FROM SchoolManagement.Users 
+        ORDER BY FullName
+    ";
+            return await con.QueryAsync<User>(sql);
+        }
+
+        public async Task<IEnumerable<SchoolTerm>> GetAllTermsForLessonNotePrintAsync()
+        {
+            using var con = new SqlConnection(connectionString);
+            await con.OpenAsync();
+            const string sql = "SELECT TermID, Term FROM SchoolManagement.SchoolTerm ORDER BY TermID";
+            return await con.QueryAsync<SchoolTerm>(sql);
+        }
+
+        public async Task<IEnumerable<LessonNote>> GetLessonNotesByTeacherTermDateRangeAsync(
+     int userId, int termId, DateTime fromDate, DateTime toDate)
+        {
+            using var con = new SqlConnection(connectionString);
+            await con.OpenAsync();
+            const string sql = @"
+        SELECT * FROM SchoolManagement.TEACHERSLESSONNOTES
+        WHERE UserID = @UserId
+        AND TermID = @TermId
+        AND LessonNoteDate BETWEEN @FromDate AND @ToDate
+    ";
+            return await con.QueryAsync<LessonNote>(
+                sql,
+                new { UserId = userId, TermId = termId, FromDate = fromDate, ToDate = toDate }
+            );
+        }
+
 
     }
 

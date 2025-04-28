@@ -5,15 +5,70 @@
 @inject AuthService lessonNoteService
 @using CORE.MODEL
 @using CORE.SERVICE.NOTIFICATION
+@using CORE.Tool_Components.LESSON_NOTE
 @inject DialogService DialogService
 @inject NotificationMessageService Notify
 @inject IJSRuntime JSRuntime
+@inherits View_Submitted_Lesson_Note_Page_CodeBehind
 <RadzenNotification />
+
+
+<style>
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
+    /* PRINT STUDENT REPOR */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
+
+    .custom-background {
+        background-color: green !important;
+    }
+</style>
+
+
 
 <LoadingSpinner Visible="isLoading" />
 
 @if (!isLoading)
 {
+
+
+      <RadzenHeader title="EXPORT ATTENDANCE" class="header-container compact-header">
+        <RadzenFieldset Text="EXPORT ATTENDANCE" class="right-align" Icon="print">
+            <Lesson_Note_ToolComponent OnOpenLessonNoteExportDialog="OpenPerTeacherExportDialog" />
+            </RadzenFieldset>
+      </RadzenHeader>
+             
+
+
     <div class="container my-5">
         <div class="mb-4 d-flex align-items-center">
             <RadzenDatePicker @bind-Value="fromDate" Placeholder="From Date" Style="width: 200px;" />
@@ -227,4 +282,6 @@
     {
         DialogService.Close();
     }
+
+    async void OpenPerTeacherExportDialog() => await OpenLessonNoteDialog();
 }
