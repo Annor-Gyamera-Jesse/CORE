@@ -447,8 +447,8 @@ namespace CORE.SERVICE
                 {
                     await connection.OpenAsync();
 
-                    var query = "INSERT INTO SchoolManagement.Teacher (TeacherFirstName, TeacherLastName, TeacherDateOfBirth, TeacherGender, TeacherAddress, TeacherPhoneNumber, TeacherEmail, ImageData, DateHired, SSNIT, BasicSalary, PAYE, SSNITTIER2, VotersID, HealthInsurance, GhanaCard, Bank, AccountNumber, Remarks, SSNITNumber, CategoryName) " +
-                                "VALUES (@FirstName, @LastName, @DateOfBirth, @Gender, @Address, @PhoneNumber, @Email, @ImageData, @DateHired, @SSNIT, @BasicSalary, @PAYE, @SSNITTIER2, @VotersID, @HealthInsurance, @GhanaCard, @Bank, @AccountNumber, @Remarks, @SSNITNumber, @CategoryName); " +
+                    var query = "INSERT INTO SchoolManagement.Teacher (TeacherFirstName, TeacherLastName, TeacherDateOfBirth, TeacherGender, TeacherAddress, TeacherPhoneNumber, TeacherEmail, ImageData, DateHired, SSNIT, BasicSalary, PAYE, SSNITTIER2, VotersID, HealthInsurance, GhanaCard, Bank, AccountNumber, Remarks, SSNITNumber, CategoryName, EmploymentStatus) " +
+                                "VALUES (@FirstName, @LastName, @DateOfBirth, @Gender, @Address, @PhoneNumber, @Email, @ImageData, @DateHired, @SSNIT, @BasicSalary, @PAYE, @SSNITTIER2, @VotersID, @HealthInsurance, @GhanaCard, @Bank, @AccountNumber, @Remarks, @SSNITNumber, @CategoryName, @EmploymentStatus); " +
                                 "SELECT SCOPE_IDENTITY();";
 
                     using (var command = new SqlCommand(query, connection))
@@ -474,6 +474,7 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@Remarks", teachersRegistration.Remarks);
                         command.Parameters.AddWithValue("@SSNITNumber", teachersRegistration.SSNITNumber);
                         command.Parameters.AddWithValue("@CategoryName", teachersRegistration.CategoryName);
+                        command.Parameters.AddWithValue("@EmploymentStatus", teachersRegistration.EmploymentStatus);
 
                         var result = await command.ExecuteScalarAsync();
                         return result != null ? Convert.ToInt32(result) : 0;

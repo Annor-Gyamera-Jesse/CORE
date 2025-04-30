@@ -29,6 +29,7 @@
         public string Remarks { get; set; }
         public string SSNITNumber { get; set; }
         public string CategoryName { get; set; }
+        public string EmploymentStatus { get; set; }
 
     }
 }
