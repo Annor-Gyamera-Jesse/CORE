@@ -108,6 +108,19 @@
             </div>
         </div>
 
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Employment Status" />
+            </div>
+            <div class="col-md-3">
+                <RadzenDropDown @bind-Value="@teachersRegistration.EmploymentStatus"
+                Data="@employmentStatuses"
+                Placeholder="Select Employment Status"
+                Class="form-control form-control-sm" />
+            </div>
+        </div>
+
+
         <RadzenFieldset Text="SSNIT">
             <div class="row">
                 <div class="col-md-3 text-md-end form-label">
@@ -246,6 +259,7 @@
     private List<PaymentCategory> paymentCategories = new();
     private int selectedCategoryId;
     private bool isLoading = false;
+    List<string> employmentStatuses = new() { "Active", "Suspended", "Terminated", "Leave" };
 
     protected override async Task OnInitializedAsync()
     {
@@ -334,27 +348,21 @@
         return Validator.TryValidateObject(obj, validationContext, validationResults, true);
     }
 
-    private void HandleFileChange(InputFileChangeEventArgs e)
+    private async Task HandleFileChange(InputFileChangeEventArgs e)
     {
         try
         {
             isLoading = true;
-            // Check if the file is not null and has a valid size
-            if (e.File != null && e.File.Size > 0)
-            {
-                // Read the file into a byte array
-                using (var stream = e.File.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024)) // 2 MB limit
-                {
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        stream.CopyTo(memoryStream);
-                        imageData = memoryStream.ToArray();
-                    }
-                }
-            }
+            var file = e.File;
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // Max 10 MB
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms); // ✅ Asynchronous
+            teachersRegistration.ImageData = ms.ToArray();
         }
         catch (Exception ex)
         {
+            // Handle the exception (e.g., show a notification)
             Notify.ShowNotification("Error", $"An error occurred while uploading the file: {ex.Message}", NotificationSeverity.Error);
         }
         finally
@@ -362,11 +370,7 @@
             isLoading = false;
             StateHasChanged();
         }
-
-
-
-        // Handle the file change event
-       // selectedFile = e.File;
+        
     }
 
     void ResetForm()
