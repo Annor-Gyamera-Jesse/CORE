@@ -1661,7 +1661,7 @@ namespace CORE.SERVICE
             return new List<string>();
         }
 
-        public async Task<int> InsertExamAsync(Exam exam)
+        public async Task<int> InsertExamAsync(Exam exam, int userId)
         {
             try
             {
@@ -1669,34 +1669,91 @@ namespace CORE.SERVICE
                 {
                     await connection.OpenAsync();
 
-                    var query = @"INSERT INTO SchoolManagement.SchoolExams 
-                          (StudentName, ClassName, AcademicYear, VacationDate, PromotedTo, NumberOnRoll, 
-                           Term, Position, NextTermsBegins, AttendanceOut, AttendanceIn, SchoolCourse, ClassScore, 
-                           ExamsScore, TotalScore, SubjectsPositions, Grade, TeachersRemarks, Conduct, HeadmasterRemark, 
-                           SchoolInformation, TeachersSignature, HeadMasterSignature) 
-                          VALUES 
-                          (@StudentName, @ClassName, @AcademicYear, @VacationDate, @PromotedTo, @NumberOnRoll, 
-                           @Term, @Position, @NextTermsBegins, @AttendanceOut, @AttendanceIn, @SchoolCourse, @ClassScore, 
-                           @ExamsScore, @TotalScore, @SubjectsPositions, @Grade, @TeachersRemarks, @Conduct, @HeadmasterRemark, 
-                           @SchoolInformation, @TeachersSignature, @HeadMasterSignature);
-                          SELECT SCOPE_IDENTITY();";
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            // Insert Exam Record
+                            var insertExamQuery = @"
+                        INSERT INTO SchoolManagement.SchoolExams 
+                        (StudentName, ClassName, AcademicYear, VacationDate, PromotedTo, NumberOnRoll, 
+                         Term, Position, NextTermsBegins, AttendanceOut, AttendanceIn, SchoolCourse, ClassScore, 
+                         ExamsScore, TotalScore, SubjectsPositions, Grade, TeachersRemarks, Conduct, HeadmasterRemark, 
+                         SchoolInformation, TeachersSignature, HeadMasterSignature, UserID) 
+                        VALUES 
+                        (@StudentName, @ClassName, @AcademicYear, @VacationDate, @PromotedTo, @NumberOnRoll, 
+                         @Term, @Position, @NextTermsBegins, @AttendanceOut, @AttendanceIn, @SchoolCourse, @ClassScore, 
+                         @ExamsScore, @TotalScore, @SubjectsPositions, @Grade, @TeachersRemarks, @Conduct, @HeadmasterRemark, 
+                         @SchoolInformation, @TeachersSignature, @HeadMasterSignature, @UserID);
+                        SELECT SCOPE_IDENTITY();";
 
-                    return await connection.ExecuteScalarAsync<int>(query, exam);
+                            var examId = await connection.ExecuteScalarAsync<int>(
+                                insertExamQuery, exam, transaction);
+
+                            // Get StudentID and Current ClassID
+                            var studentInfo = await connection.QueryFirstOrDefaultAsync<(int StudentID, string ClassID)>(@"
+                            SELECT StudentID, ClassID 
+                              FROM SchoolManagement.Students 
+                               WHERE CONCAT(StudentFirstName, ' ', StudentLastName) = @StudentName",
+                                     new { exam.StudentName }, transaction);
+
+                            if (studentInfo.StudentID == 0)
+                                throw new Exception("Student not found.");
+
+
+                            // Update Student Class
+                            var updateClassQuery = @"
+                        UPDATE SchoolManagement.Students
+                        SET ClassID = @PromotedTo
+                        WHERE StudentID = @StudentID";
+
+                            await connection.ExecuteAsync(updateClassQuery, new
+                            {
+                                PromotedTo = exam.PromotedTo,
+                                StudentID = studentInfo.StudentID
+                            }, transaction);
+
+                            // Log Class Change in StudentClassHistory
+                            var logHistoryQuery = @"
+                        INSERT INTO SchoolManagement.StudentClassHistory 
+                        (StudentID, PreviousClassID, NewClassID, UpdatedByUserID, ReasonForChange)
+                        VALUES 
+                        (@StudentID, @PreviousClassID, @NewClassID, @UpdatedByUserID, @ReasonForChange)";
+
+                            await connection.ExecuteAsync(logHistoryQuery, new
+                            {
+                                StudentID = studentInfo.StudentID,
+                                PreviousClassID = studentInfo.ClassID,
+                                NewClassID = exam.PromotedTo,
+                                UpdatedByUserID = userId,
+                                ReasonForChange = "Promotion after exam"
+                            }, transaction);
+
+                            transaction.Commit();
+
+                            return examId;
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            Console.WriteLine($"Transaction failed: {ex.Message}");
+                            throw;
+                        }
+                    }
                 }
             }
             catch (SqlException ex)
             {
-                // Log SQL exceptions
                 Console.WriteLine($"SQL Exception: {ex.Message}");
-                throw; // Re-throw the exception for better debugging
+                throw;
             }
             catch (Exception ex)
             {
-                // Log other exceptions
                 Console.WriteLine($"Exception: {ex.Message}");
-                throw; // Re-throw the exception for better debugging
+                throw;
             }
         }
+
 
         // Method to get the list of students for a specific class
         public async Task<IEnumerable<Student>> GetStudentsByClassInExams(string classId)
