@@ -9,6 +9,7 @@
 @using System.Globalization
 @inject NotificationMessageService NotificationService
 <RadzenNotification />
+@inject IJSRuntime jsRuntime
 @inherits ExamsCodeBehind
 
 <style>
@@ -84,10 +85,10 @@
                             </RadzenField>
                         </div>
                         <div class="col-md-3">
-                            <RadzenField Property="PromotedTo" Title="Promoted To">
-                                <RadzenLabel Text="Promoted To" />
-                                <RadzenTextBox @bind-Value="@examModel.PromotedTo"></RadzenTextBox>
-                            </RadzenField>
+                          <RadzenField Property="PromotedTo" Title="Promoted To">
+                           <RadzenLabel Text="Promoted To" />
+                          <RadzenDropDown @bind-Value="@examModel.PromotedTo" Data="@classList" Placeholder="Select Class" Style="width: 100%" />
+                          </RadzenField>
                         </div>
                     </div>
 
@@ -238,7 +239,7 @@
                     <!-- RadzenGrid to display assessment data -->
                     <div class="mt-3">
                         <!-- RadzenGrid to display assessment data -->
-                        <RadzenGrid Data="@assessment" TItem="TeachersAssessment" ColumnWidth="200px" Style="overflow-x: auto;">
+                        <RadzenGrid Data="@assessment" TItem="TeachersAssessment" AllowPaging="true" PageSize="10" ColumnWidth="200px" Style="overflow-x: auto;">
                             <Columns>
                                 <RadzenGridColumn TItem="TeachersAssessment" Property="Course" Title="Course" Width="120px" />
                                 <RadzenGridColumn TItem="TeachersAssessment" Property="StudentName" Title="Student Name" Width="250px" />
@@ -334,6 +335,7 @@ private IEnumerable<Student> students;
 private IEnumerable<TeachersAssessment> assessment;    
 private List<string> classes = new List<string>();
     private string selectedStudentName;
+    private int userId;
 
     void AddExam()
     {
@@ -378,20 +380,31 @@ private List<string> classes = new List<string>();
 
     async Task UploadExams()
     {
+        // Get the UserID of the logged-in user
+        var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var user = await authService.GetUserByUsernameAsync(username);
+        int userId = 0;
+
+        if (user != null)
+        {
+            userId = user.UserID;
+        }
+
+        // Upload each exam result and include the UserID
         foreach (var result in examResults)
         {
-            var insertResult = await authService.InsertExamAsync(result);
+            result.UserID = userId;  // Assign UserID to the exam result
+
+            var insertResult = await authService.InsertExamAsync(result, userId);
 
             if (insertResult > 0)
             {
                 // Insertion successful
-                // Console.WriteLine($"Exam for {result.StudentName} Upload successfully!");
                 Notify.ShowNotification("success", "Exam for user Upload successfully!", NotificationSeverity.Success);
             }
             else
             {
                 // Insertion failed
-                // Console.WriteLine($"Exam for {result.StudentName} Upload failed!"); 
                 Notify.ShowNotification("Error", "Exam for user Upload failed!", NotificationSeverity.Warning);
             }
         }
@@ -400,6 +413,7 @@ private List<string> classes = new List<string>();
         examResults.Clear();
         StateHasChanged();
     }
+
 
     // Method to handle class selection change
     async Task OnClassChange(object value)
@@ -479,6 +493,12 @@ private List<string> classes = new List<string>();
 
     protected override async Task OnInitializedAsync()
     {
+        var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var user = await authService.GetUserByUsernameAsync(username);
+        if (user != null)
+        {
+            userId = user.UserID;
+        }
         // Fetch data for dropdowns
         courseList = await authService.GetSchoolExamsCoursesAsync();
         classList = await authService.GetClassesAsync();
