@@ -1,5 +1,6 @@
 ﻿@page "/exams"
 @using CORE.MODEL
+@using CORE.MODEL.Term
 @using CORE.SERVICE
 @inject AuthService authService
 @using CORE.SERVICE.NOTIFICATION
@@ -101,10 +102,10 @@
                             </RadzenField>
                         </div>
                         <div class="col-md-4">
-                            <RadzenField Property="Term" Title="Term">
-                                <RadzenLabel Text="Term" />
-                                <RadzenTextBox @bind-Value="@examModel.Term"></RadzenTextBox>
-                            </RadzenField>
+                        <RadzenField Property="Term" Title="Term">
+                           <RadzenLabel Text="Term" />
+                            <RadzenDropDown @bind-Value="@examModel.Term" Data="@termList" TextProperty="Term" ValueProperty="Term"Placeholder="Select Term" Style="width:100%" />
+                        </RadzenField>
                         </div>
                         <div class="col-md-4">
                             <RadzenField Property="Position" Title="Position">
@@ -329,13 +330,15 @@
     List<Student> studentList = new List<Student>();
     [Inject]
     protected IJSRuntime JSRuntime { get; set; }
-private string selectedClass;
-private int? selectedStudent;
-private IEnumerable<Student> students;
-private IEnumerable<TeachersAssessment> assessment;    
-private List<string> classes = new List<string>();
+    private string selectedClass;
+    private int? selectedStudent;
+    private IEnumerable<Student> students;
+    private IEnumerable<TeachersAssessment> assessment;    
+    private List<string> classes = new List<string>();
     private string selectedStudentName;
     private int userId;
+    private IEnumerable<SchoolTerm> termList = new List<SchoolTerm>();
+
 
     void AddExam()
     {
@@ -503,5 +506,6 @@ private List<string> classes = new List<string>();
         courseList = await authService.GetSchoolExamsCoursesAsync();
         classList = await authService.GetClassesAsync();
         classes = await authService.GetClassesAsync();
+        termList = await authService.GetAllTermsAsync();
     }
 }
