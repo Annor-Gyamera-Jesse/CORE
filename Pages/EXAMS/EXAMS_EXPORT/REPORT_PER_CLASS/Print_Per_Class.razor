@@ -86,7 +86,7 @@
 
             foreach (var student in studentExamData)
             {
-                csvBuilder.AppendLine($"{student.StudentName}, {student.ClassName}, {student.AcademicYear}, {student.VacationDate}, {student.PromotedTo}, {student.NumberOnRoll}, {student.Term}, {student.Position}, {student.NextTermsBegins}, {student.SchoolCourse}, {student.ClassScore}, {student.ExamsScore}, {student.TotalScore}, {student.SubjectsPositions}, {student.Grade}, {student.TeachersRemarks}, {student.Conduct}, {student.HeadmasterRemark}, {student.SchoolInformation}, {student.TeachersSignature}, {student.HeadMasterSignature}");
+                csvBuilder.AppendLine($"{student.StudentName}, {student.ClassName}, {student.AcademicYear}, {student.VacationDate}, {student.PromotedTo}, {student.NumberOnRoll}, {student.TermID}, {student.Position}, {student.NextTermsBegins}, {student.SchoolCourse}, {student.ClassScore}, {student.ExamsScore}, {student.TotalScore}, {student.SubjectsPositions}, {student.Grade}, {student.TeachersRemarks}, {student.Conduct}, {student.HeadmasterRemark}, {student.SchoolInformation}, {student.TeachersSignature}, {student.HeadMasterSignature}");
             }
 
             var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
