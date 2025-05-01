@@ -18,5 +18,7 @@
         public int UserID { get; set; }
         public int StudentID { get; set; }
         public string Course { get; set; }
+        public int TermID { get; set; }
+
     }
 }

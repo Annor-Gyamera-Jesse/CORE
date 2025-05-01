@@ -78,7 +78,7 @@
 
             foreach (var exam in studentExamData)
             {
-                csvBuilder.AppendLine($"{exam.StudentName}, {exam.ClassName}, {exam.AcademicYear}, {exam.VacationDate}, {exam.PromotedTo}, {exam.NumberOnRoll}, {exam.Term}, {exam.Position}, {exam.NextTermsBegins}, {exam.SchoolCourse}, {exam.ClassScore}, {exam.ExamsScore}, {exam.TotalScore}, {exam.SubjectsPositions}, {exam.Grade}, {exam.TeachersRemarks}, {exam.Conduct}, {exam.HeadmasterRemark}, {exam.SchoolInformation}, {exam.TeachersSignature}, {exam.HeadMasterSignature}");
+                csvBuilder.AppendLine($"{exam.StudentName}, {exam.ClassName}, {exam.AcademicYear}, {exam.VacationDate}, {exam.PromotedTo}, {exam.NumberOnRoll}, {exam.TermID}, {exam.Position}, {exam.NextTermsBegins}, {exam.SchoolCourse}, {exam.ClassScore}, {exam.ExamsScore}, {exam.TotalScore}, {exam.SubjectsPositions}, {exam.Grade}, {exam.TeachersRemarks}, {exam.Conduct}, {exam.HeadmasterRemark}, {exam.SchoolInformation}, {exam.TeachersSignature}, {exam.HeadMasterSignature}");
             }
 
             var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());

@@ -1677,12 +1677,12 @@ namespace CORE.SERVICE
                             var insertExamQuery = @"
                         INSERT INTO SchoolManagement.SchoolExams 
                         (StudentName, ClassName, AcademicYear, VacationDate, PromotedTo, NumberOnRoll, 
-                         Term, Position, NextTermsBegins, AttendanceOut, AttendanceIn, SchoolCourse, ClassScore, 
+                         TermID, Position, NextTermsBegins, AttendanceOut, AttendanceIn, SchoolCourse, ClassScore, 
                          ExamsScore, TotalScore, SubjectsPositions, Grade, TeachersRemarks, Conduct, HeadmasterRemark, 
                          SchoolInformation, TeachersSignature, HeadMasterSignature, UserID) 
                         VALUES 
                         (@StudentName, @ClassName, @AcademicYear, @VacationDate, @PromotedTo, @NumberOnRoll, 
-                         @Term, @Position, @NextTermsBegins, @AttendanceOut, @AttendanceIn, @SchoolCourse, @ClassScore, 
+                         @TermID, @Position, @NextTermsBegins, @AttendanceOut, @AttendanceIn, @SchoolCourse, @ClassScore, 
                          @ExamsScore, @TotalScore, @SubjectsPositions, @Grade, @TeachersRemarks, @Conduct, @HeadmasterRemark, 
                          @SchoolInformation, @TeachersSignature, @HeadMasterSignature, @UserID);
                         SELECT SCOPE_IDENTITY();";
@@ -1768,16 +1768,18 @@ namespace CORE.SERVICE
         }
 
         // Method to get assessments for a specific student
-        public async Task<IEnumerable<TeachersAssessment>> GetAssessmentByStudentAsync(string studentName)
+        public async Task<IEnumerable<TeachersAssessment>> GetAssessmentByStudentAsync(string studentName, int termID)
         {
             using (var connection = new SqlConnection(connectionString))
             {
                 await connection.OpenAsync();
 
-                // Use StudentName to query assessments
-                var sqlQuery = "SELECT * FROM SchoolManagement.TeachersAssesment WHERE StudentName = @StudentName";
+                var sqlQuery = @"
+            SELECT * 
+            FROM SchoolManagement.TeachersAssesment 
+            WHERE StudentName = @StudentName AND TermID = @TermID";
 
-                return await connection.QueryAsync<TeachersAssessment>(sqlQuery, new { StudentName = studentName });
+                return await connection.QueryAsync<TeachersAssessment>(sqlQuery, new { StudentName = studentName, TermID = termID });
             }
         }
 
@@ -2322,8 +2324,8 @@ namespace CORE.SERVICE
             using (var connection = new SqlConnection(connectionString))
             {
                 var sql = @"
-            INSERT INTO SchoolManagement.TeachersAssesment (StudentName, ClassID, TEST1, TEST2, GROUPWORK, HOMEWORK, CLASSTEST, TOTAL_X, EXAMS_SCORE, Y, X_Y, POSITION, UserID, Course)
-            VALUES (@StudentName, @ClassID, @TEST1, @TEST2, @GROUPWORK, @HOMEWORK, @CLASSTEST, @TOTAL_X, @EXAMS_SCORE, @Y, @X_Y, @POSITION, @UserID, @Course)";
+            INSERT INTO SchoolManagement.TeachersAssesment (StudentName, ClassID, TEST1, TEST2, GROUPWORK, HOMEWORK, CLASSTEST, TOTAL_X, EXAMS_SCORE, Y, X_Y, POSITION, UserID, Course, TermID)
+            VALUES (@StudentName, @ClassID, @TEST1, @TEST2, @GROUPWORK, @HOMEWORK, @CLASSTEST, @TOTAL_X, @EXAMS_SCORE, @Y, @X_Y, @POSITION, @UserID, @Course, @TermID)";
 
                 return await connection.ExecuteAsync(sql, assessment);
             }
