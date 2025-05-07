@@ -3129,7 +3129,7 @@ namespace CORE.SERVICE
             using (var connection = new SqlConnection(connectionString))
             {
                 string query = @"
-                    SELECT FeeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, DueDate, Note 
+                    SELECT FeeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, TermID, PaymentDate, DueDate, Note 
                     FROM SchoolManagement.StudentFees
                     WHERE StudentID = @StudentID";
 
