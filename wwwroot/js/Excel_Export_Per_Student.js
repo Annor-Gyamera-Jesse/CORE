@@ -12,6 +12,9 @@
         .filter(line => line.trim() !== '') // Exclude any empty lines
         .map(line => line.split(',')); // Split rows into cells
 
+    // Extract TermID from the first row (assuming it's the last column)
+    const termId = tableData.length > 0 ? tableData[0][5] : '';
+
     // Set document font and title
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(20);
@@ -21,10 +24,11 @@
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.text('Generated on: ' + new Date().toLocaleString(), 20, 30);
+    doc.text('Term: ' + termId, 20, 37);
 
     // Add a line separator
     doc.setLineWidth(0.5);
-    doc.line(20, 35, 190, 35); // Horizontal line below the title
+    doc.line(20, 42, 190, 42); // Horizontal line below the title
 
     // Define table headers and column widths
     const headers = ['Student Name', 'Fee Type', 'Class', 'Amount Paid', 'Amount Left'];
@@ -50,11 +54,12 @@
     let rowY = tableY + 10; // Start from the next line after the header
     tableData.forEach(row => {
         let rowX = tableX;
-        row.forEach((cell, index) => {
-            doc.text(cell, rowX + columnWidths[index] / 2, rowY, { align: 'center' });
+        for (let index = 0; index < headers.length; index++) {
+            const cell = row[index] !== undefined ? row[index] : '';
+            doc.text(String(cell), rowX + columnWidths[index] / 2, rowY, { align: 'center' });
             rowX += columnWidths[index];
-        });
-        rowY += 10; // Space between rows
+        }
+        rowY += 10;
     });
 
     // Add a footer line
