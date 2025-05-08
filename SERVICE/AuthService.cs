@@ -1806,6 +1806,38 @@ namespace CORE.SERVICE
             }
         }
 
+        public async Task UpdateEmploymentStatusAsync(int teacherId, string newStatus, int changedByUserId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Get old status
+                var oldStatus = await connection.ExecuteScalarAsync<string>(
+                    "SELECT EmploymentStatus FROM SchoolManagement.Teacher WHERE TeacherID = @TeacherID",
+                    new { TeacherID = teacherId });
+
+                // Update teacher table
+                await connection.ExecuteAsync(
+                    "UPDATE SchoolManagement.Teacher SET EmploymentStatus = @Status WHERE TeacherID = @TeacherID",
+                    new { Status = newStatus, TeacherID = teacherId });
+
+                // Insert into audit table
+                await connection.ExecuteAsync(@"
+            INSERT INTO SchoolManagement.TeacherEmploymentStatusHistory 
+            (TeacherID, OldStatus, NewStatus, ChangedByUserID)
+            VALUES (@TeacherID, @OldStatus, @NewStatus, @ChangedByUserID)",
+                    new
+                    {
+                        TeacherID = teacherId,
+                        OldStatus = oldStatus,
+                        NewStatus = newStatus,
+                        ChangedByUserID = changedByUserId
+                    });
+            }
+        }
+
+
         //-------Display All Students------//
         public async Task<List<Student>> GetAllStudents()
         {
