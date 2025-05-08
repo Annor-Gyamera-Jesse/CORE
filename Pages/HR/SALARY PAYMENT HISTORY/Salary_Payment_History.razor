@@ -1,0 +1,83 @@
+﻿@page "/salary-payment-history"
+@using CORE.MODEL.Salary_Payment_History
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService Service
+@inject NotificationMessageService Notify
+<RadzenNotification />
+
+<LoadingSpinner Visible="isLoading" />
+@if (!isLoading)
+{
+    <RadzenNumeric @bind-Value="staffIDFilter" Placeholder="Enter Staff ID" Style="width: 200px;" />
+    <RadzenTextBox @bind-Value="staffNameFilter" Placeholder="Enter Staff Name" Style="width: 200px; margin-left: 10px;" />
+    <RadzenButton Text="Filter" Click="FilterHistory" Style="margin-left: 10px;" />
+
+    <!-- Salary Payment History Grid -->
+    <RadzenGrid Data="@salaryHistory" TItem="SalaryPaymentHistory" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="PaymentID" Title="Payment ID" />
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="StaffID" Title="Staff ID" />
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="Amount" Title="Amount" />
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="SalaryFor" Title="Salary For" />
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="PaymentYear" Title="Payment Year" />
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="PayedOn" Title="Payment Date" />
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="PaymentMethod" Title="Payment Method" />
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="BankName" Title="Bank Name" />
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="AccountName" Title="Account Name" />
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="AccountNumber" Title="Account Number" />
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="OverTime" Title="Overtime" />
+            <RadzenGridColumn TItem="SalaryPaymentHistory" Property="TaxDeduction" Title="Tax Deduction" />
+        </Columns>
+    </RadzenGrid>
+}
+@code {
+    private List<SalaryPaymentHistory> salaryHistory;
+    private int? staffIDFilter;
+    private string staffNameFilter;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            salaryHistory = await Service.GetSalaryPaymentHistoryAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching salary payment history: {ex.Message}");
+            Notify.ShowNotification($"Error: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = true;
+        }
+
+    }
+
+    // Filter the data based on staff ID and staff name
+    private async Task FilterHistory()
+    {
+        try
+        {
+            if (!staffIDFilter.HasValue && string.IsNullOrWhiteSpace(staffNameFilter))
+            {
+                Notify.ShowNotification("Please enter a Staff ID or Staff Name to filter.", "", NotificationSeverity.Warning);
+                return;
+            }
+
+            salaryHistory = await Service.GetSalaryPaymentHistoryAsync(staffIDFilter, staffNameFilter);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error filtering salary payment history: {ex.Message}");
+            Notify.ShowNotification($"Error: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = true;
+        }
+    }
+
+}

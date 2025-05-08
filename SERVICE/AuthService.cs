@@ -18,6 +18,8 @@ using CORE.MODEL.Set_Exams;
 using CORE.MODEL.LeaveManagement;
 using CORE.MODEL.LeaveStatus;
 using CORE.MODEL.Students_Attendance;
+using CORE.Pages.HR.SALARY_PAYMENT_HISTORY;
+using CORE.MODEL.Salary_Payment_History;
 
 namespace CORE.SERVICE
 {
@@ -3366,6 +3368,40 @@ VALUES (@BankID, 'Withdrawal', @TotalAmount, GETDATE(), 'Success', NULL)";
             }
         }
 
+        public async Task<List<SalaryPaymentHistory>> GetSalaryPaymentHistoryAsync(int? staffID = null, string staffName = null)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                string query = @"
+            SELECT PaymentID, StaffID, Amount, SalaryFor, PaymentYear, PayedOn, PaymentMethod, BankName, 
+                   AccountName, AccountNumber, OverTime, TaxDeduction
+            FROM SchoolManagement.SalaryPayments";
+
+                // Add filters based on the provided parameters
+                if (staffID.HasValue && !string.IsNullOrEmpty(staffName))
+                {
+                    query += " WHERE StaffID = @StaffID AND StaffName LIKE @StaffName";
+                }
+                else if (staffID.HasValue)
+                {
+                    query += " WHERE StaffID = @StaffID";
+                }
+                else if (!string.IsNullOrEmpty(staffName))
+                {
+                    query += " WHERE StaffName LIKE @StaffName";
+                }
+
+                var result = await connection.QueryAsync<SalaryPaymentHistory>(query, new { StaffID = staffID, StaffName = $"%{staffName}%" });
+                return result.ToList();
+            }
+            catch (Exception ex)
+            {
+                // Log the error
+                Console.WriteLine($"Error fetching salary payment history: {ex.Message}");
+                return new List<SalaryPaymentHistory>();
+            }
+        }
 
 
         private async Task LogPaymentAsync(int? paymentId, int? bankId, string paymentType, decimal amount, string status, string errorMessage, int paymentMethodId)
