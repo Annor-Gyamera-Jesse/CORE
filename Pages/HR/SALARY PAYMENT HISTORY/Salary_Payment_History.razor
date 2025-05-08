@@ -15,7 +15,7 @@
     <RadzenButton Text="Filter" Click="FilterHistory" Style="margin-left: 10px;" />
 
     <!-- Salary Payment History Grid -->
-    <RadzenGrid Data="@salaryHistory" TItem="SalaryPaymentHistory" ColumnWidth="200px">
+    <RadzenGrid Data="@salaryHistory" TItem="SalaryPaymentHistory" RowSelect="@OnRowSelect" Class="w-100 shadow-lg" PageSize="8" ShowPagingSummary="true" AllowPaging="true" AllowFiltering="true" AllowSorting="true" ColumnWidth="200px">
         <Columns>
             <RadzenGridColumn TItem="SalaryPaymentHistory" Property="PaymentID" Title="Payment ID" />
             <RadzenGridColumn TItem="SalaryPaymentHistory" Property="StaffID" Title="Staff ID" />
@@ -42,6 +42,7 @@
     {
         try
         {
+            isLoading = true;
             salaryHistory = await Service.GetSalaryPaymentHistoryAsync();
         }
         catch (Exception ex)
@@ -51,7 +52,7 @@
         }
         finally
         {
-            isLoading = true;
+            isLoading = false;
         }
 
     }
@@ -61,6 +62,7 @@
     {
         try
         {
+            isLoading = true;
             if (!staffIDFilter.HasValue && string.IsNullOrWhiteSpace(staffNameFilter))
             {
                 Notify.ShowNotification("Please enter a Staff ID or Staff Name to filter.", "", NotificationSeverity.Warning);
@@ -76,8 +78,13 @@
         }
         finally
         {
-            isLoading = true;
+            isLoading = false;
         }
+    }
+
+    void OnRowSelect(SalaryPaymentHistory expense)
+    {
+        // Optional: Handle row click, e.g., open detailed view
     }
 
 }

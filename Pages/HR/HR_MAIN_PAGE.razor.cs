@@ -12,7 +12,7 @@ namespace CORE.Pages.HR
 
         public async Task OpenSalaryHistoryDialogDialog()
         {
-            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "600px", Resizable = false, Height = "301px" };
+            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "900px", Resizable = false, Height = "501px" };
             var dialogTitle = $"Salary_Payment_History";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<Salary_Payment_History>(dialogTitle, null, dialogOptions);
