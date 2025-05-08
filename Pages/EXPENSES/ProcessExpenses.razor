@@ -42,9 +42,9 @@
 
 @if (!isLoading)
 {
-    <RadzenHeader title="School Fees Payment" class="header-container compact-header">
-        <RadzenFieldset Text="Manage Category" class="right-align">
-            <Expenses_Tool_Componet OnEditCategoriesDialog="OnEditCategoriesDialogClick" OnManagePaymentMethodsDialog="OnManagePaymentMethodsDialogCLick" />
+    <RadzenHeader title="Expenses Management" class="header-container compact-header">
+        <RadzenFieldset Text="Expenses Management ToolComponent" class="right-align">
+                <Expenses_Tool_Componet OnEditCategoriesDialog="OnEditCategoriesDialogClick" OnManagePaymentMethodsDialog="OnManagePaymentMethodsDialogCLick" OnHistoryDialog="OnHistoryClick" />
         </RadzenFieldset>
     </RadzenHeader>
 
@@ -163,4 +163,5 @@
 
     async void OnEditCategoriesDialogClick() => await OnEditCategories();
     async void OnManagePaymentMethodsDialogCLick() => await OnManagePaymentMethods();
+    async void OnHistoryClick() => await OnHistory();
 }

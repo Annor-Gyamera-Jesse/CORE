@@ -4456,6 +4456,20 @@ VALUES
             }
         
         }
+        //added a method to fetch the list of processed expenses
+        public async Task<IEnumerable<ExpenseHistoryView>> GetExpenseHistoryAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        SELECT e.ExpenseID, u.UserName, c.CategoryName, e.Amount, e.Description, e.ExpenseDate
+        FROM SchoolManagement.Expenses e
+        JOIN SchoolManagement.Users u ON e.UserID = u.UserID
+        JOIN SchoolManagement.ExpenseCategories c ON e.CategoryID = c.CategoryID
+        ORDER BY e.ExpenseDate DESC";
+
+            return await connection.QueryAsync<ExpenseHistoryView>(query);
+        }
+
 
         /*Bank Deposit*/
         public async Task<bool> InsertBankDepositAsync(BankDeposit deposit, int userId)

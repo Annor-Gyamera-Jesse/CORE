@@ -19,11 +19,13 @@
     <div class="toolset-container mt-2">
         <RadzenButton Text="Add Categories" Icon="edit" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnEditCategoriesDialog />             
         <RadzenButton Text="Payment Method" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Dark" Click=@OnManagePaymentMethodsDialog />
+        <RadzenButton Text="History" Icon="list" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OnHistoryDialog />
     </div>
 }
 @code {
     private bool isLoading = false;
     [Parameter] public Action OnEditCategoriesDialog { get; set; } 
     [Parameter] public Action OnManagePaymentMethodsDialog { get; set; }
+    [Parameter] public Action OnHistoryDialog { get; set; }
 
 }

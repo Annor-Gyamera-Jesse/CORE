@@ -1,0 +1,57 @@
+﻿@page "/pages/expenses/expenses-history"
+@using CORE.MODEL.Expenses
+@inject AuthService ExpenseService
+@inject NotificationMessageService Notify
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using Radzen.Blazor
+
+<RadzenNotification />
+
+<h3 class="text-center text-2xl font-bold mb-4">Expenses History</h3>
+
+@if (isLoading)
+{
+    <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" Style="height: 6px;" />
+}
+else
+{
+    <RadzenDataGrid Data="@expenseHistory" TItem="ExpenseHistoryView" RowSelect="@OnRowSelect" Class="w-100 shadow-lg" PageSize="8" ShowPagingSummary="true" AllowPaging="true" AllowFiltering="true" AllowSorting="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="ExpenseHistoryView" Property="ExpenseID" Title="ID" />
+            <RadzenDataGridColumn TItem="ExpenseHistoryView" Property="UserName" Title="User" />
+            <RadzenDataGridColumn TItem="ExpenseHistoryView" Property="CategoryName" Title="Category" />
+            <RadzenDataGridColumn TItem="ExpenseHistoryView" Property="Amount" Title="Amount" />
+            <RadzenDataGridColumn TItem="ExpenseHistoryView" Property="Description" Title="Description" />
+            <RadzenDataGridColumn TItem="ExpenseHistoryView" Property="ExpenseDate" Title="Date" FormatString="{0:dd-MMM-yyyy hh:mm tt}" />
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    List<ExpenseHistoryView> expenseHistory = new();
+    bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            expenseHistory = (await ExpenseService.GetExpenseHistoryAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error loading expense history", ex.Message, NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    void OnRowSelect(ExpenseHistoryView expense)
+    {
+        // Optional: Handle row click, e.g., open detailed view
+    }
+}
