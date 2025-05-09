@@ -135,22 +135,44 @@
         StateHasChanged(); // Update the UI
     }
 
+    // private async Task OnRoleSelected(object args)
+    // {
+    //     selectedRole = Convert.ToInt32(args);
+    //     if (selectedRole.HasValue)
+    //     {
+    //         var menuAccess = await UserService.GetMenuAccessAsync(selectedRole.Value);
+
+    //         // Initialize menu access dictionary based on selected role
+    //         foreach (var menu in allMenus)
+    //         {
+    //             menuAccessDict[menu.MenuID] = menuAccess.Any(ma => ma.MenuID == menu.MenuID && ma.CanAccess);
+    //         }
+
+    //         StateHasChanged(); // Update the UI
+    //     }
+    // }
+
     private async Task OnRoleSelected(object args)
     {
         selectedRole = Convert.ToInt32(args);
-        if (selectedRole.HasValue)
+
+        if (selectedUser.HasValue && selectedRole.HasValue)
         {
+            // Update the user's role in the database
+            await UserService.UpdateUserRoleAsync(selectedUser.Value, selectedRole.Value);
+
+            // Load menu access after role is updated
             var menuAccess = await UserService.GetMenuAccessAsync(selectedRole.Value);
 
-            // Initialize menu access dictionary based on selected role
             foreach (var menu in allMenus)
             {
                 menuAccessDict[menu.MenuID] = menuAccess.Any(ma => ma.MenuID == menu.MenuID && ma.CanAccess);
             }
 
-            StateHasChanged(); // Update the UI
+            StateHasChanged();
         }
     }
+
 
     private async Task UpdateAccess(int menuId, bool canAccess)
     {
