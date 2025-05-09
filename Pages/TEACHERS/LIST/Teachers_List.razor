@@ -78,12 +78,22 @@
     {
         try
         {
+            isLoading = true;
+            if (teacher == null)
+            {
+                Notify.ShowNotification("Error", "Teacher data is null", NotificationSeverity.Error);
+                return;
+            }
             await authService.UpdateEmploymentStatusAsync(teacher.TeacherID, teacher.EmploymentStatus, currentUserId);
             Notify.ShowNotification("Updated.", "Employment status updated successfully", NotificationSeverity.Success);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error updating EmploymentStatus: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }
