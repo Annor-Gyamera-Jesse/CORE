@@ -5,15 +5,45 @@
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
+@using CORE.Tool_Components.HR_TOOLCOMPONENT
 @inject NotificationMessageService Notify
+@inherits HR_MAIN_PAGECodeBehind
 <RadzenNotification/>
 
 <RadzenNotification/>
 <LoadingSpinner Visible="isLoading" />
 
+<style>
+    /* PRINT STUDENT REPOR */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
+</style>
+
 @if (!isLoading)
 {
-   
+    <RadzenHeader title="HR Management ToolComponent" class="header-container compact-header">
+        <RadzenFieldset Text="HR Management ToolComponent" class="right-align">
+            <HR_TOOLCOMPONENT OnSalaryHistoryDialog="OnSalaryHistoryDialog" />
+        </RadzenFieldset>
+    </RadzenHeader>
+   <br/>
     <RadzenRow Class="gap-6">
         <!-- Staff List Panel -->
         <RadzenColumn Size="5">
@@ -521,4 +551,9 @@
             isLoading = false;
         }
     }
+
+
+    async void OnSalaryHistoryDialog() => await OpenSalaryHistoryDialogDialog();
+    // async void OnManagePaymentMethodsDialogCLick() => await OnManagePaymentMethods();
+    // async void OnHistoryClick() => await OnHistory();
 }

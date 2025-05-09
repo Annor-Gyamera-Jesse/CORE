@@ -1,0 +1,31 @@
+﻿@using CORE.Pages.LOADING_COMPONENT
+@* ToolComponent Page *@
+
+<style>
+    .toolset-container {
+        display: flex;
+        gap: 10px; /* Adjust the spacing between buttons */
+    }
+
+    .toolset-btn {
+        font-size: 14px;
+        flex: 1; /* Makes both buttons take equal space */
+    }
+</style>
+
+<LoadingSpinner Visible="isLoading" />
+@if (!isLoading)
+{
+    <div class="toolset-container mt-2">
+        <RadzenButton Text="Salary History" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Dark" Click=@OnSalaryHistoryDialog />
+      @*   <RadzenButton Text="Payment Method" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Dark" Click=@OnManagePaymentMethodsDialog />
+        <RadzenButton Text="History" Icon="list" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OnHistoryDialog /> *@
+    </div>
+}
+@code {
+    private bool isLoading = false;
+    [Parameter] public Action OnSalaryHistoryDialog { get; set; }
+    // [Parameter] public Action OnManagePaymentMethodsDialog { get; set; }
+    // [Parameter] public Action OnHistoryDialog { get; set; }
+
+}

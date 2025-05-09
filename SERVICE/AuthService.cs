@@ -18,6 +18,8 @@ using CORE.MODEL.Set_Exams;
 using CORE.MODEL.LeaveManagement;
 using CORE.MODEL.LeaveStatus;
 using CORE.MODEL.Students_Attendance;
+using CORE.Pages.HR.SALARY_PAYMENT_HISTORY;
+using CORE.MODEL.Salary_Payment_History;
 
 namespace CORE.SERVICE
 {
@@ -1806,6 +1808,38 @@ namespace CORE.SERVICE
             }
         }
 
+        public async Task UpdateEmploymentStatusAsync(int teacherId, string newStatus, int changedByUserId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Get old status
+                var oldStatus = await connection.ExecuteScalarAsync<string>(
+                    "SELECT EmploymentStatus FROM SchoolManagement.Teacher WHERE TeacherID = @TeacherID",
+                    new { TeacherID = teacherId });
+
+                // Update teacher table
+                await connection.ExecuteAsync(
+                    "UPDATE SchoolManagement.Teacher SET EmploymentStatus = @Status WHERE TeacherID = @TeacherID",
+                    new { Status = newStatus, TeacherID = teacherId });
+
+                // Insert into audit table
+                await connection.ExecuteAsync(@"
+            INSERT INTO SchoolManagement.TeacherEmploymentStatusHistory 
+            (TeacherID, OldStatus, NewStatus, ChangedByUserID)
+            VALUES (@TeacherID, @OldStatus, @NewStatus, @ChangedByUserID)",
+                    new
+                    {
+                        TeacherID = teacherId,
+                        OldStatus = oldStatus,
+                        NewStatus = newStatus,
+                        ChangedByUserID = changedByUserId
+                    });
+            }
+        }
+
+
         //-------Display All Students------//
         public async Task<List<Student>> GetAllStudents()
         {
@@ -3129,7 +3163,7 @@ namespace CORE.SERVICE
             using (var connection = new SqlConnection(connectionString))
             {
                 string query = @"
-                    SELECT FeeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, DueDate, Note 
+                    SELECT FeeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, TermID, PaymentDate, DueDate, Note 
                     FROM SchoolManagement.StudentFees
                     WHERE StudentID = @StudentID";
 
@@ -3334,6 +3368,40 @@ VALUES (@BankID, 'Withdrawal', @TotalAmount, GETDATE(), 'Success', NULL)";
             }
         }
 
+        public async Task<List<SalaryPaymentHistory>> GetSalaryPaymentHistoryAsync(int? staffID = null, string staffName = null)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                string query = @"
+            SELECT PaymentID, StaffID, Amount, SalaryFor, PaymentYear, PayedOn, PaymentMethod, BankName, 
+                   AccountName, AccountNumber, OverTime, TaxDeduction
+            FROM SchoolManagement.SalaryPayments";
+
+                // Add filters based on the provided parameters
+                if (staffID.HasValue && !string.IsNullOrEmpty(staffName))
+                {
+                    query += " WHERE StaffID = @StaffID AND StaffName LIKE @StaffName";
+                }
+                else if (staffID.HasValue)
+                {
+                    query += " WHERE StaffID = @StaffID";
+                }
+                else if (!string.IsNullOrEmpty(staffName))
+                {
+                    query += " WHERE StaffName LIKE @StaffName";
+                }
+
+                var result = await connection.QueryAsync<SalaryPaymentHistory>(query, new { StaffID = staffID, StaffName = $"%{staffName}%" });
+                return result.ToList();
+            }
+            catch (Exception ex)
+            {
+                // Log the error
+                Console.WriteLine($"Error fetching salary payment history: {ex.Message}");
+                return new List<SalaryPaymentHistory>();
+            }
+        }
 
 
         private async Task LogPaymentAsync(int? paymentId, int? bankId, string paymentType, decimal amount, string status, string errorMessage, int paymentMethodId)
@@ -4424,6 +4492,20 @@ VALUES
             }
         
         }
+        //added a method to fetch the list of processed expenses
+        public async Task<IEnumerable<ExpenseHistoryView>> GetExpenseHistoryAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        SELECT e.ExpenseID, u.UserName, c.CategoryName, e.Amount, e.Description, e.ExpenseDate
+        FROM SchoolManagement.Expenses e
+        JOIN SchoolManagement.Users u ON e.UserID = u.UserID
+        JOIN SchoolManagement.ExpenseCategories c ON e.CategoryID = c.CategoryID
+        ORDER BY e.ExpenseDate DESC";
+
+            return await connection.QueryAsync<ExpenseHistoryView>(query);
+        }
+
 
         /*Bank Deposit*/
         public async Task<bool> InsertBankDepositAsync(BankDeposit deposit, int userId)
@@ -4655,6 +4737,80 @@ VALUES (
             );
         }
 
+        /*for updating staffs employee status*/
+        // Get all staff records with minimal info for grid
+        public async Task<IEnumerable<Staff>> GetDesplayAllStaffAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            var sql = @"SELECT * FROM SchoolManagement.Staff";
+            return await connection.QueryAsync<Staff>(sql);
+        }
+
+        // Update employment status for staffs and log it
+        //public async Task UpdateStaffEmploymentStatusAsync(int staffId, string newStatus, int changedByUserId)
+        //{
+        //    using var connection = new SqlConnection(connectionString);
+        //    await connection.OpenAsync();
+        //    using var transaction = connection.BeginTransaction();
+
+        //    try
+        //    {
+        //        // Update employment status
+        //        var updateSql = @"UPDATE SchoolManagement.Staff 
+        //                  SET EmploymentStatus = @NewStatus 
+        //                  WHERE StaffID = @StaffID";
+        //        await connection.ExecuteAsync(updateSql, new { NewStatus = newStatus, StaffID = staffId }, transaction);
+
+        //        // Insert into history
+        //        var insertSql = @"
+        //    INSERT INTO SchoolManagement.StaffEmploymentStatusHistory 
+        //    (StaffID, OldStatus, NewStatus, ChangedByUserID, Remarks, ChangeDate)
+        //    VALUES (@StaffID, @OldStatus, @NewStatus, @ChangedByUserID, @Remarks, GETDATE())";
+
+        //        await connection.ExecuteAsync(insertSql, new
+        //        {
+        //            StaffID = staffId,                    
+        //            NewStatus = newStatus,
+        //            ChangedByUserID = changedByUserId,                    
+        //        }, transaction);
+
+        //        transaction.Commit();
+        //    }
+        //    catch
+        //    {
+        //        transaction.Rollback();
+        //        throw;
+        //    }
+        //}
+
+        public async Task UpdateStaffEmploymentStatusAsync(int staffId, string newStatus, int changedByUserId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var oldStatus = await connection.QueryFirstOrDefaultAsync<string>(
+                    "SELECT EmploymentStatus FROM SchoolManagement.Staff WHERE StaffID = @StaffID",
+                    new { StaffID = staffId });
+
+                await connection.ExecuteAsync(
+                    "UPDATE SchoolManagement.Staff SET EmploymentStatus = @NewStatus WHERE StaffID = @StaffID",
+                    new { NewStatus = newStatus, StaffID = staffId });
+
+                await connection.ExecuteAsync(@"
+                    INSERT INTO SchoolManagement.StaffEmploymentStatusHistory 
+                    (StaffID, OldStatus, NewStatus, ChangedByUserID, Remarks, ChangeDate)
+                    VALUES (@StaffID, @OldStatus, @NewStatus, @ChangedByUserID, @Remarks, GETDATE())",
+                    new
+                    {
+                        StaffID = staffId,
+                        OldStatus = oldStatus,
+                        NewStatus = newStatus,
+                        ChangedByUserID = changedByUserId,
+                        Remarks = "Updated Employment Status"
+                    });
+            }
+
+        }
 
     }
 

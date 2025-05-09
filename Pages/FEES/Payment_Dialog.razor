@@ -78,9 +78,9 @@
 
             foreach (var fee in studentFeeData)
             {
-                csvBuilder.AppendLine(
-                    $"{fee.StudentName}, {fee.FeeTypeName}, {fee.ClassID}, {fee.AmountPaid}, {fee.AmountLeft}"
-                );
+             csvBuilder.AppendLine(
+              $"{fee.StudentName}, {fee.FeeTypeName}, {fee.ClassID}, {fee.AmountPaid}, {fee.AmountLeft}, {fee.TermID}"
+              );
             }
 
             var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
