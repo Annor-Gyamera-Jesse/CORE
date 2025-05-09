@@ -83,5 +83,15 @@ namespace CORE.SERVICE.MainLayout
                 throw new Exception("An error occurred while fetching menus.", ex);
             }
         }
+
+        public async Task UpdateUserRoleAsync(int userId, int roleId)
+        {
+            using (var connection = CreateConnection())
+            {
+                var sql = "UPDATE SchoolManagement.Users SET RoleID = @RoleID WHERE UserID = @UserID";
+                await connection.ExecuteAsync(sql, new { UserID = userId, RoleID = roleId });
+            }
+        }
+
     }
 }
