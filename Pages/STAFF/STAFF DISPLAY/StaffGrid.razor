@@ -1,0 +1,109 @@
+﻿@page "/core/pages/staff/staffdisplay/staffgrid"
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@inject AuthService staffService
+@inject IJSRuntime JSRuntime
+@inject NotificationService NotificationService
+<RadzenNotification />
+
+<LoadingSpinner Visible="isLoading" />
+@if (!isLoading)
+{
+    <RadzenGrid @ref="grid" Data="@staffList" TItem="Staff" Editable="true" RowUpdate="@OnUpdateStatus" AllowFiltering="true" AllowPaging="true" AllowSorting="true">
+    <Columns>
+        <RadzenGridColumn TItem="Staff" Property="StaffID" Title="ID" />
+        <RadzenGridColumn TItem="Staff" Property="StaffFirstName" Title="First Name" />
+        <RadzenGridColumn TItem="Staff" Property="StaffLastName" Title="Last Name" />
+        <RadzenGridColumn TItem="Staff" Property="Department" Title="Department" />
+        <RadzenGridColumn TItem="Staff" Property="Position" Title="Position" />
+        <RadzenGridColumn TItem="Staff" Property="StaffPhoneNumber" Title="Phone Num." />
+        <RadzenGridColumn TItem="Staff" Property="StaffGender" Title="Gender" />
+        <RadzenGridColumn TItem="Staff" Property="StaffEmail" Title="Email" />
+        <RadzenGridColumn TItem="Staff" Property="EmploymentStatus" Title="Employment Status">
+            <EditTemplate Context="staff">
+                <RadzenDropDown @bind-Value="staff.EmploymentStatus" Data="@statusOptions" Style="width:100%" />
+            </EditTemplate>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="Staff" Context="staff" TextAlign="TextAlign.Center" Width="80px">
+            <Template Context="staff">
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Click="@(() => grid.EditRow(staff))" />
+            </Template>
+            <EditTemplate Context="staff">
+                <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" Click="@(() => grid.UpdateRow(staff))" />
+                    <RadzenButton Icon="cancel" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => grid.CancelEditRow(staff))" />
+            </EditTemplate>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+}
+@code {
+    private RadzenGrid<Staff> grid;
+    private List<Staff> staffList;
+    private List<string> statusOptions = new() { "Active", "Suspended", "Terminated" };
+    private int currentUserId = 0;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            await LoadUserIdAsync();
+            staffList = (await staffService.GetDesplayAllStaffAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching staff data: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private async Task LoadUserIdAsync()
+    {
+        try
+        {
+            isLoading = true;
+        var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var user = await staffService.GetUserByUsernameAsync(username);
+        currentUserId = user?.UserID ?? 0;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching user ID: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
+    }
+
+    private async Task OnUpdateStatus(Staff staff)
+    {
+        try
+        {
+                isLoading = true;
+            
+            await staffService.UpdateStaffEmploymentStatusAsync(staff.StaffID, staff.EmploymentStatus, currentUserId);
+            NotificationService.Notify(NotificationSeverity.Success, "Updated", "Employment status updated successfully");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+
+}

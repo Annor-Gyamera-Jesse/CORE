@@ -4737,6 +4737,80 @@ VALUES (
             );
         }
 
+        /*for updating staffs employee status*/
+        // Get all staff records with minimal info for grid
+        public async Task<IEnumerable<Staff>> GetDesplayAllStaffAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            var sql = @"SELECT * FROM SchoolManagement.Staff";
+            return await connection.QueryAsync<Staff>(sql);
+        }
+
+        // Update employment status for staffs and log it
+        //public async Task UpdateStaffEmploymentStatusAsync(int staffId, string newStatus, int changedByUserId)
+        //{
+        //    using var connection = new SqlConnection(connectionString);
+        //    await connection.OpenAsync();
+        //    using var transaction = connection.BeginTransaction();
+
+        //    try
+        //    {
+        //        // Update employment status
+        //        var updateSql = @"UPDATE SchoolManagement.Staff 
+        //                  SET EmploymentStatus = @NewStatus 
+        //                  WHERE StaffID = @StaffID";
+        //        await connection.ExecuteAsync(updateSql, new { NewStatus = newStatus, StaffID = staffId }, transaction);
+
+        //        // Insert into history
+        //        var insertSql = @"
+        //    INSERT INTO SchoolManagement.StaffEmploymentStatusHistory 
+        //    (StaffID, OldStatus, NewStatus, ChangedByUserID, Remarks, ChangeDate)
+        //    VALUES (@StaffID, @OldStatus, @NewStatus, @ChangedByUserID, @Remarks, GETDATE())";
+
+        //        await connection.ExecuteAsync(insertSql, new
+        //        {
+        //            StaffID = staffId,                    
+        //            NewStatus = newStatus,
+        //            ChangedByUserID = changedByUserId,                    
+        //        }, transaction);
+
+        //        transaction.Commit();
+        //    }
+        //    catch
+        //    {
+        //        transaction.Rollback();
+        //        throw;
+        //    }
+        //}
+
+        public async Task UpdateStaffEmploymentStatusAsync(int staffId, string newStatus, int changedByUserId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var oldStatus = await connection.QueryFirstOrDefaultAsync<string>(
+                    "SELECT EmploymentStatus FROM SchoolManagement.Staff WHERE StaffID = @StaffID",
+                    new { StaffID = staffId });
+
+                await connection.ExecuteAsync(
+                    "UPDATE SchoolManagement.Staff SET EmploymentStatus = @NewStatus WHERE StaffID = @StaffID",
+                    new { NewStatus = newStatus, StaffID = staffId });
+
+                await connection.ExecuteAsync(@"
+                    INSERT INTO SchoolManagement.StaffEmploymentStatusHistory 
+                    (StaffID, OldStatus, NewStatus, ChangedByUserID, Remarks, ChangeDate)
+                    VALUES (@StaffID, @OldStatus, @NewStatus, @ChangedByUserID, @Remarks, GETDATE())",
+                    new
+                    {
+                        StaffID = staffId,
+                        OldStatus = oldStatus,
+                        NewStatus = newStatus,
+                        ChangedByUserID = changedByUserId,
+                        Remarks = "Updated Employment Status"
+                    });
+            }
+
+        }
 
     }
 
