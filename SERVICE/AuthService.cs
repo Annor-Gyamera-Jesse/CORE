@@ -20,22 +20,32 @@ using CORE.MODEL.LeaveStatus;
 using CORE.MODEL.Students_Attendance;
 using CORE.Pages.HR.SALARY_PAYMENT_HISTORY;
 using CORE.MODEL.Salary_Payment_History;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace CORE.SERVICE
 {
     // AuthService.cs
     public class AuthService
     {
+        private readonly IMemoryCache _cache;
         private readonly string connectionString;
         private Timer _timer;
-        public AuthService(string connectionString)
+        public AuthService(string connectionString, IMemoryCache memoryCache)
         {
             this.connectionString = connectionString;
             StartAutoTransfer();
+            _cache = memoryCache;
         }
 
         public async Task<User> GetUserByUsernameAsync(string username)
         {
+            string cacheKey = $"User_{username}";
+
+            if (_cache.TryGetValue(cacheKey, out User cachedUser))
+            {
+                return cachedUser;
+            }
+
             try
             {
                 using (var connection = new SqlConnection(connectionString))
@@ -51,12 +61,15 @@ namespace CORE.SERVICE
                         {
                             if (await reader.ReadAsync())
                             {
-                                return new User
+                                var user = new User
                                 {
                                     UserID = reader.GetInt32(0),
                                     UserName = reader.GetString(1),
                                     Password = reader.GetString(2)
                                 };
+
+                                _cache.Set(cacheKey, user, TimeSpan.FromMinutes(10));
+                                return user;
                             }
                         }
                     }
@@ -64,12 +77,10 @@ namespace CORE.SERVICE
             }
             catch (SqlException ex)
             {
-                // Log SQL exceptions
                 Console.WriteLine($"SQL Exception: {ex.Message}");
             }
             catch (Exception ex)
             {
-                // Log other exceptions
                 Console.WriteLine($"Exception: {ex.Message}");
             }
 
@@ -79,23 +90,29 @@ namespace CORE.SERVICE
         //FOR CHECKING USER ROLE ND IT MENU ITEM
         public async Task<UserRoleAndMenuAccess> GetUserRoleAndMenuAccessAsync(int userId)
         {
+            string cacheKey = $"UserRoleMenu_{userId}";
+
+            if (_cache.TryGetValue(cacheKey, out UserRoleAndMenuAccess cachedAccess))
+            {
+                return cachedAccess;
+            }
+
             using (var connection = new SqlConnection(connectionString))
             {
                 var userRoleAndMenuAccess = new UserRoleAndMenuAccess();
 
-                // Get user role
                 userRoleAndMenuAccess.Role = await connection.QuerySingleAsync<string>(
                     "SELECT r.RoleName FROM SchoolManagementSecurity.MainSystemRoles r " +
                     "JOIN SchoolManagement.Users u ON r.RoleID = u.RoleID WHERE u.UserID = @UserID",
                     new { UserID = userId });
 
-                // Get menu items accessible to this role
                 userRoleAndMenuAccess.MenuItems = (await connection.QueryAsync<MenuItem>(
                     "SELECT m.* FROM SchoolManagementSecurity.MainMenu m " +
                     "JOIN SchoolManagementSecurity.MenuAccess a ON m.MenuID = a.MenuID " +
                     "WHERE a.RoleID = (SELECT RoleID FROM SchoolManagement.Users WHERE UserID = @UserID) AND a.CanAccess = 1",
                     new { UserID = userId })).ToList();
 
+                _cache.Set(cacheKey, userRoleAndMenuAccess, TimeSpan.FromMinutes(10));
                 return userRoleAndMenuAccess;
             }
         }
@@ -114,43 +131,53 @@ namespace CORE.SERVICE
         //--- For company LoginLayout display--///
         public async Task<string> GetSoftwareVersionAsync()
         {
-            using (var connection = new SqlConnection(connectionString))
+            if (_cache.TryGetValue("SoftwareVersion", out string version))
             {
-                await connection.OpenAsync();
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT SoftWareVerssion FROM SchoolManagement.LoginScreenDetails";
-                    return (string)await command.ExecuteScalarAsync();
-                }
+                return version;
             }
+
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT SoftWareVerssion FROM SchoolManagement.LoginScreenDetails";
+            version = (string)await command.ExecuteScalarAsync();
+
+            _cache.Set("SoftwareVersion", version, TimeSpan.FromHours(1));
+            return version;
+        }
+
+        public async Task<(string, string)> GetLoginScreenDetailsAsync()
+        {
+            if (_cache.TryGetValue("LoginScreenDetails", out (string, string) details))
+            {
+                return details;
+            }
+
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT SchoolName, CompanyRegisteredName FROM SchoolManagement.LoginScreenDetails";
+
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                string schoolName = reader.GetString(reader.GetOrdinal("SchoolName"));
+                string companyName = reader.GetString(reader.GetOrdinal("CompanyRegisteredName"));
+                details = (schoolName, companyName);
+
+                _cache.Set("LoginScreenDetails", details, TimeSpan.FromHours(1));
+                return details;
+            }
+
+            return (null, null);
         }
 
         public int GetCompanyRegisteredYear()
         {
             // Use current year as company registered date
             return DateTime.Now.Year;
-        }
-
-        public async Task<(string, string)> GetLoginScreenDetailsAsync()
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT SchoolName, CompanyRegisteredName FROM SchoolManagement.LoginScreenDetails";
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            string schoolName = reader.GetString(reader.GetOrdinal("SchoolName"));
-                            string companyRegisteredName = reader.GetString(reader.GetOrdinal("CompanyRegisteredName"));
-                            return (schoolName, companyRegisteredName);
-                        }
-                    }
-                }
-            }
-            return (null, null); // Return null if no data found
         }
 
         //----------------------For Admin_Security ------------------------------------//
@@ -241,6 +268,9 @@ namespace CORE.SERVICE
         // Fetches the list of users with their roles
         public async Task<List<UserRoleViewModel>> GetUsersAsync()
         {
+            if (_cache.TryGetValue("CachedUsersList", out List<UserRoleViewModel> cachedUsers))
+                return cachedUsers;
+
             List<UserRoleViewModel> users = new List<UserRoleViewModel>();
 
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -261,43 +291,65 @@ namespace CORE.SERVICE
                 }
             }
 
+            _cache.Set("CachedUsersList", users, TimeSpan.FromMinutes(10)); // cache for 10 minutes
             return users;
         }
 
-          // Method to get all users
+        // Method to get all users
         public async Task<IEnumerable<User>> GetMUsersAsync()
         {
+            if (_cache.TryGetValue("CachedMUsersList", out IEnumerable<User> cachedMUsers))
+                return cachedMUsers;
+
             using (var connection = new SqlConnection(connectionString))
             {
-                return await connection.QueryAsync<User>("SELECT UserID, UserName FROM SchoolManagement.Users");
+                var result = await connection.QueryAsync<User>("SELECT UserID, UserName FROM SchoolManagement.Users");
+                _cache.Set("CachedMUsersList", result, TimeSpan.FromMinutes(10));
+                return result;
             }
         }
 
         // Method to get all roles
         public async Task<IEnumerable<Role>> GetRolesAsync()
         {
+            if (_cache.TryGetValue("CachedRoles", out IEnumerable<Role> cachedRoles))
+                return cachedRoles;
+
             using (var connection = new SqlConnection(connectionString))
             {
-                return await connection.QueryAsync<Role>("SELECT RoleName FROM SchoolManagement.Roles");
+                var roles = await connection.QueryAsync<Role>("SELECT RoleName FROM SchoolManagement.Roles");
+                _cache.Set("CachedRoles", roles, TimeSpan.FromMinutes(30));
+                return roles;
             }
         }
 
         // Method to get all menu items
         public async Task<IEnumerable<MobileMenuItem>> GetMenuItemsAsync()
         {
+            if (_cache.TryGetValue("CachedMenuItems", out IEnumerable<MobileMenuItem> cachedMenuItems))
+                return cachedMenuItems;
+
             using (var connection = new SqlConnection(connectionString))
             {
-                return await connection.QueryAsync<MobileMenuItem>("SELECT CategoryName, MenuItem AS ItemName FROM SchoolManagement.MobileAppMenuDisplay");
+                var menuItems = await connection.QueryAsync<MobileMenuItem>(
+                    "SELECT CategoryName, MenuItem AS ItemName FROM SchoolManagement.MobileAppMenuDisplay");
+                _cache.Set("CachedMenuItems", menuItems, TimeSpan.FromMinutes(30));
+                return menuItems;
             }
         }
 
         // Method to get distinct category names
         public async Task<IEnumerable<string>> GetCategoryNamesAsync()
         {
+            if (_cache.TryGetValue("CachedCategoryNames", out IEnumerable<string> cachedCategories))
+                return cachedCategories;
+
             using (var connection = new SqlConnection(connectionString))
             {
-                return await connection.QueryAsync<string>(
+                var categories = await connection.QueryAsync<string>(
                     "SELECT DISTINCT CategoryName FROM SchoolManagement.MobileAppMenuDisplay");
+                _cache.Set("CachedCategoryNames", categories, TimeSpan.FromMinutes(30));
+                return categories;
             }
         }
 
@@ -327,11 +379,20 @@ namespace CORE.SERVICE
         // Method to get roles assigned to a user
         public async Task<IEnumerable<MobileAppRole>> GetUserRolesAsync(int userId)
         {
+            string cacheKey = $"UserRoles_{userId}";
+
+            if (_cache.TryGetValue(cacheKey, out IEnumerable<MobileAppRole> cachedRoles))
+                return cachedRoles;
+
             using (var connection = new SqlConnection(connectionString))
             {
-                return await connection.QueryAsync<MobileAppRole>(
+                var roles = await connection.QueryAsync<MobileAppRole>(
                     "SELECT * FROM SchoolManagement.MobileAppRoles WHERE UserID = @UserID",
                     new { UserID = userId });
+
+                _cache.Set(cacheKey, roles, TimeSpan.FromMinutes(10)); // or less depending on role update frequency
+
+                return roles;
             }
         }
 
@@ -344,6 +405,8 @@ namespace CORE.SERVICE
                     "INSERT INTO SchoolManagement.MobileAppRoles (UserID, RoleName, Enable, MenuItem, CategoryName) VALUES (@UserID, @RoleName, @Enable, @MenuItem, @CategoryName)",
                     new { UserID = userId, RoleName = roleName, Enable = enable, MenuItem = menuItem, CategoryName = categoryName });
             }
+
+            _cache.Remove($"UserRoles_{userId}"); // Invalidate cache after insert
         }
 
         // Method to update role enable status

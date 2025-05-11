@@ -5,6 +5,7 @@ using CORE.SERVICE.MainLayout;
 using CORE.SERVICE.NOTIFICATION;
 using FastReport.Data;
 using FastReport.Utils;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Win32;
 using Radzen;
 
@@ -38,9 +39,16 @@ builder.Services.AddHttpClient();
 //builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(builder.Configuration["BaseAddress"]) });
 builder.Services.AddFastReport();
 
+builder.Services.AddMemoryCache();
+
 
 // Add the UserService registration
-builder.Services.AddScoped<AuthService>(provider => new AuthService("workstation id=SmssCore.mssql.somee.com;packet size=4096;user id=Smss_SQLLogin_1;pwd=rh5eysynka;data source=SmssCore.mssql.somee.com;persist security info=False;initial catalog=SmssCore;TrustServerCertificate=True;"));
+builder.Services.AddScoped<AuthService>(provider =>
+{
+    var memoryCache = provider.GetRequiredService<IMemoryCache>();
+    var connectionString = "workstation id=SmssCore.mssql.somee.com;packet size=4096;user id=Smss_SQLLogin_1;pwd=rh5eysynka;data source=SmssCore.mssql.somee.com;persist security info=False;initial catalog=SmssCore;TrustServerCertificate=True;";
+    return new AuthService(connectionString, memoryCache);
+});
 
 // Register MenuService with the necessary connection string
 builder.Services.AddScoped<MenuService>(provider => new MenuService("workstation id=SmssCore.mssql.somee.com;packet size=4096;user id=Smss_SQLLogin_1;pwd=rh5eysynka;data source=SmssCore.mssql.somee.com;persist security info=False;initial catalog=SmssCore;TrustServerCertificate=True;"));
