@@ -108,29 +108,23 @@ namespace CORE.SERVICE
         //FOR CHECKING USER ROLE ND IT MENU ITEM
         public async Task<UserRoleAndMenuAccess> GetUserRoleAndMenuAccessAsync(int userId)
         {
-            string cacheKey = $"UserRoleMenu_{userId}";
-
-            if (_cache.TryGetValue(cacheKey, out UserRoleAndMenuAccess cachedAccess))
-            {
-                return cachedAccess;
-            }
-
             using (var connection = new SqlConnection(connectionString))
             {
                 var userRoleAndMenuAccess = new UserRoleAndMenuAccess();
 
+                // Get user role
                 userRoleAndMenuAccess.Role = await connection.QuerySingleAsync<string>(
                     "SELECT r.RoleName FROM SchoolManagementSecurity.MainSystemRoles r " +
                     "JOIN SchoolManagement.Users u ON r.RoleID = u.RoleID WHERE u.UserID = @UserID",
                     new { UserID = userId });
 
+                // Get menu items accessible to this role
                 userRoleAndMenuAccess.MenuItems = (await connection.QueryAsync<MenuItem>(
                     "SELECT m.* FROM SchoolManagementSecurity.MainMenu m " +
                     "JOIN SchoolManagementSecurity.MenuAccess a ON m.MenuID = a.MenuID " +
                     "WHERE a.RoleID = (SELECT RoleID FROM SchoolManagement.Users WHERE UserID = @UserID) AND a.CanAccess = 1",
                     new { UserID = userId })).ToList();
 
-                _cache.Set(cacheKey, userRoleAndMenuAccess, TimeSpan.FromMinutes(10));
                 return userRoleAndMenuAccess;
             }
         }
