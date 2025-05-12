@@ -1,6 +1,7 @@
 ﻿@page "/manage-users"
 @using CORE.MODEL
 @using CORE.Pages.LOADING_COMPONENT
+@using CORE.SECURITY.FORGET_PASSWORD
 @using CORE.SERVICE
 @using CORE.SERVICE.MainLayout
 @using CORE.SERVICE.NOTIFICATION
@@ -118,7 +119,8 @@
                             <RadzenGridColumn TItem="User" Title="Actions" Width="150px">
                                 <Template Context="user">
                                     <div class="grid-actions">
-                                        @*   <RadzenButton Text="Edit" Icon="edit" ButtonStyle="ButtonStyle.Info" Click="() => EditUser(user.UserID)" /> *@
+                                        <RadzenButton Text="Reset Password" Icon="key" ButtonStyle="ButtonStyle.Info"
+                                                      Click="() => OpenResetPasswordDialog(user.UserID)" />
                                         <RadzenButton Text="Delete" Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="() => DeleteUser(user.UserID)" />
                                     </div>
                                 </Template>
@@ -208,8 +210,13 @@
         }
     }
 
-    private void EditUser(int userId)
+    private async Task OpenResetPasswordDialog(int userId)
     {
-        // Implement edit functionality here
+        var result = await DialogService.OpenAsync<ResetPasswordDialog>(
+            "Reset User Password",
+            new Dictionary<string, object>() { { "UserId", userId } },
+            new DialogOptions() { Width = "500px", CloseDialogOnOverlayClick = true }
+        );
     }
+
 }
