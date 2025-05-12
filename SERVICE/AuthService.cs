@@ -66,13 +66,6 @@ namespace CORE.SERVICE
 
         public async Task<User> GetUserByUsernameAsync(string username)
         {
-            string cacheKey = $"User_{username}";
-
-            if (_cache.TryGetValue(cacheKey, out User cachedUser))
-            {
-                return cachedUser;
-            }
-
             try
             {
                 using (var connection = new SqlConnection(connectionString))
@@ -88,15 +81,12 @@ namespace CORE.SERVICE
                         {
                             if (await reader.ReadAsync())
                             {
-                                var user = new User
+                                return new User
                                 {
                                     UserID = reader.GetInt32(0),
                                     UserName = reader.GetString(1),
                                     Password = reader.GetString(2)
                                 };
-
-                                _cache.Set(cacheKey, user, TimeSpan.FromMinutes(10));
-                                return user;
                             }
                         }
                     }
@@ -104,10 +94,12 @@ namespace CORE.SERVICE
             }
             catch (SqlException ex)
             {
+                // Log SQL exceptions
                 Console.WriteLine($"SQL Exception: {ex.Message}");
             }
             catch (Exception ex)
             {
+                // Log other exceptions
                 Console.WriteLine($"Exception: {ex.Message}");
             }
 
@@ -117,29 +109,23 @@ namespace CORE.SERVICE
         //FOR CHECKING USER ROLE ND IT MENU ITEM
         public async Task<UserRoleAndMenuAccess> GetUserRoleAndMenuAccessAsync(int userId)
         {
-            string cacheKey = $"UserRoleMenu_{userId}";
-
-            if (_cache.TryGetValue(cacheKey, out UserRoleAndMenuAccess cachedAccess))
-            {
-                return cachedAccess;
-            }
-
             using (var connection = new SqlConnection(connectionString))
             {
                 var userRoleAndMenuAccess = new UserRoleAndMenuAccess();
 
+                // Get user role
                 userRoleAndMenuAccess.Role = await connection.QuerySingleAsync<string>(
                     "SELECT r.RoleName FROM SchoolManagementSecurity.MainSystemRoles r " +
                     "JOIN SchoolManagement.Users u ON r.RoleID = u.RoleID WHERE u.UserID = @UserID",
                     new { UserID = userId });
 
+                // Get menu items accessible to this role
                 userRoleAndMenuAccess.MenuItems = (await connection.QueryAsync<MenuItem>(
                     "SELECT m.* FROM SchoolManagementSecurity.MainMenu m " +
                     "JOIN SchoolManagementSecurity.MenuAccess a ON m.MenuID = a.MenuID " +
                     "WHERE a.RoleID = (SELECT RoleID FROM SchoolManagement.Users WHERE UserID = @UserID) AND a.CanAccess = 1",
                     new { UserID = userId })).ToList();
 
-                _cache.Set(cacheKey, userRoleAndMenuAccess, TimeSpan.FromMinutes(10));
                 return userRoleAndMenuAccess;
             }
         }
