@@ -33,9 +33,36 @@ namespace CORE.SERVICE
         public AuthService(string connectionString, IMemoryCache memoryCache)
         {
             this.connectionString = connectionString;
-            StartAutoTransfer();
             _cache = memoryCache;
+            StartAutoTransfer();          
         }
+
+        public async Task ResetPasswordAsync(int userId, string defaultPassword)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = "UPDATE SchoolManagement.Users SET Password = @Password, UpdatedOn = GETDATE() WHERE UserID = @UserID";
+                await connection.ExecuteAsync(query, new { Password = defaultPassword, UserID = userId });
+            }
+        }
+
+        public async Task<bool> ChangePasswordAsync(string defaultPassword, string newPassword)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = "SELECT UserID FROM SchoolManagement.Users WHERE Password = @DefaultPassword";
+                var userId = await connection.QueryFirstOrDefaultAsync<int?>(query, new { DefaultPassword = defaultPassword });
+
+                if (userId.HasValue)
+                {
+                    var updateQuery = "UPDATE SchoolManagement.Users SET Password = @NewPassword, UpdatedOn = GETDATE() WHERE UserID = @UserID";
+                    await connection.ExecuteAsync(updateQuery, new { NewPassword = newPassword, UserID = userId.Value });
+                    return true;
+                }
+                return false;
+            }
+        }
+
 
         public async Task<User> GetUserByUsernameAsync(string username)
         {
