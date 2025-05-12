@@ -2,6 +2,7 @@
 @inject NotificationMessageService Notify
 @inject IJSRuntime JSRuntime
 @using CORE.MODEL
+@using CORE.MODEL.Term
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
@@ -22,6 +23,10 @@
         @bind-Value="selectedStudentId" Placeholder="Select a student"
         Style="width: 100%; margin-bottom: 20px;" />
 
+        <RadzenDropDown Data="@terms" TextProperty="Term" ValueProperty="TermID"
+        @bind-Value="selectedTermId" Placeholder="Select term"
+        Style="width: 100%; margin-bottom: 20px;" />
+
         <RadzenButton Text="Generate Report" Icon="save_alt" Click="@GenerateStudentReport"
         Disabled="@isLoading" Style="width: 100%; margin-bottom: 10px;" />
     </div>
@@ -31,40 +36,98 @@
     private int selectedStudentId;
     private List<Student> students = new();
     private bool isLoading;
+    private List<SchoolTerm> terms = new();
+    private int selectedTermId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            terms = await authService.GetAllSchoolTermsAsync();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error loading terms: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
 
     private async Task SearchStudents(object args)
     {
-        if (args is string searchText && !string.IsNullOrWhiteSpace(searchText))
+        try
         {
-            this.searchText = searchText;
-            try
+            isLoading = true;
+            if (args is null || args is not string)
             {
-                isLoading = true;
-                students = (await authService.SearchStudentsAsync(searchText)).ToList();      
+                return;
             }
-            catch (Exception ex)
+            if (args is string searchText && !string.IsNullOrWhiteSpace(searchText))
             {
-                Notify.ShowNotification($"Error searching students: {ex.Message}", "", NotificationSeverity.Error);
+                this.searchText = searchText;
+                try
+                {
+                    isLoading = true;
+                    students = (await authService.SearchStudentsAsync(searchText)).ToList();
+                }
+                catch (Exception ex)
+                {
+                    Notify.ShowNotification($"Error searching students: {ex.Message}", "", NotificationSeverity.Error);
+                }
+                finally
+                {
+                    isLoading = false;
+                }
             }
-            finally
-            {
-                isLoading = false;
-            }
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error searching students: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
     private async Task GenerateStudentReport()
-    {
+    {      
+            if (string.IsNullOrWhiteSpace(searchText) && selectedStudentId == 0 && selectedTermId == 0)
+        {
+            Notify.ShowNotification("Please enter a student name to search or select a student and term.", "", NotificationSeverity.Warning);
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(searchText) && selectedStudentId == 0)
+        {
+            Notify.ShowNotification("Please enter a student name to search or select a student.", "", NotificationSeverity.Warning);
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            Notify.ShowNotification("Please enter a student name to search.", "", NotificationSeverity.Warning);
+            return;
+        }
         if (selectedStudentId == 0)
         {
             Notify.ShowNotification("Please select a student.", "", NotificationSeverity.Warning);
             return;
         }
 
-        isLoading = true;
+        if (selectedTermId == 0)
+        {
+            Notify.ShowNotification("Please select a term.", "", NotificationSeverity.Warning);
+            return;
+        }
+   
         try
         {
-            var studentFeeData = await authService.GetStudentFeesByStudentIdAsync(selectedStudentId);
+            isLoading = true;
+            var studentFeeData = await authService.GetStudentFeesByStudentIdandTermAsync(selectedStudentId, selectedTermId);
             if (studentFeeData == null || !studentFeeData.Any())
             {
                 Notify.ShowNotification("No data found for the selected student.", "", NotificationSeverity.Warning);

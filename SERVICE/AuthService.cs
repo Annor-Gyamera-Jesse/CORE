@@ -2949,6 +2949,16 @@ namespace CORE.SERVICE
             return result;
         }
 
+        public async Task<IEnumerable<StudentFee>> GetStudentFeesByStudentIdandTermAsync(int studentId, int termId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var result = await connection.QueryAsync<StudentFee>(
+                "GetStudentFeesByStudentAndTerm",
+                new { StudentID = studentId, TermID = termId },
+                commandType: CommandType.StoredProcedure);
+            return result;
+        }
+
         public async Task<List<FeeType>> GetFeeTypesByClassAsync(string classId)
         {
             using (var connection = new SqlConnection(connectionString))
