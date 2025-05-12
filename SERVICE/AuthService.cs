@@ -39,13 +39,6 @@ namespace CORE.SERVICE
 
         public async Task<User> GetUserByUsernameAsync(string username)
         {
-            string cacheKey = $"User_{username}";
-
-            if (_cache.TryGetValue(cacheKey, out User cachedUser))
-            {
-                return cachedUser;
-            }
-
             try
             {
                 using (var connection = new SqlConnection(connectionString))
@@ -61,15 +54,12 @@ namespace CORE.SERVICE
                         {
                             if (await reader.ReadAsync())
                             {
-                                var user = new User
+                                return new User
                                 {
                                     UserID = reader.GetInt32(0),
                                     UserName = reader.GetString(1),
                                     Password = reader.GetString(2)
                                 };
-
-                                _cache.Set(cacheKey, user, TimeSpan.FromMinutes(10));
-                                return user;
                             }
                         }
                     }
@@ -77,16 +67,17 @@ namespace CORE.SERVICE
             }
             catch (SqlException ex)
             {
+                // Log SQL exceptions
                 Console.WriteLine($"SQL Exception: {ex.Message}");
             }
             catch (Exception ex)
             {
+                // Log other exceptions
                 Console.WriteLine($"Exception: {ex.Message}");
             }
 
             return null;
         }
-
         //FOR CHECKING USER ROLE ND IT MENU ITEM
         public async Task<UserRoleAndMenuAccess> GetUserRoleAndMenuAccessAsync(int userId)
         {
