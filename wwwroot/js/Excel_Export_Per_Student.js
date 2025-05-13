@@ -1,71 +1,69 @@
 ﻿function downloadPdf(fileName, base64Csv) {
-    const { jsPDF } = window.jspdf; // Access jsPDF from the window object
+    const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // Decode base64 CSV data and split it into lines
     const decodedCsv = atob(base64Csv);
-    const lines = decodedCsv.split('\n');
+    const lines = decodedCsv.split('\n').filter(line => line.trim() !== '');
 
-    // Extract headers and rows
-    const csvHeaders = lines[0].split(','); // Extract the first line as headers
-    const tableData = lines.slice(1) // Skip the headers for data rows
-        .filter(line => line.trim() !== '') // Exclude any empty lines
-        .map(line => line.split(',')); // Split rows into cells
+    // Skip title and blank line
+    const feeLines = lines.slice(2);
 
-    // Extract TermID from the first row (assuming it's the last column)
-    const termId = tableData.length > 0 ? tableData[0][5] : '';
-
-    // Set document font and title
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.text('Student Fee Report', 105, 20, { align: 'center' });
-
-    // Add space after the title
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Generated on: ' + new Date().toLocaleString(), 20, 30);
-    doc.text('Term: ' + termId, 20, 37);
-
-    // Add a line separator
-    doc.setLineWidth(0.5);
-    doc.line(20, 42, 190, 42); // Horizontal line below the title
-
-    // Define table headers and column widths
     const headers = ['Student Name', 'Fee Type', 'Class', 'Amount Paid', 'Amount Left'];
-    const columnWidths = [60, 40, 30, 30, 30]; // Adjust column widths for better fit
-
-    // Table positioning
+    const columnWidths = [60, 40, 30, 30, 30];
     const tableX = 20;
-    const tableY = 40;
+    const headerY = 50;
 
-    // Draw the table header
-    doc.setFont('helvetica', 'bold');
-    let currentX = tableX;
-    headers.forEach((header, index) => {
-        doc.text(header, currentX + columnWidths[index] / 2, tableY, { align: 'center' });
-        currentX += columnWidths[index];
+    // Group data by FeeTypeName
+    const groupedData = {};
+
+    feeLines.forEach(line => {
+        const columns = line.split(',');
+        const feeType = columns[1]?.trim();
+        if (!groupedData[feeType]) groupedData[feeType] = [];
+        groupedData[feeType].push(columns);
     });
 
-    // Add a line below the header
-    doc.line(tableX, tableY + 2, tableX + columnWidths.reduce((a, b) => a + b), tableY + 2);
+    let isFirstPage = true;
 
-    // Draw the table rows
-    doc.setFont('helvetica', 'normal');
-    let rowY = tableY + 10; // Start from the next line after the header
-    tableData.forEach(row => {
-        let rowX = tableX;
-        for (let index = 0; index < headers.length; index++) {
-            const cell = row[index] !== undefined ? row[index] : '';
-            doc.text(String(cell), rowX + columnWidths[index] / 2, rowY, { align: 'center' });
-            rowX += columnWidths[index];
+    Object.entries(groupedData).forEach(([feeType, rows], groupIndex) => {
+        if (!isFirstPage) {
+            doc.addPage();
         }
-        rowY += 10;
+        isFirstPage = false;
+
+        // Header
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.text(`Fee Report - ${feeType}`, 105, 20, { align: 'center' });
+
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Generated on: ' + new Date().toLocaleString(), 20, 30);
+
+        // Draw headers
+        doc.setFont('helvetica', 'bold');
+        let currentX = tableX;
+        headers.forEach((header, index) => {
+            doc.text(header, currentX + columnWidths[index] / 2, headerY, { align: 'center' });
+            currentX += columnWidths[index];
+        });
+
+        doc.line(tableX, headerY + 2, tableX + columnWidths.reduce((a, b) => a + b), headerY + 2);
+
+        // Draw rows
+        doc.setFont('helvetica', 'normal');
+        let rowY = headerY + 10;
+
+        rows.forEach(row => {
+            let rowX = tableX;
+            for (let index = 0; index < headers.length; index++) {
+                const cell = row[index]?.trim() ?? '';
+                doc.text(String(cell), rowX + columnWidths[index] / 2, rowY, { align: 'center' });
+                rowX += columnWidths[index];
+            }
+            rowY += 10;
+        });
     });
 
-    // Add a footer line
-    doc.setLineWidth(0.5);
-    doc.line(20, rowY + 10, 190, rowY + 10); // Horizontal line at the bottom
-
-    // Save the PDF
     doc.save(fileName);
 }
