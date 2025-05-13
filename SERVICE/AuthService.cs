@@ -3166,6 +3166,29 @@ namespace CORE.SERVICE
             }
         }
 
+        public async Task InsertNewFeeTypeAsync(FeeType feeType)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var sql = @"
+                INSERT INTO SchoolManagement.FeeTypes 
+                (FeeTypeName, Description, Amount, ClassID, RecDateCreated, UserID)
+                VALUES 
+                (@FeeTypeName, '', @Amount, @ClassID, GETDATE(), @UserID);";
+
+                    await connection.ExecuteAsync(sql, feeType);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error inserting new fee type: {ex.Message}");
+                throw;
+            }
+        }
 
 
         public async Task<List<Class>> GetAllforsetfeesFeeTypesAsync()

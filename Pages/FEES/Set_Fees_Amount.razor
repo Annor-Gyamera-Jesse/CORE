@@ -8,22 +8,79 @@
 @inject NotificationMessageService NotificationService
 <RadzenNotification />
 @using CORE.Pages.LOADING_COMPONENT
+<style>
+    .text-blue {
+    color: blue;
+    }
+
+    .text-red {
+    color: red;
+    }
+
+    .student-list-container {
+    max-width: 300px;
+    float: left;
+    margin-right: 20px;
+    }
+
+    .form-container {
+    margin-left: 320px;
+    }
+
+    .input-group {
+    margin-bottom: 15px;
+    }
+
+    /* PRINT STUDENT REPOR */
+    .header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+
+    .right-align {
+    margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+    height: 60px; /* Adjust the height to your preference */
+    padding: 5px 15px; /* Reduce padding */
+    }
+
+    /* Additional styling if needed */
+    .compact-header .rz-header-title {
+    font-size: 18px; /* Make the title smaller */
+    }
+
+    .custom-background {
+    background-color: green !important;
+    }
+</style>
 
 <LoadingSpinner Visible="isLoading" />
 
 @if (!isLoading)
 {
-    <RadzenDropDown @bind-Value="selectedClassId" Data="@classes" TextProperty="ClassID" ValueProperty="ClassID" Placeholder="Select Class" />
-    <RadzenDropDown @bind-Value="selectedFeeTypeId" Data="@feeTypes" TextProperty="FeeTypeName" ValueProperty="FeeTypeID" Placeholder="Select Fee Type" />
-    <RadzenNumeric @bind-Value="feeAmount" Min="0" Placeholder="Enter Amount" />
+    <RadzenHeader title="Set School Fees Payment" class="header-container compact-header">
+        <RadzenFieldset Text="TOOL COMPONENT" class="right-align">
 
-    <RadzenButton Text="Submit" Click="HandleCreate" ButtonStyle="ButtonStyle.Primary" />
+            <RadzenDropDown @bind-Value="selectedClassId" Data="@classes" TextProperty="ClassID" ValueProperty="ClassID" Placeholder="Select Class" />
+            <RadzenDropDown @bind-Value="selectedFeeTypeId" Data="@feeTypes" TextProperty="FeeTypeName" ValueProperty="FeeTypeID" Placeholder="Select Fee Type" />
+            <RadzenNumeric @bind-Value="feeAmount" Min="0" Placeholder="Enter Amount" />
 
-    @if (selectedFeeTypeId > 0 && !string.IsNullOrEmpty(selectedClassId))
-    {
-        <RadzenButton Text="Edit" Click="() => HandleEdit(selectedFeeType)" ButtonStyle="ButtonStyle.Info" />
-        <RadzenButton Text="Delete" Click="() => HandleDelete(selectedFeeType)" ButtonStyle="ButtonStyle.Danger" />
-    }
+            <RadzenButton Text="Submit" Click="HandleCreate" ButtonStyle="ButtonStyle.Primary" />
+
+            @if (selectedFeeTypeId > 0 && !string.IsNullOrEmpty(selectedClassId))
+            {
+                <RadzenButton Text="Edit" Click="() => HandleEdit(selectedFeeType)" ButtonStyle="ButtonStyle.Info" />
+                <RadzenButton Text="Delete" Click="() => HandleDelete(selectedFeeType)" ButtonStyle="ButtonStyle.Danger" />
+            }
+            <RadzenTextBox @bind-Value="newFeeTypeName" Placeholder="Enter New Fee Type Name" Style="margin-top:10px;" />
+            <RadzenButton Text="Add New Fee Type" Click="CreateNewFeeType" ButtonStyle="ButtonStyle.Success" Style="margin-top:10px;" />
+
+        </RadzenFieldset>
+    </RadzenHeader>
+
 
     <RadzenDataGrid @ref="feeGrid" Data="@feeTypes" TItem="FeeType" ShowPaging="true" PageSize="5">
         <Columns>
@@ -78,7 +135,7 @@
 @code {
     private List<Class> classes = new List<Class>();       // List to hold the classes
     private List<FeeType> feeTypes = new List<FeeType>();  // List to hold the fee types
-
+    private string newFeeTypeName;
     private string selectedClassId;
     private int selectedFeeTypeId;
     private decimal feeAmount;
@@ -107,7 +164,7 @@
 
     private async Task HandleCreate()
     {
-        
+
         try
         {
             isLoading = true;
@@ -156,11 +213,57 @@
     }
 
 
+    private async Task CreateNewFeeType()
+    {
+        if (string.IsNullOrWhiteSpace(newFeeTypeName))
+        {
+            NotificationService.ShowNotification("Validation Error", "Fee Type Name cannot be empty", NotificationSeverity.Warning);
+            return;
+        }
 
+        try
+        {
+            isLoading = true;
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+            var user = await StudentService.GetUserByUsernameAsync(username);
+
+            if (user != null)
+            {
+                int userId = user.UserID;
+
+                var newFee = new FeeType
+                    {
+                        FeeTypeName = newFeeTypeName.Trim(),
+                        ClassID = "", // Optional, or set default class if needed
+                        Amount = 0,   // Default, can be updated later
+                        UserID = userId
+                    };
+
+                await StudentService.InsertNewFeeTypeAsync(newFee);
+
+                // Refresh the list
+                feeTypes = await StudentService.GetAllFeeTypesAsync();
+
+                newFeeTypeName = ""; // Reset textbox
+                NotificationService.ShowNotification("Success", "Fee Type added successfully", NotificationSeverity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Insert Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 
     private async Task HandleEdit(FeeType fee = null)
     {
-        if (fee != null)
+        try
+        {
+            isLoading = true;
+            if (fee != null)
         {
             selectedFeeType = fee;
             selectedClassId = fee.ClassID;
@@ -195,6 +298,15 @@
             {
                 isLoading = false;
             }
+        }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Initialization Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
