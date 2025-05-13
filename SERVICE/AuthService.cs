@@ -3123,7 +3123,7 @@ namespace CORE.SERVICE
                 using (var connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
-                    var query = "SELECT * FROM SchoolManagement.FeeTypes";
+                    var query = "SELECT * FROM SchoolManagement.FeeTypes WHERE DeletedBy IS NULL";
                     var result = await connection.QueryAsync<FeeType>(query);
                     return result.AsList();
                 }
