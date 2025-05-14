@@ -1,43 +1,62 @@
 ﻿@page "/student-id-card"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
 @inject AuthService StudentService
 @inject IJSRuntime JSRuntime
+@inject NotificationMessageService Notify
 
-<RadzenCard Style="width: 500px; margin: auto; padding: 20px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <RadzenDropDown @bind-Value="SelectedStudentID"
-                    Data="@Students"
-                    TextProperty="FullName"
-                    ValueProperty="StudentID"
-                    Placeholder="Select a Student"
-                    Change="OnStudentChange"
-                    Style="width: 100%;" />
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
 
-    @if (SelectedStudent != null)
-    {
-        <RadzenCard Style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #f8f8f8;">
-            <div style="display: flex; align-items: center;">
-                <img src="@SelectedStudent.ImageBase64" alt="Student Photo" style="width: 80px; height: 100px; border-radius: 5px;" />
+    <RadzenCard Style="width: 500px; margin: auto; padding: 20px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <RadzenDropDown @bind-Value="SelectedStudentID"
+        Data="@Students"
+        TextProperty="FullName"
+        ValueProperty="StudentID"
+        Placeholder="Select a Student"
+        Change="OnStudentChange"
+        Style="width: 100%;" />
 
-                <div style="margin-left: 15px;">
-                    <h4>@SelectedStudent.FullName</h4>
-                    <p>Class: <b>@SelectedStudent.ClassID</b></p>
+        @if (SelectedStudent != null)
+        {
+            <RadzenCard Style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #f8f8f8;">
+                <div style="display: flex; align-items: center;">
+                    <img src="@SelectedStudent.ImageBase64" alt="Student Photo" style="width: 80px; height: 100px; border-radius: 5px;" />
+
+                    <div style="margin-left: 15px;">
+                        <h4>@SelectedStudent.FullName</h4>
+                        <p>Class: <b>@SelectedStudent.ClassID</b></p>
+                    </div>
                 </div>
-            </div>
 
-            <RadzenButton Click="PrintIDCard" Text="Print ID Card" Icon="print" ButtonStyle="ButtonStyle.Primary" Style="margin-top: 10px;" />
-        </RadzenCard>
-    }
-</RadzenCard>
-
+                <RadzenButton Click="PrintIDCard" Text="Print ID Card" Icon="print" ButtonStyle="ButtonStyle.Primary" Style="margin-top: 10px;" />
+            </RadzenCard>
+        }
+    </RadzenCard>
+}
 @code {
     private List<Student> Students = new();
     private int? SelectedStudentID;
     private Student SelectedStudent;
-
+    public bool isLoading = false;
     protected override async Task OnInitializedAsync()
     {
-        Students = (await StudentService.GetStudentsAsync()).ToList();
+        try
+        {
+            isLoading = true;
+            Students = (await StudentService.GetStudentsAsync()).ToList();
+        }
+        catch(Exception ex)
+        {
+            Notify.ShowNotification("", $"Student found{ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task OnStudentChange(object value)

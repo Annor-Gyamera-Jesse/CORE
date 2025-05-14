@@ -12,68 +12,68 @@
 
 <style>
     .radzen-fieldset {
-        border-radius: 5px;
-        padding: 10px;
+    border-radius: 5px;
+    padding: 10px;
     }
 
     .radzen-fieldset .rz-fieldset-legend {
-        font-weight: bold;
+    font-weight: bold;
     }
 
     .radzen-fieldset .row {
-        padding: 0;
+    padding: 0;
     }
 
     .radzen-fieldset .col-md-2.text-md-end {
-        text-align: right;
+    text-align: right;
     }
 
     .radzen-fieldset .col-md-3 .form-control {
-        width: 100%;
+    width: 100%;
     }
 
     .image-card {
-        border: 1px solid #007bff;
-        border-radius: 5px;
-        padding: 10px;
-        text-align: center;
-        margin-bottom: 10px;
+    border: 1px solid #007bff;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: center;
+    margin-bottom: 10px;
     }
 
     .image-card img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 5px;
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
     }
     /* PRINT STUDENT REPOR */
     .header-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     }
 
     .right-align {
-        margin-left: auto;
+    margin-left: auto;
     }
     /* Adjust the header height */
     .compact-header {
-        height: 60px; /* Adjust the height to your preference */
-        padding: 5px 15px; /* Reduce padding */
+    height: 60px; /* Adjust the height to your preference */
+    padding: 5px 15px; /* Reduce padding */
     }
 
-        /* Additional styling if needed */
-        .compact-header .rz-header-title {
-            font-size: 18px; /* Make the title smaller */
-        }
+    /* Additional styling if needed */
+    .compact-header .rz-header-title {
+    font-size: 18px; /* Make the title smaller */
+    }
 </style>
 
 
-  <RadzenHeader title="REPORT GENERATING" class="header-container compact-header">
+<RadzenHeader title="REPORT GENERATING" class="header-container compact-header">
     <RadzenFieldset Text="PRINT STUDENT ID CARD" class="right-align">
         <KYSTOOLCOMPONENT OnOpenStudentIdCardExportDialog="OnStudentIDCardExportDialog" />
-</RadzenFieldset>
-            </RadzenHeader>
-            <br/>
+    </RadzenFieldset>
+</RadzenHeader>
+<br/>
 
 <LoadingSpinner Visible="isLoading"/>
 @if (!isLoading)
@@ -83,10 +83,21 @@
             <div class="col-md-9">
                 <div class="row">
                     <div class="col-md-2 text-md-end">
-                        <RadzenLabel Text="Search Student" Component="txtsearchstudent" class="col-form-label float-right"/>                    
+                        <RadzenLabel Text="Search Student" Component="autoStudent" class="col-form-label float-right" />
                     </div>
                     <div class="col-md-3">
-                        <RadzenTextBox @bind-Value="searchName" class="form-control" />
+                        <RadzenAutoComplete Data="@studentSuggestions"
+                                            TextProperty=""
+                                            Placeholder="Type student name..."
+                                            MinLength="2"
+                                            @bind-Value="searchName"
+                                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                            Change="@OnStudentSelected"
+                                            Style="width:100%;"
+                                            AutoCompleteDelay="300"
+                                            AllowFiltering="true"
+                                            TValue="string"
+                                            LoadData="@LoadStudentSuggestions" />
                     </div>
                     <div class="col-md-4">
                         <RadzenButton Click="@SearchStudent" Text="Search" class="btn btn-primary" />
@@ -126,59 +137,59 @@
                             <RadzenTextBox @bind-Value="student.StudentMedicalReport" class="form-control" ReadOnly="true" />
                         </RadzenFieldset>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <RadzenFieldset Text="IMAGE" Icon="image">
-                        <!-- Image Card -->
-                        <div class="image-card">
-                        @if(isLoading)
-                        {
-                            <p>Data Fetching...</p>
-                        }
-                        else
-                        {                                                
-                            @if (student?.ImageData != null)
-                            {
-                                //<img src="@($"data:image/png;base64,{Convert.ToBase64String(student.ImageData)}")" alt="Student Image" />
+                            <!-- Image Card -->
+                            <div class="image-card">
+                                @if(isLoading)
+                                {
+                                    <p>Data Fetching...</p>
+                                }
+                                else
+                                {                                                
+                                    @if (student?.ImageData != null)
+                                    {
+                                        //<img src="@($"data:image/png;base64,{Convert.ToBase64String(student.ImageData)}")" alt="Student Image" />
                                         <RadzenImage src="@($"data:image/png;base64,{Convert.ToBase64String(student.ImageData)}")" alt="Student Image" />
-                            }
-                            else
-                            {
-                                <p>No Image Available</p>
-                            }
-                        }
-                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p>No Image Available</p>
+                                    }
+                                }
+                            </div>
                         </RadzenFieldset>
 
-                    <RadzenFieldset Text="STUDENT EMERGENCY CONTACT">
-                    <RadzenLabel Text="Guardian Full Name" />
-                        <RadzenTextBox @bind-Value="student.GuardianFullName" class="form-control" ReadOnly="true" />
+                        <RadzenFieldset Text="STUDENT EMERGENCY CONTACT">
+                            <RadzenLabel Text="Guardian Full Name" />
+                            <RadzenTextBox @bind-Value="student.GuardianFullName" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Guardian Gender" />
-                        <RadzenDropDown @bind-Value="student.GuardianGender" Data="genderOptions" class="form-control" ReadOnly="true" />
+                            <RadzenLabel Text="Guardian Gender" />
+                            <RadzenDropDown @bind-Value="student.GuardianGender" Data="genderOptions" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Guardian House Address" />
-                        <RadzenTextBox @bind-Value="student.GuardianHouseAddress" class="form-control" ReadOnly="true" />
+                            <RadzenLabel Text="Guardian House Address" />
+                            <RadzenTextBox @bind-Value="student.GuardianHouseAddress" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Guardian Work Address" />
-                        <RadzenTextBox @bind-Value="student.GuardianWorkAddress" class="form-control" ReadOnly="true" />
+                            <RadzenLabel Text="Guardian Work Address" />
+                            <RadzenTextBox @bind-Value="student.GuardianWorkAddress" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Guardian Email" />
-                    <RadzenTextBox @bind-Value="student.GuardianEmail" class="form-control" ReadOnly="true"/>
+                            <RadzenLabel Text="Guardian Email" />
+                            <RadzenTextBox @bind-Value="student.GuardianEmail" class="form-control" ReadOnly="true"/>
 
-                    <RadzenLabel Text="Guardian First Contact" />
-                        <RadzenTextBox @bind-Value="student.GuardianFirstContact" class="form-control" ReadOnly="true" />
+                            <RadzenLabel Text="Guardian First Contact" />
+                            <RadzenTextBox @bind-Value="student.GuardianFirstContact" class="form-control" ReadOnly="true" />
 
-                    <RadzenLabel Text="Guardian Second Contact" />
-                        <RadzenTextBox @bind-Value="student.GuardianSecondContact" class="form-control" ReadOnly="true" />
-                   
-                    </RadzenFieldset>
+                            <RadzenLabel Text="Guardian Second Contact" />
+                            <RadzenTextBox @bind-Value="student.GuardianSecondContact" class="form-control" ReadOnly="true" />
 
+                        </RadzenFieldset>
+
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</RadzenFieldset>
+    </RadzenFieldset>
 }
 
 @code {
@@ -188,11 +199,54 @@
     List<string> genderOptions = new List<string> { "M", "F", "O" }; // not in use specificaly like that it doesnt even help like that 
     public bool isLoading = false;
     string fieldsetStyle => $"border: 2px solid {borderColor};";
+    List<string> studentSuggestions = new List<string>();
+
+    async Task LoadStudentSuggestions(LoadDataArgs args)
+    {
+        if (!string.IsNullOrWhiteSpace(args.Filter))
+        {
+            studentSuggestions = (await AuthService.SearchStudentsForKYCAsync(args.Filter)).ToList();
+        }
+    }
+
+    async Task OnStudentSelected(object value)
+    {
+        if (value is string fullNameWithClass)
+        {
+            // Extract only the name part if needed
+            var nameParts = fullNameWithClass.Split(" - ");
+            var actualName = nameParts[0].Trim();
+
+            student = await AuthService.GetStudentByNameAsync(actualName);
+
+            if (student != null)
+            {
+                Notify.ShowNotification("", "Student found", NotificationSeverity.Success);
+            }
+            else
+            {
+                Notify.ShowNotification("", "Student not found", NotificationSeverity.Warning);
+            }
+        }
+    }
 
     protected override void OnInitialized()
     {
-        base.OnInitialized();
+        try
+        {
+            isLoading = true;
+            base.OnInitialized();
         ChangeBorderColorBasedOnCondition();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("USER", $"NOT FOUND{ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
     }
 
     void ChangeBorderColorBasedOnCondition()

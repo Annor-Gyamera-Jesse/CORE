@@ -1174,6 +1174,30 @@ namespace CORE.SERVICE
             }
         }
 
+        public async Task<IEnumerable<string>> SearchStudentsForKYCAsync(string keyword)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var query = @"SELECT CONCAT(StudentFirstName, ' ', StudentLastName, ' - ', ClassID) AS DisplayName
+                          FROM SchoolManagement.Students
+                          WHERE CONCAT(StudentFirstName, ' ', StudentLastName) LIKE @Keyword";
+
+                    var result = await connection.QueryAsync<string>(query, new { Keyword = $"%{keyword}%" });
+
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SearchStudentsAsync: {ex.Message}");
+                throw;
+            }
+        }
+
 
         //Uploading Results for Students
         public async Task<int> UploadScoreAsync(ClassScore classScore)
