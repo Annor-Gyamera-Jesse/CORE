@@ -17,7 +17,7 @@ function generateStudentIDCard(student) {
     }
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape', 'mm', [85, 55]);
+    const doc = new jsPDF('landscape', 'mm', [85.6, 53.98]);
 
     try {
         // Background Color
@@ -32,7 +32,8 @@ function generateStudentIDCard(student) {
         // School Name
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
+        doc.setFontSize(8);
+        doc.text(doc.splitTextToSize(`Name: ${student.StudentFirstName} ${student.StudentLastName}`, 50), 27, textY);
         doc.text(student.SchoolName || 'SCHOOL NAME', 42, 8, { align: 'center' });
 
         // Student Photo Placeholder
