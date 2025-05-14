@@ -1,19 +1,50 @@
-﻿@page "/manage-schedule"
+﻿@page "/time-table-schedule"
 @inject AuthService scheduleService
 @using CORE.MODEL
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
+@using CORE.Tool_Components
 @using Radzen
 @using static CORE.MODEL.Teachers_Time_Table
 @inject NotificationMessageService Notify
+@inherits Time_Table_Codebehind
 <RadzenNotification />
 
 @* <h3>Manage Schedule</h3> *@
+<style>
+    /* PRINT STUDENT REPOR */
+    .header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+
+    .right-align {
+    margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+    height: 60px; /* Adjust the height to your preference */
+    padding: 5px 15px; /* Reduce padding */
+    }
+
+    /* Additional styling if needed */
+    .compact-header .rz-header-title {
+    font-size: 18px; /* Make the title smaller */
+    }
+</style>
+
 
 <LoadingSpinner Visible="isLoading" />
 @if (!isLoading)
 {
+    <RadzenHeader title="TOOL COMPONENT" class="header-container compact-header">
+        <RadzenFieldset Text="TOOL COMPONENT" class="right-align">
+            <TeacherTimeTableToolPanel OnNoticeBoard="NoticeBoard" OnManageTeachersTimeTable="TeachersTimeTable" />
+        </RadzenFieldset>
+    </RadzenHeader>
+    <br />
     @if (isEditing)
     {
         <RadzenTemplateForm Data="@EditingSchedule" TItem="Schedule" Submit="@OnSubmit">
@@ -21,15 +52,15 @@
                 <RadzenFieldset>
                     <RadzenLabel Text="Course" />
                     <RadzenDropDown @bind-Value="EditingSchedule.SCID" 
-                                    Data="@schoolCourses"
-                                    TextProperty="SchoolCourseName"
-                                    ValueProperty="SCID" 
-                                    Style="width: 100%" />
+                    Data="@schoolCourses"
+                    TextProperty="SchoolCourseName"
+                    ValueProperty="SCID" 
+                    Style="width: 100%" />
 
                     <RadzenLabel Text="Class ID" />
                     <RadzenDropDown @bind-Value="EditingSchedule.ClassID" 
-                                    Data="@classIDs" 
-                                    Style="width: 100%" />
+                    Data="@classIDs" 
+                    Style="width: 100%" />
 
                     <RadzenLabel Text="Start Time" />
                     <RadzenDatePicker @bind-Value="EditingSchedule.StartTime" Style="width: 100%" />
@@ -39,20 +70,20 @@
 
                     <RadzenLabel Text="Subject Start Time" />
                     <RadzenDatePicker @bind-Value="EditingSchedule.SubjectStartTime"
-                                      ShowTime="true"
-                                      Style="width: 100%" />
+                    ShowTime="true"
+                    Style="width: 100%" />
 
                     <RadzenLabel Text="Subject End Time" />
                     <RadzenDatePicker @bind-Value="EditingSchedule.SubjectEndTime"
-                                      ShowTime="true"
-                                      Style="width: 100%" />
+                    ShowTime="true"
+                    Style="width: 100%" />
 
                     <RadzenLabel Text="Day Name" />
                     <RadzenDropDown @bind-Value="EditingSchedule.DayID" 
-                                    Data="@days"
-                                    TextProperty="DayName"
-                                    ValueProperty="DayID"
-                                    Style="width: 100%" />
+                    Data="@days"
+                    TextProperty="DayName"
+                    ValueProperty="DayID"
+                    Style="width: 100%" />
 
                     <RadzenFieldset Text="Break Periods">
                         <div class="row">
@@ -106,14 +137,14 @@
                         <RadzenIcon Icon="check" Style="color: black;" />
                     }
                 </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="Schedule" Title="After Second Break">
-                    <Template Context="schedule">
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Schedule" Title="After Second Break">
+                <Template Context="schedule">
                     @if (schedule.AfterSecondBreak)
                     {
                         <RadzenIcon Icon="check" Style="color: red;" />
                     }
-                    </Template>
+                </Template>
             </RadzenDataGridColumn>
 
             <RadzenDataGridColumn TItem="Schedule" Context="schedule" Width="70px">
@@ -139,10 +170,22 @@
 
     protected override async Task OnInitializedAsync()
     {
-        schedules = await scheduleService.GetAllSchedulesAsync();
-        classIDs = await scheduleService.GetClassIDsAsync();
-        schoolCourses = await scheduleService.GetSchoolCoursesAsync();
-        days = await scheduleService.GetDaysAsync();
+        try
+        {
+            isLoading = true;
+            schedules = await scheduleService.GetAllSchedulesAsync();
+            classIDs = await scheduleService.GetClassIDsAsync();
+            schoolCourses = await scheduleService.GetSchoolCoursesAsync();
+            days = await scheduleService.GetDaysAsync();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("", $"{ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void ShowAddScheduleForm()
@@ -228,5 +271,16 @@
             isLoading = false;
         }
     }
+
+    async void TeachersTimeTable()
+    {
+        await OpenManageTeachersTimeTable();
+    }
+
+    async void NoticeBoard()
+    {
+        await OpenOnNoticeBoard();
+    }
+
 }
 

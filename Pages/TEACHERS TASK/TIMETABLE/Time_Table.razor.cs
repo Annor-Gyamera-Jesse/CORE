@@ -1,13 +1,10 @@
-﻿
-using CORE.Pages.NOTICE_BOARD;
-using CORE.Pages.TEACHERS_TASK.PRINT_SCHOOL_TIME_TABLE;
-using CORE.Pages.TEACHERS_TASK.TIMETABLE;
+﻿using CORE.Pages.TEACHERS_TASK.PRINT_SCHOOL_TIME_TABLE;
 using Microsoft.AspNetCore.Components;
 using Radzen;
 
-namespace CORE.Pages.TEACHERS_TASK
+namespace CORE.Pages.TEACHERS_TASK.TIMETABLE
 {
-    public class TeachersTask_Page_Codebehind : ComponentBase
+    public class Time_Table_Codebehind : ComponentBase
     {
         [Inject]
         protected Radzen.DialogService DialogService { get; set; }
@@ -25,14 +22,6 @@ namespace CORE.Pages.TEACHERS_TASK
             var dialogTitle = $"PRINT CLASS TIME TABLE";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<ClassTimetable>(dialogTitle, null, dialogOptions);
-        }
-
-        public async Task OpenTeacherTimeTable()
-        {
-            var dialogOptions = new DialogOptions() { Draggable = true, ShowClose = true, CloseDialogOnEsc = true, Width = "1000px", Resizable = false, Height = "512px" };
-            var dialogTitle = $"CLASS TIME TABLE";
-            // Register dialog closed event with RadzenDialogService
-            await DialogService.OpenAsync<TeachersTimetablePage>(dialogTitle, null, dialogOptions);
         }
     }
 }

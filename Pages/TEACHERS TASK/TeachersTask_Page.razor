@@ -10,7 +10,7 @@
 @using CORE.SERVICE.NOTIFICATION
 @using System.Timers
 @using CORE.Tool_Components
-@inherits TeachersTask_Page_Codebehind
+
 <RadzenNotification />
 
 <style>
@@ -165,9 +165,6 @@
         </div>
     </div>
 }
-<div class="right-panel">
-    <TeacherTimeTableToolPanel OnNoticeBoard="NoticeBoard" OnManageTeachersTimeTable="TeachersTimeTable" OnTeacherTimeTable="TeacherTimeTable" />
-</div>
 
 @code {
     private List<TeachersTask> tasks = new List<TeachersTask>();
@@ -194,21 +191,6 @@
         {
             isLoading = false;
         }
-    }
-
-    async void TeachersTimeTable()
-    {
-        await OpenManageTeachersTimeTable();
-    }
-
-    async void NoticeBoard()
-    {
-        await OpenOnNoticeBoard();
-    }
-
-    async void TeacherTimeTable()
-    {
-        await OpenTeacherTimeTable();
     }
 
     private void SetTimer()
