@@ -33,7 +33,6 @@ function generateStudentIDCard(student) {
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
-        doc.text(doc.splitTextToSize(`Name: ${student.StudentFirstName} ${student.StudentLastName}`, 50), 27, textY);
         doc.text(student.SchoolName || 'SCHOOL NAME', 42, 8, { align: 'center' });
 
         // Student Photo Placeholder
