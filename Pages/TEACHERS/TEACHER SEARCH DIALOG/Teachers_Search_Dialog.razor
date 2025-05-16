@@ -1,0 +1,69 @@
+﻿@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@inject AuthService authService
+@inject DialogService DialogService
+<RadzenNotification />
+
+<LoadingSpinner Visible="isLoading" />
+@if (!isLoading)
+{
+
+    <RadzenGrid Data="@students" TItem="TeachersRegistration" RowSelect="@SelectStudent" AllowPaging="true" PageSize="10">
+        <Columns>
+            <RadzenGridColumn TItem="TeachersRegistration" Property="TeacherID" Title="ID" />
+            <RadzenGridColumn TItem="TeachersRegistration" Property="TeacherFirstName" Title="First Name" />
+            <RadzenGridColumn TItem="TeachersRegistration" Property="TeacherLastName" Title="Last Name" />
+            <RadzenGridColumn TItem="TeachersRegistration" Property="TeacherGender" Title="Gender" />
+            <RadzenGridColumn TItem="TeachersRegistration" Property="EmploymentStatus" Title="Status"  />
+        </Columns>
+    </RadzenGrid>
+
+    <RadzenButton Text="Close" ButtonStyle="ButtonStyle.Danger" Style="margin-top:10px" Click="() => DialogService.Close(null)" />
+}
+
+@code {
+    List<TeachersRegistration> students = new();
+    public bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            // Fetch students from the service
+            students = await authService.GetAllTeachersAsync(); // Replace with your method to fetch students
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching students: {ex.Message}");
+            // Handle error (e.g., show a message to the user)
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    void SelectStudent(TeachersRegistration teachers)
+    {
+        try
+        {
+            isLoading = true;
+            if (teachers == null)
+            {
+                return;
+            }
+            DialogService.Close(teachers);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error selecting teacher: {ex.Message}");
+            // Handle error (e.g., show a message to the user)
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

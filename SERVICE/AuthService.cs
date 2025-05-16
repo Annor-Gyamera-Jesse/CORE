@@ -595,6 +595,42 @@ namespace CORE.SERVICE
                 throw; // Rethrow the exception after logging/handling if needed
             }
         }
+
+        public async Task<bool> UpdateTeachersRegistrationData(TeachersRegistration teachersRegistration)
+        {
+            var query = @"UPDATE SchoolManagement.Teacher
+                  SET   
+                       TeacherFirstName = @TeacherFirstName,
+                       TeacherLastName = @TeacherLastName,
+                       TeacherGender = @TeacherGender,
+                       TeacherAddress = @TeacherAddress,
+                       TeacherPhoneNumber = @TeacherPhoneNumber,
+                       TeacherEmail = @TeacherEmail,
+                       DateHired = @DateHired,
+                       SSNIT = @SSNIT,
+                       BasicSalary  = @BasicSalary,
+                       PAYE = @PAYE,
+                       SSNITTIER2 = @SSNITTIER2,
+                       VotersID = @VotersID,
+                       HealthInsurance = @HealthInsurance,
+                       GhanaCard = @GhanaCard,
+                       Bank = @Bank,
+                       AccountNumber = @AccountNumber,
+                       Remarks = @Remarks,
+                       SSNITNumber = @SSNITNumber,
+                       CategoryName = @CategoryName,
+                       RegisteredBy = @RegisteredBy,
+                       EditedBy = @EditedBy
+                       WHERE TeacherID = @TeacherID";
+
+            using(var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var result = await connection.ExecuteAsync(query, teachersRegistration);
+                return result > 0;
+            }
+        }
+
         //Service that connect to the database to add NonTeachingStaffsRegistration
         public async Task<int> AddNonTeachingStaffsAsync(NonTeachingStaffsRegistration nonteachingRegistration)
         {

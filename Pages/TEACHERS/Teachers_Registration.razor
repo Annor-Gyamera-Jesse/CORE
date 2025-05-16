@@ -1,12 +1,14 @@
 ﻿@page "/core/pages/teachers/teachersregistration"
 @using CORE.MODEL
 @using CORE.Pages.LOADING_COMPONENT
+@using CORE.Pages.TEACHERS.TEACHER_SEARCH_DIALOG
 @using CORE.SERVICE
 @using System.ComponentModel.DataAnnotations
 @using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
 @inject NotificationMessageService Notify
 <RadzenNotification />
+@inject DialogService DialogService
 
 <style>
     form .row {
@@ -31,6 +33,18 @@
 @if (!isLoading)
 {
     <RadzenFieldset Text="Teachers Registration">
+        <div class="row">
+            <div class="col-md-1">
+                <RadzenButton Text="Search and Edit" Icon="search" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Style="margin-right: -89px;" Click="@OpenSearchDialog" />
+            </div>
+            @if (isEditMode)
+            {
+                <div class="rz-card rz-shadow-lg rz-p-3 rz-mb-3 edit-mode-banner">
+                    <strong><i class="rz-icon rz-icon-edit" style="margin-right:5px;"></i>Edit Mode:</strong> You are editing an existing student record.
+                </div>
+            }
+
+        </div>
         <div class="row">
             <div class="col-md-3 text-md-end form-label">
                 <RadzenLabel Text="Teacher FirstName" Component="textteachername" />
@@ -245,6 +259,9 @@
             <div class="col-md-3">
                 <RadzenButton Text="New" Icon="add" ButtonStyle="ButtonStyle.Info" Click="@ResetForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
             </div>
+            <div class="col-md-3">
+                <RadzenButton Text="Update" Icon="edit" ButtonStyle="ButtonStyle.Warning" Click="@UpdateForm" Style="margin-bottom: 10px; width: 130px;" />
+            </div>
         </div>
     </RadzenFieldset>
 }
@@ -260,6 +277,7 @@
     private int selectedCategoryId;
     private bool isLoading = false;
     List<string> employmentStatuses = new() { "Active", "Suspended", "Terminated", "Leave" };
+    private bool isEditMode = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -378,9 +396,49 @@
         finally
         {
             isLoading = false;
+            isEditMode = false;
             StateHasChanged();
         }
 
+    }
+
+    async Task OpenSearchDialog()
+    {
+        var result = await DialogService.OpenAsync<Teachers_Search_Dialog>(
+            "Search Teacher",
+            null,
+            new DialogOptions() { Width = "900px", Height = "600px", Resizable = true, Draggable = true });
+
+        if (result is TeachersRegistration selectedTeachers)
+        {
+            teachersRegistration = selectedTeachers;
+            // selectedCategoryId = selectedTeachers.EmploymentStatus;
+            newTeacherId = selectedTeachers.TeacherID;
+
+            isEditMode = true;
+        }
+    }
+
+    private async Task UpdateForm()
+    {
+        try
+        {
+            isLoading = true;
+            var result = await authService.UpdateTeachersRegistrationData(teachersRegistration);
+            //successMessage = "Student record updated successfully!";
+            Notify.ShowNotification("", "Teacher record updated successfully!.", NotificationSeverity.Success);
+
+            isEditMode = false; // Exit edit mode after successful update
+        }
+        catch (Exception ex)
+        {
+            //errorMessage = $"Update failed: {ex.Message}";
+            Notify.ShowNotification("Error", $"Update failed: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }
 
