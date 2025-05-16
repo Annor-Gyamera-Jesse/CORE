@@ -1,5 +1,6 @@
 ﻿@page "/studentsregistration"
 @using CORE.MODEL
+@using CORE.Pages.KYS.Student_Search_Dialog
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using System.ComponentModel.DataAnnotations
@@ -7,23 +8,40 @@
 @inject AuthService authService
 @inject NotificationMessageService Notify
 <RadzenNotification />
+@inject DialogService DialogService
 
 <style>
     form .row {
-        margin-bottom: 16px;
-        margin-top: 10px;
+    margin-bottom: 16px;
+    margin-top: 10px;
     }
 
     .rz-fieldset-content {
-        padding: 0;
+    padding: 0;
     }
 
     .form-label {
-        padding-top: 8px;
+    padding-top: 8px;
     }
 
     .form-control {
-        margin-bottom: 8px;
+    margin-bottom: 8px;
+    }
+        .edit-mode-banner {
+        background-color: #fff8e1;
+        border-left: 6px solid #ff9800;
+        color: #8a6d3b;
+        font-weight: 500;
+        font-size: 15px;
+        border-radius: 6px;
+    }
+
+    .edit-mode-highlight input,
+    .edit-mode-highlight textarea,
+    .edit-mode-highlight .rz-dropdown {
+        background-color: #fffbe6 !important;
+        border-color: #ffcc80 !important;
+        box-shadow: 0 0 0 0.15rem rgba(255, 193, 7, 0.25);
     }
 </style>
 
@@ -31,171 +49,187 @@
 @if (!isLoading)
 {
 
-<RadzenFieldset Text="Students Registration">
-    <div class="row">
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Student FirstName" Component="textstudentname" />
-        </div>
-        <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentFirstName" AutoComplete="false"/>
-        </div>
+    <RadzenFieldset Text="Students Registration">
+        <div class="row">
+            <div class="col-md-1">
+                <RadzenButton Text="Search and Edit" Icon="search" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Style="margin-right: -89px;" Click="@OpenSearchDialog" />
+            </div>
+            @if (isEditMode)
+            {
+                <div class="rz-card rz-shadow-lg rz-p-3 rz-mb-3 edit-mode-banner">
+                    <strong><i class="rz-icon rz-icon-edit" style="margin-right:5px;"></i>Edit Mode:</strong> You are editing an existing student record.
+                </div>
+            }
 
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Student LastName" Component="textstudentlastname" />
         </div>
-        <div class="col-md-3">
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Student FirstName" Component="textstudentname" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentFirstName" AutoComplete="false"/>
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Student LastName" Component="textstudentlastname" />
+            </div>
+            <div class="col-md-3">
                 <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentLastName" AutoComplete="false" />
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Date of Birth" Component="textstudentdob" />
-        </div>
-        <div class="col-md-3">
-            <RadzenDatePicker @bind-Value="@student.StudentDateOfBirth" Format="d" Placeholder="Select Date of Birth" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Student Gender" Component="textstudentgender" />
-        </div>
-        <div class="col-md-3">
-                <RadzenDropDown Data="genderOptions" class="form-control form-control-sm" @bind-Value="@student.StudentGender" />
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Student Address" Component="textstudentaddress" />
-        </div>
-        <div class="col-md-3">
-                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentAddress" AutoComplete="false" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Student Phone Number" Component="textstudentphonenumber" />
-        </div>
-        <div class="col-md-3">
-                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentPhoneNumber" AutoComplete="false" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Upload PNG Image" Component="fileInput" />
-        </div>
-        <div class="col-md-3">
-            <InputFile id="studentImage" OnChange="HandleFileChange" key="@inputfileKey" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Student Email" Component="textstudentemail" />
-        </div>
-        <div class="col-md-3">
-                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentEmail" AutoComplete="false" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Class:" Component="classDropdown" />
-        </div>
-        <div class="col-md-3">
-            <RadzenDropDown Data="@classList" TextProperty="ClassID" ValueProperty="ClassID" TValue="string" @bind-Value="@classId" Style="width:100%;">
-            </RadzenDropDown>
-        </div>
-
-    </div>
-
-    <div class="row">
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Student ID" Component="textstudentid" />
-        </div>
-        <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" Value="@newStudentId.ToString()" ReadOnly="true" />
-        </div>
-    </div>
-
-</RadzenFieldset>
-<br/>
-<RadzenFieldset Text="Guardian Contacts" AllowCollapse="true" Collapsed="true">
-    <div class="row">
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Guardian FullName" Component="textguardiangfullname" />
-        </div>
-        <div class="col-md-3">
-                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianFullName" AutoComplete="false" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Guardian Gender" Component="textguardianggender" />
-        </div>
-        <div class="col-md-3">
-                <RadzenDropDown Data="genderOptions" class="form-control form-control-sm" @bind-Value="@student.GuardianGender" AutoComplete="false" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Guardian House Address" Component="textguardiangfullname" />
-        </div>
-        <div class="col-md-3">
-                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianHouseAddress" AutoComplete="false" />
-        </div>
-
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Guardian Work Address" Component="textguardiangworkaddress" />
-        </div>
-        <div class="col-md-3">
-                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianWorkAddress" AutoComplete="false" />
-        </div>
+            </div>
         </div>
 
         <div class="row">
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Guardian Email" Component="textguardiangemail" />
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Date of Birth" Component="textstudentdob" />
+            </div>
+            <div class="col-md-3">
+                <RadzenDatePicker @bind-Value="@student.StudentDateOfBirth" Format="d" Placeholder="Select Date of Birth" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Student Gender" Component="textstudentgender" />
+            </div>
+            <div class="col-md-3">
+                <RadzenDropDown Data="genderOptions" class="form-control form-control-sm" @bind-Value="@student.StudentGender" />
+            </div>
         </div>
-        <div class="col-md-3">
+
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Student Address" Component="textstudentaddress" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentAddress" AutoComplete="false" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Student Phone Number" Component="textstudentphonenumber" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentPhoneNumber" AutoComplete="false" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Upload PNG Image" Component="fileInput" />
+            </div>
+            <div class="col-md-3">
+                <InputFile id="studentImage" OnChange="HandleFileChange" key="@inputfileKey" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Student Email" Component="textstudentemail" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentEmail" AutoComplete="false" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Class:" Component="classDropdown" />
+            </div>
+            <div class="col-md-3">
+                <RadzenDropDown Data="@classList" TextProperty="ClassID" ValueProperty="ClassID" TValue="string" @bind-Value="@classId" Style="width:100%;">
+                </RadzenDropDown>
+            </div>
+
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Student ID" Component="textstudentid" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" Value="@newStudentId.ToString()" ReadOnly="true" />
+            </div>
+        </div>
+
+    </RadzenFieldset>
+    <br/>
+    <RadzenFieldset Text="Guardian Contacts" AllowCollapse="true" Collapsed="true">
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Guardian FullName" Component="textguardiangfullname" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianFullName" AutoComplete="false" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Guardian Gender" Component="textguardianggender" />
+            </div>
+            <div class="col-md-3">
+                <RadzenDropDown Data="genderOptions" class="form-control form-control-sm" @bind-Value="@student.GuardianGender" AutoComplete="false" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Guardian House Address" Component="textguardiangfullname" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianHouseAddress" AutoComplete="false" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Guardian Work Address" Component="textguardiangworkaddress" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianWorkAddress" AutoComplete="false" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Guardian Email" Component="textguardiangemail" />
+            </div>
+            <div class="col-md-3">
                 <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianEmail" AutoComplete="false" />
-        </div>
+            </div>
 
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Guardian Contact 1" Component="textguardiangfirstcontact" />
-        </div>
-        <div class="col-md-3">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Guardian Contact 1" Component="textguardiangfirstcontact" />
+            </div>
+            <div class="col-md-3">
                 <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianFirstContact" AutoComplete="false" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Guardian Contact 2" Component="textguardiangsecondcontact" />
+            </div>
+            <div class="col-md-3">
+                <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianSecondContact" AutoComplete="false"/>
+            </div>
         </div>
 
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Guardian Contact 2" Component="textguardiangsecondcontact" />
+    </RadzenFieldset>
+
+    <RadzenFieldset Text="Medical Report" AllowCollapse="true" Collapsed="true">
+        <div class="row">
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Student Medical Report" Component="textstudentmedicalreport" />
+            </div>
+            <div class="col-md-6">
+                <RadzenTextArea class="form-control form-control-sm"
+                @bind-Value="@student.StudentMedicalReport"
+                Rows="5"
+                Style="resize: both;"/>
+            </div>
+        </div>
+    </RadzenFieldset>
+
+
+    <div class="row mt-2">
+        <div class="col-md-3">      
+            <RadzenButton Text="New" Icon="add" ButtonStyle="ButtonStyle.Info" Click="@ResetForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
         </div>
         <div class="col-md-3">
-            <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.GuardianSecondContact" AutoComplete="false"/>
+            <RadzenButton Text="Submit" Icon="check" ButtonStyle="ButtonStyle.Success" ButtonType="ButtonType.Submit" Click="@SubmitForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
         </div>
-    </div>
-   
-</RadzenFieldset>
-
-<RadzenFieldset Text="Medical Report" AllowCollapse="true" Collapsed="true">
-    <div class="row">
-        <div class="col-md-3 text-md-end form-label">
-            <RadzenLabel Text="Student Medical Report" Component="textstudentmedicalreport" />
+        <div class="col-md-3">
+            <RadzenButton Text="Update" Icon="edit" ButtonStyle="ButtonStyle.Warning" Click="@UpdateForm" Style="margin-bottom: 10px; width: 130px;" />
         </div>
-        <div class="col-md-6">
-            <RadzenTextArea class="form-control form-control-sm"
-                            @bind-Value="@student.StudentMedicalReport"
-                            Rows="5"
-                            Style="resize: both;"/>
-        </div>
-    </div>
-</RadzenFieldset>
 
-
-<div class="row mt-2">
-    <div class="col-md-3">      
-        <RadzenButton Text="New" Icon="add" ButtonStyle="ButtonStyle.Info" Click="@ResetForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
     </div>
-    <div class="col-md-3">
-        <RadzenButton Text="Submit" Icon="check" ButtonStyle="ButtonStyle.Success" ButtonType="ButtonType.Submit" Click="@SubmitForm" Style="margin-bottom: 10px; width: 130px; padding-right:15px" />
-    </div>
-</div>
 
-<br/>
-@* 
+    <br/>
+    @* 
 <RadzenFieldset>
     <RadzenGrid @ref="@Grid" Data="ViewStudents" AllowPaging="true" PageSize="100" AllowSorting="true" AllowColumnResize="true">
     <Columns>
@@ -236,10 +270,9 @@
     byte[] imageData;
     List<string> genderOptions = new List<string> { "M", "F"};
     int newStudentId;
-    string successMessage;
-
+    string successMessage;    
     string errorMessage;
-
+    private bool isEditMode = false;
     private IBrowserFile selectedFile;
     private const int MaxImageSize = 500 * 1024; // 500 KB in bytes
     private int inputfileKey = 0;
@@ -250,7 +283,9 @@
 
     async Task SubmitForm()
     {
-
+        try
+        {
+            isLoading = true;
             if (IsValid(student))
             {
                 if (selectedFile != null)
@@ -280,6 +315,16 @@
                     Notify.ShowNotification("Failed to register the student", "Please try again Hint Check If Gender Is M or F.", NotificationSeverity.Error);
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions, show error messages, etc.
+            Notify.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
         
     }
 
@@ -322,6 +367,8 @@
 
         // Create a new instance of InputFile to replace the existing one
         inputfileKey++;
+
+        isEditMode = false;
         StateHasChanged();
 
     }
@@ -348,5 +395,43 @@
             isLoading = false;
         }
     }
+
+    async Task OpenSearchDialog()
+    {       
+        var result = await DialogService.OpenAsync<StudentSearchDialog>(
+            "Search Student",
+            null,
+            new DialogOptions() { Width = "900px", Height = "600px", Resizable = true, Draggable = true });
+
+        if (result is Student selectedStudent)
+        {
+            student = selectedStudent;
+            classId = selectedStudent.ClassID;
+            newStudentId = selectedStudent.StudentID;
+
+            isEditMode = true;
+        }
+    }
+
+    private async Task UpdateForm()
+    {
+        try
+        {
+            isLoading = true;
+            var result = await authService.UpdateStudent(student);
+            successMessage = "Student record updated successfully!";
+
+            isEditMode = false; // Exit edit mode after successful update
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Update failed: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
 
 }

@@ -1,0 +1,69 @@
+﻿@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@inject AuthService authService
+@inject DialogService DialogService
+<RadzenNotification />
+
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
+
+    <RadzenGrid Data="@students" TItem="Student" RowSelect="@SelectStudent" AllowPaging="true" PageSize="10">
+        <Columns>
+            <RadzenGridColumn TItem="Student" Property="StudentID" Title="ID" />
+            <RadzenGridColumn TItem="Student" Property="StudentFirstName" Title="First Name" />
+            <RadzenGridColumn TItem="Student" Property="StudentLastName" Title="Last Name" />
+            <RadzenGridColumn TItem="Student" Property="StudentGender" Title="Gender" />
+            <RadzenGridColumn TItem="Student" Property="ClassID" Title="Class" />
+        </Columns>
+    </RadzenGrid>
+
+    <RadzenButton Text="Close" ButtonStyle="ButtonStyle.Danger" Style="margin-top:10px" Click="() => DialogService.Close(null)" />
+}
+
+@code {
+    List<Student> students = new();
+    public bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            // Fetch students from the service            
+            students = await authService.GetAllStudents(); // Replace with your method to fetch students
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching students: {ex.Message}");
+            // Handle error (e.g., show a message to the user)
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    void SelectStudent(Student student)
+    {
+        try
+        {
+            isLoading = true;
+            if (student == null)
+            {
+                return;
+            }
+            DialogService.Close(student);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error selecting student: {ex.Message}");
+            // Handle error (e.g., show a message to the user)
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

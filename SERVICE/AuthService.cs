@@ -515,6 +515,37 @@ namespace CORE.SERVICE
             }
         }
 
+        public async Task<bool> UpdateStudent(Student student)
+        {
+            var query = @"
+                UPDATE SchoolManagement.Students
+                SET 
+                    StudentFirstName = @StudentFirstName,
+                    StudentLastName = @StudentLastName,
+                    StudentDateOfBirth = @StudentDateOfBirth,
+                    StudentGender = @StudentGender,
+                    StudentAddress = @StudentAddress,
+                    StudentPhoneNumber = @StudentPhoneNumber,
+                    StudentEmail = @StudentEmail,
+                    ClassID = @ClassID,
+                    GuardianFullName = @GuardianFullName,
+                    GuardianGender = @GuardianGender,
+                    GuardianHouseAddress = @GuardianHouseAddress,
+                    GuardianWorkAddress = @GuardianWorkAddress,
+                    GuardianEmail = @GuardianEmail,
+                    GuardianFirstContact = @GuardianFirstContact,
+                    GuardianSecondContact = @GuardianSecondContact,
+                    StudentMedicalReport = @StudentMedicalReport
+                WHERE StudentID = @StudentID";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                var result = await connection.ExecuteAsync(query, student);
+                return result > 0;
+            }
+        }
+
         //Add Teachers
         public async Task<int> AddTeachersAsync(TeachersRegistration teachersRegistration)
         {
