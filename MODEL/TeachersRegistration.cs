@@ -30,6 +30,9 @@
         public string SSNITNumber { get; set; }
         public string CategoryName { get; set; }
         public string EmploymentStatus { get; set; }
+        public int? RegisteredBy { get; set; }
+        public int? EditedBy { get; set; }
+
 
     }
 }
