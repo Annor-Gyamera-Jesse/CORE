@@ -1,0 +1,28 @@
+﻿@using CORE.SERVICE
+@inject AuthService attendanceService
+
+<RadzenDatePicker @bind-Value="fromDate" DateFormat="yyyy-MM-dd" Placeholder="From Date" />
+<RadzenDatePicker @bind-Value="toDate" DateFormat="yyyy-MM-dd" Placeholder="To Date" />
+<RadzenButton Text="Print" Click="@GeneratePdf" Style="margin-top:10px" />
+
+@code {
+    DateTime fromDate = DateTime.Today;
+    DateTime toDate = DateTime.Today;
+    [Inject] IJSRuntime JS { get; set; }
+
+    private async Task GeneratePdf()
+    {
+        var data = await attendanceService.GetAttendanceByDateRange(fromDate, toDate);
+
+        // Serialize data to JSON
+        var json = System.Text.Json.JsonSerializer.Serialize(data);
+
+        // Convert JSON to base64 for JS
+        var base64Data = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
+
+        var fileName = $"Attendance_{fromDate:yyyyMMdd}_{toDate:yyyyMMdd}.pdf";
+
+        await JS.InvokeVoidAsync("downloadTeachersAttendancePdf", fileName, base64Data);
+    }
+
+}
