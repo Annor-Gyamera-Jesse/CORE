@@ -1,4 +1,5 @@
 ﻿@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
@@ -7,77 +8,98 @@
 
 <style>
     h1 {
-        text-align: center;
-        margin-top: 20px;
-        font-size: 2em;
-        color: #4CAF50;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 2em;
+    color: #4CAF50;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     .RadzenCard {
-        margin: 20px auto;
-        padding: 20px;
-        max-width: 1200px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-        background-color: #f8f9fa;
+    margin: 20px auto;
+    padding: 20px;
+    max-width: 1200px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background-color: #f8f9fa;
     }
 
     .RadzenDataGrid {
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .RadzenDataGridColumn {
-        text-align: left;
-        padding: 10px;
+    text-align: left;
+    padding: 10px;
     }
 
     .RadzenButton {
-        margin: 10px;
-        background-color: #4CAF50;
-        color: white;
-        border-radius: 5px;
+    margin: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
     }
 </style>
-
-<RadzenCard>
-    <RadzenDataGrid @ref="userLogsGrid" Data="@userLogs" TItem="UserLog" LoadData="@LoadUserLogs"
-                    AllowSorting="true" AllowPaging="true" PageSize="10" ColumnWidth="200px"
-                    FilterMode="FilterMode.Advanced">
-        <Columns>
-            <RadzenDataGridColumn TItem="UserLog" Property="LogId" Title="Log ID" Width="50px" />
-            <RadzenDataGridColumn TItem="UserLog" Property="UserId" Title="User ID" />
-            <RadzenDataGridColumn TItem="UserLog" Property="EventName" Title="Event Name" />
-            <RadzenDataGridColumn TItem="UserLog" Property="Timestamp" Title="Timestamp" FormatString="{0:yyyy-MM-dd HH:mm:ss}" />
-        </Columns>
-    </RadzenDataGrid>
-</RadzenCard>
-<div class="row mt-2">
-    <div class="col-md-4 d-flex justify-content-end">
-        <RadzenButton Click="CloseForm" ButtonStyle="ButtonStyle.Danger" Text="Close" Icon="close" Style="margin-bottom: 10px; width: 150px ;float:right; padding-right:15px" />
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
+    <RadzenCard>
+        <RadzenDataGrid @ref="userLogsGrid" Data="@userLogs" TItem="UserLog" LoadData="@LoadUserLogs"
+        AllowSorting="true" AllowPaging="true" PageSize="5" ColumnWidth="200px"
+        FilterMode="FilterMode.Advanced">
+            <Columns>
+                <RadzenDataGridColumn TItem="UserLog" Property="LogId" Title="Log ID" Width="50px" />
+                <RadzenDataGridColumn TItem="UserLog" Property="UserId" Title="User ID" />
+                <RadzenDataGridColumn TItem="UserLog" Property="EventName" Title="Event Name" />
+                <RadzenDataGridColumn TItem="UserLog" Property="Timestamp" Title="Timestamp" FormatString="{0:yyyy-MM-dd HH:mm:ss}" />
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenCard>
+    <div class="row mt-2">
+        <div class="col-md-4 d-flex justify-content-end">
+            <RadzenButton Click="CloseForm" ButtonStyle="ButtonStyle.Danger" Text="Close" Icon="close" Style="margin-bottom: 10px; width: 150px ;float:right; padding-right:15px" />
+        </div>
     </div>
-</div>
+}
 @code {
     RadzenDataGrid<UserLog> userLogsGrid;
     IEnumerable<UserLog> userLogs;
+    public bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUserLogs(new LoadDataArgs());
+        try
+        {
+            isLoading = true;
+            await LoadUserLogs(new LoadDataArgs());
+        }
+        catch(Exception ex)
+        {
+            Notify.ShowNotification($"Error Loading User: {ex.Message}","",NotificationSeverity.Warning);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     async Task LoadUserLogs(LoadDataArgs args)
     {
         try
         {
+            isLoading = true;
             userLogs = await authService.GetUserLogsAsync();
             await InvokeAsync(StateHasChanged);
             Notify.ShowNotification($"Loadded", "", NotificationSeverity.Success);
         }
         catch (Exception ex)
         {
-         
+
             Notify.ShowNotification($"ALERT Error loading user logs: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 

@@ -1,5 +1,6 @@
 ﻿@page "/manage-users"
 @using CORE.MODEL
+@using CORE.Pages.AdminDialogs
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SECURITY.FORGET_PASSWORD
 @using CORE.SERVICE
@@ -9,6 +10,7 @@
 @inject NotificationMessageService Notify
 @inject DialogService DialogService
 @inject UserService UserService
+@inherits Admin_Security_CodeBehind
 <RadzenNotification />
 
 <style>
@@ -41,22 +43,25 @@
         width: 100%;
     }
 
-    .right-panel {
-        position: sticky;
-        top: 20px;
-        background-color: #f8f9fa;
-        padding: 15px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-        max-height: 80vh;
-        overflow-y: auto;
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
-        .right-panel h4 {
-            color: #343a40;
-            font-weight: 600;
-        }
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
 
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
     .grid-actions button {
         margin-right: 5px;
     }
@@ -65,6 +70,11 @@
 <LoadingSpinner Visible="isLoading"/>
 @if (!isLoading)
 {
+    <RadzenHeader title="TOOL COMPONENT" class="header-container compact-header">
+    <RadzenFieldset Text="SECURITY TOOL COMPONENT" class="right-align">
+        <UserLogsDialog OpenUserLogsDialog="OnOpenUserDialog" />
+        </RadzenFieldset>
+     </RadzenHeader>
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-9">
@@ -110,9 +120,10 @@
                     </EditForm>
                 </div>
 
+                <RadzenFieldset AllowCollapse="true" Text="ALL USERS" Icon="profile">
                 <div class="custom-fieldset">
                     <h3>View Users</h3>
-                    <RadzenGrid Data="@users" TItem="User" PageSize="10" ShowPagingSummary="true" Style="margin-top: 20px;">
+                    <RadzenGrid Data="@users" TItem="User" AllowPaging="true" PageSize="5" ShowPagingSummary="true" Style="margin-top: 20px;">
                         <Columns>
                             <RadzenGridColumn TItem="User" Property="UserName" Title="Username" />
                             <RadzenGridColumn TItem="User" Property="FullName" Title="Full Name" />
@@ -128,13 +139,7 @@
                         </Columns>
                     </RadzenGrid>
                 </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="right-panel">
-                    <h4>User Logs</h4>
-                    <CORE.Pages.AdminDialogs.UserLogsDialog />
-                </div>
+                </RadzenFieldset>
             </div>
         </div>
     </div>
@@ -218,5 +223,7 @@
             new DialogOptions() { Width = "500px", CloseDialogOnOverlayClick = true }
         );
     }
+
+    async void OnOpenUserDialog() => await OpenUserLogsDialog();
 
 }
