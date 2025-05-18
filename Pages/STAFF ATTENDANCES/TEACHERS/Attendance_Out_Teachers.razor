@@ -2,6 +2,7 @@
 @inject NotificationMessageService Notify
 @inject IJSRuntime JSRuntime
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService authService
 @inject NotificationMessageService Notify
@@ -13,68 +14,72 @@
 
 <style>
     .warning-message {
-        color: red;
-        font-weight: bold;
-        margin-top: 10px;
+    color: red;
+    font-weight: bold;
+    margin-top: 10px;
     }
 </style>
+<LoadingSpinner Visible="isLoading" />
 
-<div class="row">
-    <div class="col-md-4">
-        <RadzenFieldset Text="TEACHERS">
-            <RadzenListBox @bind-Value="selectedTeacherId" AllowFiltering="true" AllowVirtualization="true"
-                           Data="@teachersAttendance" TextProperty="TeacherFirstName" ValueProperty="TeacherID"
-                           Style="width: 100%; height: 300px;" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                           Change="@(args => OnTeacherSelectionChange((int)args))">
-            </RadzenListBox>
-        </RadzenFieldset>
-    </div>
-    <div class="col-md-8">
-        <form @ref="clockOutForm" @onsubmit="@ClockOut">
-            <RadzenForm Data="@attendanceOutModel">
-                <RadzenField Property="SelectedTeacher" Title="Selected Teacher">
-                    <RadzenTextBox @bind-Value="@attendanceOutModel.SelectedTeacher" ReadOnly="true"></RadzenTextBox>
-                </RadzenField>
-                <RadzenLabel Text="Clocked In At"/>
-                <RadzenField Property="ClockInTime" Title="Clock In Time">
-                    <RadzenTextBox @bind-Value="@attendanceOutModel.ClockInTime" ReadOnly="true"></RadzenTextBox>
-                </RadzenField>
-                <RadzenLabel Text="Clock Out"/>
-                <RadzenField Property="IsClockedOut" Title="Clocked Out">
-                    <RadzenSwitch @bind-Value="@attendanceOutModel.IsClockedOut"></RadzenSwitch>
-                </RadzenField>
-                <div class="text-right">
-                    <RadzenButton Text="Clock Out" Click="@ClockOut" Disabled="!attendanceOutModel.IsClockedOut"></RadzenButton>
-                    @if (!attendanceOutModel.IsClockedOut)
-                    {
-                        <div class="warning-message">Please turn on the switch before submitting.</div>
-                    }
-                </div>
-            </RadzenForm>
-        </form>
-    </div>
-</div>
+@if (!isLoading)
+{
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Teachers Name</th>
-            <th>Enable Switch</th>
-            <th>Clock Out</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var record in attendanceOutRecords)
-        {
+    <div class="row">
+        <div class="col-md-4">
+            <RadzenFieldset Text="TEACHERS">
+                <RadzenListBox @bind-Value="selectedTeacherId" AllowFiltering="true" AllowVirtualization="true"
+                Data="@teachersAttendance" TextProperty="TeacherFirstName" ValueProperty="TeacherID"
+                Style="width: 100%; height: 300px;" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                Change="@(args => OnTeacherSelectionChange((int)args))">
+                </RadzenListBox>
+            </RadzenFieldset>
+        </div>
+        <div class="col-md-8">
+            <form @ref="clockOutForm" @onsubmit="@ClockOut">
+                <RadzenForm Data="@attendanceOutModel">
+                    <RadzenField Property="SelectedTeacher" Title="Selected Teacher">
+                        <RadzenTextBox @bind-Value="@attendanceOutModel.SelectedTeacher" ReadOnly="true"></RadzenTextBox>
+                    </RadzenField>
+                    <RadzenLabel Text="Clocked In At"/>
+                    <RadzenField Property="ClockInTime" Title="Clock In Time">
+                        <RadzenTextBox @bind-Value="@attendanceOutModel.ClockInTime" ReadOnly="true"></RadzenTextBox>
+                    </RadzenField>
+                    <RadzenLabel Text="Clock Out"/>
+                    <RadzenField Property="IsClockedOut" Title="Clocked Out">
+                        <RadzenSwitch @bind-Value="@attendanceOutModel.IsClockedOut"></RadzenSwitch>
+                    </RadzenField>
+                    <div class="text-right">
+                        <RadzenButton Text="Clock Out" Click="@ClockOut" Disabled="!attendanceOutModel.IsClockedOut"></RadzenButton>
+                        @if (!attendanceOutModel.IsClockedOut)
+                        {
+                            <div class="warning-message">Please turn on the switch before submitting.</div>
+                        }
+                    </div>
+                </RadzenForm>
+            </form>
+        </div>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
             <tr>
-                <td>@record.TeacherFirstName</td>
-                <td>@record.EnableSwitch</td>                
-                <td>@record.ClockOUT</td>
+                <th>Teachers Name</th>
+                <th>Enable Switch</th>
+                <th>Clock Out</th>
             </tr>
-        }
-    </tbody>
-</table>
-
+        </thead>
+        <tbody>
+            @foreach (var record in attendanceOutRecords)
+            {
+                <tr>
+                    <td>@record.TeacherFirstName</td>
+                    <td>@record.EnableSwitch</td>                
+                    <td>@record.ClockOUT</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 @code {
     List<TeacherAttendance> teachersAttendance;
     List<TeachersAttendanceOut> attendanceOutRecords = new List<TeachersAttendanceOut>();
@@ -82,22 +87,35 @@
     int selectedTeacherId;
     ElementReference clockOutForm;
     private int userId;
-
+    public bool isLoading = false;
     protected override async Task OnInitializedAsync()
     {
-        var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
-        var user = await authService.GetUserByUsernameAsync(username);
-        if (user != null)
+        try
         {
-            userId = user.UserID;
-        }
+            isLoading = true;
+            var username = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+            var user = await authService.GetUserByUsernameAsync(username);
+            if (user != null)
+            {
+                userId = user.UserID;
+            }
 
-        // Fetch today's attendance
-        teachersAttendance = await authService.GetTodaysAttendanceAsync();
+            // Fetch today's attendance
+            teachersAttendance = await authService.GetTodaysAttendanceAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            Notify.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     void OnTeacherSelectionChange(int selectedValue)
-    {
+    {        
         if (selectedValue > 0)
         {
             var selectedTeacher = teachersAttendance.FirstOrDefault(t => t.TeacherID == selectedValue);
@@ -113,6 +131,7 @@
     {
         try
         {
+            isLoading = true;
             // Log the selectedTeacherId to ensure it's valid
             Console.WriteLine($"Selected Teacher ID: {selectedTeacherId}");
 
@@ -161,6 +180,10 @@
             // Log any exceptions that occur
             Console.WriteLine($"Error: {ex.Message}");
             Notify.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
