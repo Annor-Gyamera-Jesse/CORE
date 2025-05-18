@@ -21,6 +21,7 @@ using CORE.MODEL.Students_Attendance;
 using CORE.Pages.HR.SALARY_PAYMENT_HISTORY;
 using CORE.MODEL.Salary_Payment_History;
 using Microsoft.Extensions.Caching.Memory;
+using System.Text;
 
 namespace CORE.SERVICE
 {
@@ -4972,6 +4973,71 @@ VALUES (
                     });
             }
 
+        }
+
+        //TEACHERS ATTENDANCE PDF EXPORT
+        public async Task<IEnumerable<string>> GetTeacherNamesAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            var query = @"SELECT DISTINCT CONCAT(TeacherFirstName, ' ', TeacherLastName) AS FullName
+                      FROM SchoolManagement.TeachersAttendanceOut";
+            return await connection.QueryAsync<string>(query);
+        }
+
+        public async Task<IEnumerable<dynamic>> GetAttendanceByTeacherAndDate(string teacherName, DateTime date)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            var query = @"
+    SELECT 
+        A.TeacherFirstName,
+        A.TeacherLastName,
+        A.ClockIN,
+        B.ClockOUT
+    FROM SchoolManagement.TeachersAttendance A
+    JOIN SchoolManagement.TeachersAttendanceOut B
+        ON A.TeacherFirstName = B.TeacherFirstName
+        AND A.TeacherLastName = B.TeacherLastName
+        AND CAST(A.RecDateCreated AS DATE) = CAST(B.RecDateCreated AS DATE)
+    WHERE CONCAT(A.TeacherFirstName, ' ', A.TeacherLastName) = @Name
+      AND CAST(A.ClockIN AS DATE) = @Date";
+
+            return await connection.QueryAsync<dynamic>(query, new { Name = teacherName, Date = date.Date });
+        }
+
+
+        public async Task<IEnumerable<dynamic>> GetAttendanceByDateRange(DateTime from, DateTime to)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            var query = @"
+    SELECT 
+        A.TeacherFirstName,
+        A.TeacherLastName,
+        A.ClockIN,
+        B.ClockOUT
+    FROM SchoolManagement.TeachersAttendance A
+    JOIN SchoolManagement.TeachersAttendanceOut B
+        ON A.TeacherFirstName = B.TeacherFirstName
+        AND A.TeacherLastName = B.TeacherLastName
+        AND CAST(A.RecDateCreated AS DATE) = CAST(B.RecDateCreated AS DATE)
+    WHERE CAST(A.ClockIN AS DATE) BETWEEN @From AND @To";
+
+            return await connection.QueryAsync<dynamic>(query, new { From = from.Date, To = to.Date });
+        }
+
+
+        public string ExportToCsv(IEnumerable<dynamic> data)
+        {
+            var csv = new StringBuilder();
+            csv.AppendLine("TeacherFirstName,TeacherLastName,ClockIN,ClockOUT");
+
+            foreach (var row in data)
+            {
+                csv.AppendLine($"{row.TeacherFirstName},{row.TeacherLastName},{row.ClockIN},{row.ClockOUT}");
+            }
+
+            return csv.ToString();
         }
 
     }

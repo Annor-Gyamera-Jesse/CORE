@@ -5,9 +5,11 @@
 @inject AuthService AuthService
 @inject NotificationMessageService Notify
 @using CORE.SERVICE.NOTIFICATION
+@using CORE.Tool_Components.All_Staffs_Attendance_Tool_Panel_Component
 @using Radzen
 @using Radzen.Blazor
 @inject IJSRuntime JSRuntime
+@inherits Attendance_Teachers_CodeBehind
 <RadzenNotification />
 
 <style>
@@ -65,18 +67,43 @@
     border-radius: 8px;
     padding: 20px;
     }
+    /* PRINT STUDENT REPOR */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
 </style>
 <LoadingSpinner Visible="isLoading" />
 
 @if (!isLoading)
 {
-
-    <div class="container">
+    
+    <RadzenHeader title="REPORT GENERATING" class="header-container compact-header">
         <div class="row header">
             <div class="col-md-12">
                 <h1>Teacher Attendance</h1>
             </div>
         </div>
+        <RadzenFieldset Text="EXPORT ATTENDANCE REPORT" class="right-align">
+            <All_Staff_Attendance_Tool_Panel_Component OnOpenPerTeacherExportDialog="OpenPerTeacherExportDialog" OnOpenPerTermDialog="OpenPerTermDialog" />
+        </RadzenFieldset>
+     </RadzenHeader>
+    <div class="container">
 
         <div class="row form-container">
             <div class="col-md-4">
@@ -248,7 +275,8 @@
         }
     }
 
-    
+    async void OpenPerTeacherExportDialog() => await PerTeacherExportDialog();
+    async void OpenPerTermDialog() => await PerTermExportDialog();
 
     public class AttendanceModel
     {

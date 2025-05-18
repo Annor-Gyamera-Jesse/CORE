@@ -1,0 +1,35 @@
+﻿@using CORE.SERVICE
+@inject AuthService attendanceService
+
+<RadzenDropDown @bind-Value="selectedTeacher" Data="@teacherNames" Placeholder="Select Teacher" />
+<RadzenDatePicker @bind-Value="selectedDate" DateFormat="yyyy-MM-dd" />
+<RadzenButton Text="Print" Click="@GeneratePdf" Style="margin-top:10px" />
+
+@code {
+    List<string> teacherNames = new();
+    string selectedTeacher;
+    DateTime selectedDate = DateTime.Today;
+    [Inject] IJSRuntime JS { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        teacherNames = (await attendanceService.GetTeacherNamesAsync()).ToList();
+    }
+
+    private async Task GeneratePdf()
+    {
+        var data = await attendanceService.GetAttendanceByTeacherAndDate(selectedTeacher, selectedDate);
+
+        // Serialize data to JSON string
+        var json = System.Text.Json.JsonSerializer.Serialize(data);
+
+        // Convert JSON string to base64 for JS interop
+        var base64Data = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
+
+        var fileName = $"Attendance_{selectedTeacher}_{selectedDate:yyyyMMdd}.pdf";
+
+        await JS.InvokeVoidAsync("downloadTeachersAttendancePdf", fileName, base64Data);
+    }
+
+
+}
