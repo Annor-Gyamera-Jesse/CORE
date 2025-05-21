@@ -33,7 +33,7 @@ namespace CORE.Pages.STAFF_ATTENDANCES.TEACHERS
             }
 
             var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "600px", Resizable = false, Height = "100px" };
-            var dialogTitle = $"EXPORT TO PDF-(PER TERM)";
+            var dialogTitle = $"EXPORT TO PDF-(DATE RANGE)";
 
             await DialogService.OpenAsync<All_Staffs_Attendance_Print_Per_Date_Range>(dialogTitle, null, dialogOptions);
         }
