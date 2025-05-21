@@ -49,8 +49,8 @@
             doc.addPage();
             y = margin;
         }
-        const clockIn = new Date(row.ClockIN).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const clockOut = row.ClockOUT ? new Date(row.ClockOUT).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
+        const clockIn = new Date(row.ClockIN).toLocaleString();
+        const clockOut = row.ClockOUT ? new Date(row.ClockOUT).toLocaleString() : "N/A";
 
         doc.text(row.TeacherFirstName, colX[0], y);
         doc.text(row.TeacherLastName, colX[1], y);
