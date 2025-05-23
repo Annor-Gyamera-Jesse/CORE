@@ -418,6 +418,19 @@
         try
         {
             isLoading = true;
+            if (selectedFile != null)
+            {
+                using (var stream = selectedFile.OpenReadStream())
+                {
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        await stream.CopyToAsync(memoryStream);
+                        imageData = memoryStream.ToArray();
+                    }
+                }
+
+                student.ImageData = imageData;
+            }
             var result = await authService.UpdateStudent(student);
             successMessage = "Student record updated successfully!";
 

@@ -481,11 +481,11 @@ namespace CORE.SERVICE
                     {
                         command.Parameters.AddWithValue("@FirstName", student.StudentFirstName);
                         command.Parameters.AddWithValue("@LastName", student.StudentLastName);
-                        command.Parameters.AddWithValue("@DateOfBirth", student.StudentDateOfBirth);
-                        command.Parameters.AddWithValue("@Gender", student.StudentGender);
-                        command.Parameters.AddWithValue("@Address", student.StudentAddress);
-                        command.Parameters.AddWithValue("@PhoneNumber", student.StudentPhoneNumber);
-                        command.Parameters.AddWithValue("@Email", student.StudentEmail);
+                        command.Parameters.AddWithValue("@DateOfBirth", student.StudentDateOfBirth ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Gender", student.StudentGender ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Address", student.StudentAddress ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@PhoneNumber", student.StudentPhoneNumber ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Email", student.StudentEmail ?? (object)DBNull.Value);
                         // Add parameter for ImageData
                         command.Parameters.Add("@ImageData", SqlDbType.VarBinary).Value = student.ImageData ?? (object)DBNull.Value;
                         // Add parameter for ClassID

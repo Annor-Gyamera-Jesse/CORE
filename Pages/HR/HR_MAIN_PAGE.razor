@@ -180,17 +180,21 @@
     private bool isLoading = false;
 
     private async Task HandleManualPayment()
-    {
-        isLoading = true;
+    {        
         try
         {
+            isLoading = true;
             if (selectedStaff == null)
             {
                 await DialogService.Alert("Please select a staff member.", "Warning");
                 return;
             }
 
-            decimal totalAmount = selectedStaff.Salary + selectedStaff.OverTime - selectedStaff.TaxMoney;
+            decimal totalAmount =
+    (selectedStaff.Salary ?? 0) +
+    (selectedStaff.OverTime ?? 0) -
+    (selectedStaff.TaxMoney ?? 0);
+
 
             if (string.IsNullOrEmpty(selectedPaymentMethod))
             {
@@ -443,20 +447,20 @@
         isLoading = true;
         try
         {
-            bool success = await HrService.PaySalaryAsync(
+         bool success = await HrService.PaySalaryAsync(
                 selectedStaff.StaffID,
-                selectedStaff.Salary,
+                selectedStaff.Salary ?? 0,
                 DateTime.Now,
                 selectedMonth,
                 selectedYear,
                 selectedStaff.BankName,
                 selectedStaff.AccountName,
                 selectedStaff.AccountNumber,
-                selectedStaff.OverTime,
-                selectedStaff.TaxMoney,
+                selectedStaff.OverTime ?? 0,
+                selectedStaff.TaxMoney ?? 0,
                 selectedPaymentMethod,
                 selectedCategoryId
-            );
+         );
 
             if (success)
             {
