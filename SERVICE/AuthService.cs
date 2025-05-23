@@ -481,11 +481,11 @@ namespace CORE.SERVICE
                     {
                         command.Parameters.AddWithValue("@FirstName", student.StudentFirstName);
                         command.Parameters.AddWithValue("@LastName", student.StudentLastName);
-                        command.Parameters.AddWithValue("@DateOfBirth", student.StudentDateOfBirth);
-                        command.Parameters.AddWithValue("@Gender", student.StudentGender);
-                        command.Parameters.AddWithValue("@Address", student.StudentAddress);
-                        command.Parameters.AddWithValue("@PhoneNumber", student.StudentPhoneNumber);
-                        command.Parameters.AddWithValue("@Email", student.StudentEmail);
+                        command.Parameters.AddWithValue("@DateOfBirth", student.StudentDateOfBirth ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Gender", student.StudentGender ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Address", student.StudentAddress ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@PhoneNumber", student.StudentPhoneNumber ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Email", student.StudentEmail ?? (object)DBNull.Value);
                         // Add parameter for ImageData
                         command.Parameters.Add("@ImageData", SqlDbType.VarBinary).Value = student.ImageData ?? (object)DBNull.Value;
                         // Add parameter for ClassID
@@ -564,25 +564,28 @@ namespace CORE.SERVICE
                     {
                         command.Parameters.AddWithValue("@FirstName", teachersRegistration.TeacherFirstName);
                         command.Parameters.AddWithValue("@LastName", teachersRegistration.TeacherLastName);
-                        command.Parameters.AddWithValue("@DateOfBirth", teachersRegistration.TeacherDateOfBirth);
-                        command.Parameters.AddWithValue("@Gender", teachersRegistration.TeacherGender);
-                        command.Parameters.AddWithValue("@Address", teachersRegistration.TeacherAddress);
-                        command.Parameters.AddWithValue("@PhoneNumber", teachersRegistration.TeacherPhoneNumber);
-                        command.Parameters.AddWithValue("@Email", teachersRegistration.TeacherEmail);
-                        command.Parameters.AddWithValue("@ImageData", teachersRegistration.ImageData ?? (object)DBNull.Value);
-                        command.Parameters.AddWithValue("@DateHired", teachersRegistration.DateHired);
-                        command.Parameters.AddWithValue("@SSNIT", teachersRegistration.SSNIT);
-                        command.Parameters.AddWithValue("@BasicSalary", teachersRegistration.BasicSalary);
-                        command.Parameters.AddWithValue("@PAYE", teachersRegistration.PAYE);
-                        command.Parameters.AddWithValue("@SSNITTIER2", teachersRegistration.SSNITTIER2);
-                        command.Parameters.AddWithValue("@VotersID", teachersRegistration.VotersID);
-                        command.Parameters.AddWithValue("@HealthInsurance", teachersRegistration.HealthInsurance);
-                        command.Parameters.AddWithValue("@GhanaCard", teachersRegistration.GhanaCard);
-                        command.Parameters.AddWithValue("@Bank", teachersRegistration.Bank);
-                        command.Parameters.AddWithValue("@AccountNumber", teachersRegistration.AccountNumber);
-                        command.Parameters.AddWithValue("@Remarks", teachersRegistration.Remarks);
-                        command.Parameters.AddWithValue("@SSNITNumber", teachersRegistration.SSNITNumber);
-                        command.Parameters.AddWithValue("@CategoryName", teachersRegistration.CategoryName);
+                        command.Parameters.AddWithValue("@DateOfBirth", teachersRegistration.TeacherDateOfBirth ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Gender", teachersRegistration.TeacherGender ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Address", teachersRegistration.TeacherAddress ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@PhoneNumber", teachersRegistration.TeacherPhoneNumber ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Email", teachersRegistration.TeacherEmail ?? (object)DBNull.Value);
+
+                        var imageParameter = command.Parameters.Add("@ImageData", SqlDbType.VarBinary, -1);
+                        imageParameter.Value = teachersRegistration.ImageData ?? (object)DBNull.Value;
+
+                        command.Parameters.AddWithValue("@DateHired", teachersRegistration.DateHired ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@SSNIT", teachersRegistration.SSNIT ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@BasicSalary", teachersRegistration.BasicSalary ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@PAYE", teachersRegistration.PAYE ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@SSNITTIER2", teachersRegistration.SSNITTIER2 ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@VotersID", teachersRegistration.VotersID ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@HealthInsurance", teachersRegistration.HealthInsurance ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@GhanaCard", teachersRegistration.GhanaCard ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Bank", teachersRegistration.Bank ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@AccountNumber", teachersRegistration.AccountNumber ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Remarks", teachersRegistration.Remarks ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@SSNITNumber", teachersRegistration.SSNITNumber ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@CategoryName", teachersRegistration.CategoryName ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@EmploymentStatus", teachersRegistration.EmploymentStatus);
 
                         var result = await command.ExecuteScalarAsync();
@@ -607,12 +610,14 @@ namespace CORE.SERVICE
                        TeacherAddress = @TeacherAddress,
                        TeacherPhoneNumber = @TeacherPhoneNumber,
                        TeacherEmail = @TeacherEmail,
+                       TeacherDateOfBirth = @TeacherDateOfBirth,
                        DateHired = @DateHired,
                        SSNIT = @SSNIT,
                        BasicSalary  = @BasicSalary,
                        PAYE = @PAYE,
                        SSNITTIER2 = @SSNITTIER2,
                        VotersID = @VotersID,
+                       ImageData = @ImageData,
                        HealthInsurance = @HealthInsurance,
                        GhanaCard = @GhanaCard,
                        Bank = @Bank,

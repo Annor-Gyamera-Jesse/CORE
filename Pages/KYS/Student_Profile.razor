@@ -80,7 +80,12 @@
                         <div class="card-body">
                             <h5 class="card-title">@($"{selectedStudent.StudentFirstName} {selectedStudent.StudentLastName}")</h5>
                             <p class="card-text"><strong>Student ID:</strong> @selectedStudent.StudentID</p>
-                            <p class="card-text"><strong>Date of Birth:</strong> @selectedStudent.StudentDateOfBirth.ToShortDateString()</p>
+                                <p class="card-text">
+                                    <strong>Date of Birth:</strong>
+                                    @(selectedStudent.StudentDateOfBirth.HasValue
+                                        ? selectedStudent.StudentDateOfBirth.Value.ToShortDateString()
+                                        : "N/A")
+                                </p>
                             <p class="card-text"><strong>Gender:</strong> @selectedStudent.StudentGender</p>
                             <p class="card-text"><strong>Address:</strong> @selectedStudent.StudentAddress</p>
                             <p class="card-text"><strong>Phone Number:</strong> @selectedStudent.StudentPhoneNumber</p>

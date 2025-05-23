@@ -152,10 +152,11 @@
                 </div>
                 <div class="col-md-3">
                     <RadzenNumeric @bind-Value="@teachersRegistration.BasicSalary"
-                    Class="form-control form-control-sm"
-                    Change="@((decimal value) => CalculateSSNITTier2(value))" />
-
+                                   TValue="decimal?"
+                                   Class="form-control form-control-sm"
+                                   Change="@OnSalaryChanged" />
                 </div>
+
 
                 <div class="row">
                     <div class="col-md-3 text-md-end form-label">
@@ -278,6 +279,7 @@
     private bool isLoading = false;
     List<string> employmentStatuses = new() { "Active", "Suspended", "Terminated", "Leave" };
     private bool isEditMode = false;
+    private EventCallback<decimal?> OnSalaryChanged => EventCallback.Factory.Create<decimal?>(this, CalculateSSNITTier2);
 
     protected override async Task OnInitializedAsync()
     {
@@ -298,7 +300,7 @@
         }
     }
 
-    private Task CalculateSSNITTier2(decimal newSalary)
+    private Task CalculateSSNITTier2(decimal? newSalary)
     {
         teachersRegistration.BasicSalary = newSalary;
         teachersRegistration.SSNITTIER2 = newSalary * 0.05m;
@@ -311,8 +313,6 @@
         try
         {
             isLoading = true;
-            if (IsValid(teachersRegistration))
-            {
                 if (selectedFile != null)
                 {
                     using (var stream = selectedFile.OpenReadStream())
@@ -344,7 +344,7 @@
                     // Notify failure
                     Notify.ShowNotification("Error", "Failed to register the teacher. Please try again.", NotificationSeverity.Warning);
                 }
-            }
+            
         }
         catch (Exception ex)
         {
@@ -424,6 +424,22 @@
         try
         {
             isLoading = true;
+            if (selectedFile != null)
+            {
+                using (var stream = selectedFile.OpenReadStream())
+                {
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        await stream.CopyToAsync(memoryStream);
+                        imageData = memoryStream.ToArray();
+                    }
+                }
+
+                teachersRegistration.ImageData = imageData;
+            }
+            // Set the CategoryName based on the selectedCategoryId
+            var selectedCategory = paymentCategories.FirstOrDefault(c => c.CategoryID == selectedCategoryId);
+            teachersRegistration.CategoryName = selectedCategory?.CategoryName; // This will be null if not found
             var result = await authService.UpdateTeachersRegistrationData(teachersRegistration);
             //successMessage = "Student record updated successfully!";
             Notify.ShowNotification("", "Teacher record updated successfully!.", NotificationSeverity.Success);
