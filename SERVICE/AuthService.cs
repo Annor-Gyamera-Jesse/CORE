@@ -22,6 +22,7 @@ using CORE.Pages.HR.SALARY_PAYMENT_HISTORY;
 using CORE.MODEL.Salary_Payment_History;
 using Microsoft.Extensions.Caching.Memory;
 using System.Text;
+using static CORE.Pages.FEES.STUDENT_FEES_VIEWING.Students_Fees_Viewing;
 
 namespace CORE.SERVICE
 {
@@ -5112,6 +5113,16 @@ VALUES (
             return result.ToList();
         }
 
+        public async Task<List<StudentFeeHistory>> GetStudentFeeHistoryByTermAsync(int studentId, int termId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var sql = @"
+        SELECT FeeTypeName, AmountPaid, AmountLeft
+        FROM SchoolManagement.StudentFees
+        WHERE StudentID = @StudentID AND TermID = @TermID";
+
+            return (await connection.QueryAsync<StudentFeeHistory>(sql, new { StudentID = studentId, TermID = termId })).ToList();
+        }
 
     }
 

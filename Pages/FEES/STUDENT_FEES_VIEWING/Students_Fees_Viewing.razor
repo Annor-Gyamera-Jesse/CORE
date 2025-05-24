@@ -1,0 +1,93 @@
+﻿@page "/core/pages/fees/student-fees-viewing/student-fee-history"
+@using CORE.MODEL
+@using CORE.MODEL.Term
+@using CORE.SERVICE
+@inject AuthService authService
+
+<h3 class="text-xl font-bold mb-4">Student Fee Payment History</h3>
+
+<div class="grid grid-cols-12 gap-4">
+    <!-- Left: Student List -->
+    <div class="col-span-4">
+        <RadzenListBox @bind-Value="selectedStudentID"
+                       Data="@students"
+                       TextProperty="DisplayName"
+                       ValueProperty="StudentID"
+                       Change="@OnStudentSelected"
+                       Style="height: 400px;" />
+    </div>
+
+    <!-- Middle: Term Selection -->
+    <div class="col-span-4 flex flex-col items-center gap-2">
+        <h4 class="font-semibold mb-2">Select Term</h4>
+        @foreach (var term in terms)
+        {
+            <RadzenButton Text="@term.Term"
+                          Click="@(() => SelectTerm(term.TermID, term.Term))"
+                          Style="width: 140px;" />
+        }
+
+        @if (!string.IsNullOrEmpty(selectedTermName))
+        {
+            <div class="mt-4 text-sm font-medium text-gray-700">
+                Selected Term: <span class="text-blue-600">@selectedTermName</span>
+            </div>
+        }
+    </div>
+
+    <!-- Right: Fee History -->
+    <div class="col-span-4">
+        <RadzenDataGrid Data="@feeHistory" TItem="StudentFeeHistory" Class="w-full" ShowPagingSummary="false">
+            <Columns>
+                <RadzenDataGridColumn TItem="StudentFeeHistory" Property="FeeTypeName" Title="Fee Type" />
+                <RadzenDataGridColumn TItem="StudentFeeHistory" Property="AmountPaid" Title="Paid" />
+                <RadzenDataGridColumn TItem="StudentFeeHistory" Property="AmountLeft" Title="Left" />
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+@code {
+    private List<StudentDisplay> students = new();
+    private List<SchoolTerm> terms = new();
+    private List<StudentFeeHistory> feeHistory = new();
+
+    private int selectedStudentID;
+    private int selectedTermID;
+    private string selectedTermName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var rawStudents = await authService.GetAllStudentsAsync();
+        students = rawStudents.Select(s => new StudentDisplay
+            {
+                StudentID = s.StudentID,
+                StudentFirstName = s.StudentFirstName,
+                StudentLastName = s.StudentLastName,
+                ClassID = s.ClassID
+            }).ToList();
+
+        terms = await authService.GetAllSchoolTermsAsync();
+    }
+
+    private async Task OnStudentSelected(object value)
+    {
+        selectedStudentID = (int)value;
+        await TryLoadHistory();
+    }
+
+    private async Task SelectTerm(int termId, string termName)
+    {
+        selectedTermID = termId;
+        selectedTermName = termName;
+        await TryLoadHistory();
+    }
+
+    private async Task TryLoadHistory()
+    {
+        if (selectedStudentID != 0 && selectedTermID != 0)
+        {
+            feeHistory = await authService.GetStudentFeeHistoryByTermAsync(selectedStudentID, selectedTermID);
+        }
+    }
+}
