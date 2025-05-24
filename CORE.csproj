@@ -43,7 +43,4 @@
 	<ItemGroup>
 		<UpToDateCheckInput Remove="Pages\AdminDialogs\ApprovedLessonNotesDialog.razor" />
 	</ItemGroup>
-	<ItemGroup>
-	  <Folder Include="Pages\FEES\TRANSACTION_FEES_VIEW\" />
-	</ItemGroup>
 </Project>

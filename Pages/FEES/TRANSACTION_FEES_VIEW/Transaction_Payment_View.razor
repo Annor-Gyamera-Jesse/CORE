@@ -1,0 +1,140 @@
+﻿@page "/core/pages/fees/transactionview/view-payments"
+@using CORE.MODEL.Expenses
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService AuthService
+@inject NotificationMessageService NotificationService
+<style>
+    .text-blue {
+        color: blue;
+    }
+
+    .text-red {
+        color: red;
+    }
+
+    .student-list-container {
+        max-width: 300px;
+        float: left;
+        margin-right: 20px;
+    }
+
+    .form-container {
+        margin-left: 320px;
+    }
+
+    .input-group {
+        margin-bottom: 15px;
+    }
+
+    /* PRINT STUDENT REPOR */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
+
+    .custom-background {
+        background-color: green !important;
+    }
+</style>
+<h3 class="text-xl font-bold mb-4">Payment Transactions</h3>
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <RadzenHeader title="Transaction Payment View" class="header-container compact-header">
+        <RadzenFieldset Text="Transaction Payment View" class="right-align">
+            <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <RadzenDatePicker @bind-Value="filterFromDate" Name="FromDate" DateFormat="dd/MM/yyyy" Placeholder="From Date" Style="width:100%" />
+                <RadzenDatePicker @bind-Value="filterToDate" Name="ToDate" DateFormat="dd/MM/yyyy" Placeholder="To Date" Style="width:100%" />
+                <RadzenTextBox @bind-Value="filterMethodName" Name="MethodName" Placeholder="Method Name" Style="width:100%" />
+                <RadzenButton Text="Filter" ButtonStyle="ButtonStyle.Primary" Icon="search" Click="@LoadFilteredPayments" Style="width:100%" />
+            </div>
+        </RadzenFieldset>
+    </RadzenHeader>
+
+    @if (paymentList?.Any() == true)
+    {
+        <RadzenCard Style="margin-bottom: 20px; background-color: #f0f4f8;">
+            <h4 class="text-lg font-semibold text-green-700">
+                Total Transferred Amount: @totalAmountTransferred.ToString("C")
+            </h4>
+        </RadzenCard>
+    }
+
+
+    <RadzenDataGrid TItem="PaymentViewModel" Data="@paymentList" ColumnWidth="200px" ShowPagingSummary="true" PageSize="10" AllowPaging="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="PaymentViewModel" Property="BankID" Title="Bank ID" />
+            <RadzenDataGridColumn TItem="PaymentViewModel" Property="MethodName" Title="Payment Method" />
+            <RadzenDataGridColumn TItem="PaymentViewModel" Property="BankNumber" Title="Bank Number" />
+            <RadzenDataGridColumn TItem="PaymentViewModel" Property="AmountTransferred" Title="Transferred Amount" />
+            <RadzenDataGridColumn TItem="PaymentViewModel" Property="AmountInHand" Title="Amount In Hand" />
+            <RadzenDataGridColumn TItem="PaymentViewModel" Property="TransferDate" Title="Date of Transfer" FormatString="{0:dd/MM/yyyy}" />
+            <RadzenDataGridColumn TItem="PaymentViewModel" Property="SystemTransferID" Title="System ID" />           
+            <RadzenDataGridColumn TItem="PaymentViewModel" Property="Remarks" Title="Remarks" />
+           @*  <RadzenDataGridColumn TItem="PaymentViewModel" Property="UserID" Title="UserID" /> *@
+        </Columns>
+    </RadzenDataGrid>
+}
+@code {
+    private List<PaymentViewModel> paymentList = new();
+    public bool isLoading = false;
+    DateTime? filterFromDate;
+    DateTime? filterToDate;
+    string filterMethodName;
+    decimal totalAmountTransferred = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            paymentList = (await AuthService.GetAllPaymentsAsync()).ToList();
+            await LoadFilteredPayments();
+        }
+        catch(Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Initialization Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadFilteredPayments()
+    {
+        try
+        {
+            isLoading = true;
+            paymentList = (await AuthService.GetFilteredPaymentsAsync(filterFromDate, filterToDate, filterMethodName)).ToList();
+            totalAmountTransferred = paymentList.Sum(p => p.AmountTransferred);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Filter Load Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+}
