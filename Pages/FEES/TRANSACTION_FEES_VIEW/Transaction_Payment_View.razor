@@ -1,0 +1,139 @@
+﻿@page "/core/pages/fees/transactionview/view-payments"
+@using CORE.MODEL
+@using CORE.MODEL.Expenses
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService AuthService
+@inject NotificationMessageService NotificationService
+<style>
+    .text-blue {
+    color: blue;
+    }
+
+    .text-red {
+    color: red;
+    }
+
+    .student-list-container {
+    max-width: 300px;
+    float: left;
+    margin-right: 20px;
+    }
+
+    .form-container {
+    margin-left: 320px;
+    }
+
+    .input-group {
+    margin-bottom: 15px;
+    }
+
+    /* PRINT STUDENT REPOR */
+    .header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+
+    .right-align {
+    margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+    height: 60px; /* Adjust the height to your preference */
+    padding: 5px 15px; /* Reduce padding */
+    }
+
+    /* Additional styling if needed */
+    .compact-header .rz-header-title {
+    font-size: 18px; /* Make the title smaller */
+    }
+
+    .custom-background {
+    background-color: green !important;
+    }
+</style>
+<h3 class="text-xl font-bold mb-4">Payment Transactions</h3>
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <RadzenHeader title="TOOL COMPONENT" class="header-container compact-header">
+        <RadzenFieldset Text="TOOL COMPONENT" class="right-align">
+            <div class="flex flex-wrap gap-4 mb-4">
+                <RadzenDatePicker @bind-Value="fromDate" DateFormat="dd-MMM-yyyy" Placeholder="From Date" Style="width: 200px;" />
+                <RadzenDatePicker @bind-Value="toDate" DateFormat="dd-MMM-yyyy" Placeholder="To Date" Style="width: 200px;" />
+                <RadzenDropDown @bind-Value="selectedFeeType" Data="@feeTypes" TextProperty="FeeTypeName" ValueProperty="FeeTypeName"
+                Placeholder="Select Fee Type" Style="width: 200px;" />
+                <RadzenButton Icon="search" Text="Filter" Click="@LoadData" Style="margin-top: 5px;" />
+            </div>
+        </RadzenFieldset>
+    </RadzenHeader>
+    @if (feeSummaries == null)
+    {
+        <p>Loading...</p>
+    }
+    else if (!feeSummaries.Any())
+    {
+        <p>No fee transactions found.</p>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@feeSummaries" TItem="FeeTransactionSummary" Class="w-full">
+            <Columns>
+                <RadzenDataGridColumn TItem="FeeTransactionSummary" Property="FeeTypeName" Title="Fee Type" />
+                <RadzenDataGridColumn TItem="FeeTransactionSummary" Property="MethodName" Title="Payment Method" />
+                <RadzenDataGridColumn TItem="FeeTransactionSummary" Property="AmountPaid" Title="Amount Paid" />
+                <RadzenDataGridColumn TItem="FeeTransactionSummary" Property="PaymentDate" Title="Payment Date"
+                FormatString="{0:dd-MMM-yyyy}" />
+            </Columns>
+        </RadzenDataGrid>
+    }
+}
+@code {
+    public bool isLoading = false;
+    private List<FeeTransactionSummary> feeSummaries;
+    private List<FeeType> feeTypes;
+    private string selectedFeeType;
+    private DateTime? fromDate;
+    private DateTime? toDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            feeSummaries = await AuthService.GetFeeTransactionSummariesAsync();
+            await LoadData();
+            feeTypes = await AuthService.GetFeeTypesAsync();
+        }
+        catch(Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Initialization Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+            feeSummaries = await AuthService.GetFilteredFeeTransactionSummariesAsync(fromDate, toDate, selectedFeeType);
+        }
+        catch(Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Initialization Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+   
+
+}

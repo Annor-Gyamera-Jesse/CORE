@@ -5045,6 +5045,74 @@ VALUES (
             return csv.ToString();
         }
 
+        public async Task<List<FeeTransactionSummary>> GetFeeTransactionSummariesAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            var query = @"
+        SELECT 
+            sf.FeeTypeName,
+            b.MethodName,
+            sf.AmountPaid,
+            sf.PaymentDate
+        FROM 
+            SchoolManagement.StudentFees sf
+        LEFT JOIN 
+            SchoolManagement.Bank b ON sf.SystemTransferID = b.SystemTransferID
+        WHERE 
+            sf.AmountPaid > 0
+        ORDER BY 
+            sf.PaymentDate DESC;
+    ";
+
+            var result = await connection.QueryAsync<FeeTransactionSummary>(query);
+            return result.ToList();
+        }
+
+        public async Task<List<FeeTransactionSummary>> GetFilteredFeeTransactionSummariesAsync(DateTime? fromDate, DateTime? toDate, string feeTypeName)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            var query = new StringBuilder(@"
+        SELECT 
+            sf.FeeTypeName,
+            b.MethodName,
+            sf.AmountPaid,
+            sf.PaymentDate
+        FROM 
+            SchoolManagement.StudentFees sf
+        LEFT JOIN 
+            SchoolManagement.Bank b ON sf.SystemTransferID = b.SystemTransferID
+        WHERE 
+            sf.AmountPaid > 0
+    ");
+
+            var parameters = new DynamicParameters();
+
+            if (fromDate.HasValue)
+            {
+                query.Append(" AND sf.PaymentDate >= @FromDate");
+                parameters.Add("FromDate", fromDate.Value.Date);
+            }
+
+            if (toDate.HasValue)
+            {
+                query.Append(" AND sf.PaymentDate <= @ToDate");
+                parameters.Add("ToDate", toDate.Value.Date.AddDays(1).AddSeconds(-1));
+            }
+
+            if (!string.IsNullOrEmpty(feeTypeName))
+            {
+                query.Append(" AND sf.FeeTypeName = @FeeTypeName");
+                parameters.Add("FeeTypeName", feeTypeName);
+            }
+
+            query.Append(" ORDER BY sf.PaymentDate DESC");
+
+            var result = await connection.QueryAsync<FeeTransactionSummary>(query.ToString(), parameters);
+            return result.ToList();
+        }
+
+
     }
 
 }
