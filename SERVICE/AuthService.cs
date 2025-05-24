@@ -5045,74 +5045,27 @@ VALUES (
             return csv.ToString();
         }
 
-        public async Task<IEnumerable<PaymentViewModel>> GetAllPaymentsAsync()
+        public async Task<List<FeeTransactionSummary>> GetFeeTransactionSummariesAsync()
         {
             using var connection = new SqlConnection(connectionString);
-            var sql = @"
+            var query = @"
         SELECT 
-            b.BankID,
-            b.PaymentMethodID,
+            sf.FeeTypeName,
             b.MethodName,
-            b.BankNumber,
-            b.AmountTransferred,
-            b.AmountInHand,
-            b.TransferDate,
-            b.SystemTransferID,
-            b.Remarks,
-            b.UserID,
-            u.UserName
-        FROM SchoolManagement.Bank b
-        LEFT JOIN SchoolManagement.Users u ON b.UserID = u.UserID
-        ORDER BY b.TransferDate DESC";
+            sf.AmountPaid,
+            sf.PaymentDate
+        FROM 
+            SchoolManagement.StudentFees sf
+        LEFT JOIN 
+            SchoolManagement.Bank b ON sf.SystemTransferID = b.SystemTransferID
+        WHERE 
+            sf.AmountPaid > 0
+        ORDER BY 
+            sf.PaymentDate DESC;
+    ";
 
-            var payments = await connection.QueryAsync<PaymentViewModel>(sql);
-            return payments;
-        }
-
-        public async Task<IEnumerable<PaymentViewModel>> GetFilteredPaymentsAsync(DateTime? fromDate, DateTime? toDate, string methodName)
-        {
-            using var connection = new SqlConnection(connectionString);
-
-            var sql = new StringBuilder(@"
-        SELECT 
-            b.BankID,
-            b.PaymentMethodID,
-            b.MethodName,
-            b.BankNumber,
-            b.AmountTransferred,
-            b.AmountInHand,
-            b.TransferDate,
-            b.SystemTransferID,
-            b.Remarks,
-            b.UserID,
-            u.UserName
-        FROM SchoolManagement.Bank b
-        LEFT JOIN SchoolManagement.Users u ON b.UserID = u.UserID
-        WHERE 1=1 ");
-
-            var parameters = new DynamicParameters();
-
-            if (fromDate.HasValue)
-            {
-                sql.Append(" AND b.TransferDate >= @FromDate ");
-                parameters.Add("FromDate", fromDate.Value.Date);
-            }
-
-            if (toDate.HasValue)
-            {
-                sql.Append(" AND b.TransferDate <= @ToDate ");
-                parameters.Add("ToDate", toDate.Value.Date.AddDays(1).AddTicks(-1)); // include full day
-            }
-
-            if (!string.IsNullOrWhiteSpace(methodName))
-            {
-                sql.Append(" AND b.MethodName LIKE @MethodName ");
-                parameters.Add("MethodName", $"%{methodName}%");
-            }
-
-            sql.Append(" ORDER BY b.TransferDate DESC");
-
-            return await connection.QueryAsync<PaymentViewModel>(sql.ToString(), parameters);
+            var result = await connection.QueryAsync<FeeTransactionSummary>(query);
+            return result.ToList();
         }
 
     }

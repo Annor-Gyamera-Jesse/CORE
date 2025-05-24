@@ -23,4 +23,11 @@
         public int UserID { get; set; }
         public string UserName { get; set; } // From Users table
     }
+    public class FeeTransactionSummary
+    {
+        public string FeeTypeName { get; set; }
+        public string MethodName { get; set; }
+        public decimal AmountPaid { get; set; }
+        public DateTime PaymentDate { get; set; }
+    }
 }
