@@ -1,33 +1,140 @@
-﻿@* @page "/viewallstudents"
+﻿@page "/core/pages/students/view-students"
 @using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService authService
+<style>
+    .text-blue {
+    color: blue;
+    }
 
+    .text-red {
+    color: red;
+    }
 
-<RadzenGrid @ref="@Grid" Data="ViewStudents" AllowPaging="true" PageSize="100" AllowSorting="true" AllowColumnResize="true">
-    <Columns>
-        <RadzenGridColumn TItem="Student" Property="StudentFirstName" Title="Student`s FirstName" />
-        <RadzenGridColumn TItem="Student" Property="StudentLastName" Title="Student`s LastName" />
-        <RadzenGridColumn TItem="Student" Property="StudentGender" Title="Student`s Gender" />
-        <RadzenGridColumn TItem="Student" Property="StudentPhoneNumber" Title="Student`s PhoneNumber" />
-        <RadzenGridColumn TItem="Student" Property="ClassID" Title="Student`s Class" />
-    </Columns>
+    .student-list-container {
+    max-width: 300px;
+    float: left;
+    margin-right: 20px;
+    }
 
-</RadzenGrid>
+    .form-container {
+    margin-left: 320px;
+    }
 
+    .input-group {
+    margin-bottom: 15px;
+    }
 
+    /* PRINT STUDENT REPOR */
+    .header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+
+    .right-align {
+    margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+    height: 60px; /* Adjust the height to your preference */
+    padding: 5px 15px; /* Reduce padding */
+    }
+
+    /* Additional styling if needed */
+    .compact-header .rz-header-title {
+    font-size: 18px; /* Make the title smaller */
+    }
+
+    .custom-background {
+    background-color: green !important;
+    }
+</style>
+
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <h3 class="text-xl font-bold mb-4">Students and Their Classes</h3>
+    <RadzenHeader title="TOOL COMPONENT" class="header-container compact-header">
+        <RadzenFieldset Text="TOOL COMPONENT" class="right-align">
+            <div class="flex flex-wrap items-center gap-4 mb-4">
+                <RadzenDropDown @bind-Value="selectedClass"
+                Data="@classIds"
+                Placeholder="Filter by Class"
+                Style="width: 200px"
+                Change="@(args => FilterByClass())" />
+                <RadzenCard Style="padding: 10px; background-color: #f5f5f5; min-width: 200px;">
+                    <h4 class="text-lg font-semibold mb-1">Total Students</h4>
+                    <div class="text-2xl font-bold text-blue-600">@filteredStudents?.Count()</div>
+                </RadzenCard>
+            </div>
+        </RadzenFieldset>
+    </RadzenHeader>
+
+    <RadzenDataGrid Data="@filteredStudents" TItem="Student" Class="w-full">
+        <Columns>
+            <RadzenDataGridColumn TItem="Student" Property="StudentID" Title="ID" />
+            <RadzenDataGridColumn TItem="Student" Property="StudentFirstName" Title="First Name" />
+            <RadzenDataGridColumn TItem="Student" Property="StudentLastName" Title="Last Name" />
+            <RadzenDataGridColumn TItem="Student" Property="ClassID" Title="Class ID" />
+        </Columns>
+    </RadzenDataGrid>
+}
 
 @code {
-    RadzenGrid<Student> Grid;
-    List<Student> ViewStudents;
-
+    private List<Student> students = new();
+    private List<Student> filteredStudents = new();
+    private string selectedClass;
+    private List<string> classIds = new();
+    public bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-
-        ViewStudents = await authService.GetAllStudents();
-
+        try
+        {
+            isLoading = true;
+            students = await authService.GetAllStudentsAsync();
+            classIds = students.Select(s => s.ClassID).Distinct().OrderBy(x => x).ToList();
+            filteredStudents = new List<Student>(students);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching students: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
+    private void FilterByClass()
+    {
+        if (isLoading) return; // Prevent filtering while loading
+        if (string.IsNullOrEmpty(selectedClass) && filteredStudents.Count == students.Count)
+        {
+            return; // No filtering needed
+        }
+        try
+        {
+            isLoading = true;
+            if (!string.IsNullOrEmpty(selectedClass))
+        {
+            filteredStudents = students.Where(s => s.ClassID == selectedClass).ToList();
+        }
+        else
+        {
+            filteredStudents = new List<Student>(students);
+        }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error filtering students: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 }
- *@

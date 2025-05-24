@@ -5029,22 +5029,9 @@ VALUES (
     WHERE CAST(A.ClockIN AS DATE) BETWEEN @From AND @To";
 
             return await connection.QueryAsync<dynamic>(query, new { From = from.Date, To = to.Date });
-        }
+        }     
 
-
-        public string ExportToCsv(IEnumerable<dynamic> data)
-        {
-            var csv = new StringBuilder();
-            csv.AppendLine("TeacherFirstName,TeacherLastName,ClockIN,ClockOUT");
-
-            foreach (var row in data)
-            {
-                csv.AppendLine($"{row.TeacherFirstName},{row.TeacherLastName},{row.ClockIN},{row.ClockOUT}");
-            }
-
-            return csv.ToString();
-        }
-
+        //transactio fees view
         public async Task<List<FeeTransactionSummary>> GetFeeTransactionSummariesAsync()
         {
             using var connection = new SqlConnection(connectionString);
@@ -5109,6 +5096,19 @@ VALUES (
             query.Append(" ORDER BY sf.PaymentDate DESC");
 
             var result = await connection.QueryAsync<FeeTransactionSummary>(query.ToString(), parameters);
+            return result.ToList();
+        }
+
+        //view all students page
+        public async Task<List<Student>> GetAllStudentsAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        SELECT StudentID, StudentFirstName, StudentLastName, ClassID
+        FROM SchoolManagement.Students
+        ORDER BY ClassID, StudentFirstName
+    ";
+            var result = await connection.QueryAsync<Student>(query);
             return result.ToList();
         }
 
