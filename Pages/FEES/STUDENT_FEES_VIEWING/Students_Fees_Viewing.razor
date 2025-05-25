@@ -1,79 +1,117 @@
 ﻿@page "/core/pages/fees/student-fees-viewing/student-fee-history"
 @using CORE.MODEL
 @using CORE.MODEL.Term
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService authService
 
-<h3 class="text-xl font-bold mb-4">Student Fee Payment History</h3>
 
-<div class="grid grid-cols-12 gap-4">
-    <!-- Left: Student List -->
-    <div class="col-span-4">
-        <RadzenListBox @bind-Value="selectedStudentID"
-                       Data="@students"
-                       TextProperty="DisplayName"
-                       ValueProperty="StudentID"
-                       Change="@OnStudentSelected"
-                       Style="height: 400px;" />
-    </div>
+<LoadingSpinner Visible="isLoading" />
 
-    <!-- Middle: Term Selection -->
-    <div class="col-span-4 flex flex-col items-center gap-2">
-        <h4 class="font-semibold mb-2">Select Term</h4>
-        @foreach (var term in terms)
-        {
-            <RadzenButton Text="@term.Term"
-                          Click="@(() => SelectTerm(term.TermID, term.Term))"
-                          Style="width: 140px;" />
-        }
+@if (!isLoading)
+{
+    <h3 class="text-xl font-bold mb-4">Student Fee Payment History</h3>
 
-        @if (!string.IsNullOrEmpty(selectedTermName))
-        {
-            <div class="mt-4 text-sm font-medium text-gray-700">
-                Selected Term: <span class="text-blue-600">@selectedTermName</span>
-            </div>
-        }
-    </div>
+    <RadzenRow>
+        <RadzenFieldset Text="SELECT STUDENT" Style="width: 100%;">
+            <RadzenTextBox Placeholder="Search by Student Name">
+        <RadzenColumn Width="25%">
+            <RadzenListBox @bind-Value="selectedStudentID"
+            Data="@students"
+            TextProperty="DisplayName"
+            ValueProperty="StudentID"
+            Change="@OnStudentSelected"
+            Style="height: 400px;" />    
+        </RadzenColumn>
+        </RadzenTextBox>
+        </RadzenFieldset>
 
-    <!-- Right: Fee History -->
-    <div class="col-span-4">
-        <RadzenDataGrid Data="@feeHistory" TItem="StudentFeeHistory" Class="w-full" ShowPagingSummary="false">
-            <Columns>
-                <RadzenDataGridColumn TItem="StudentFeeHistory" Property="FeeTypeName" Title="Fee Type" />
-                <RadzenDataGridColumn TItem="StudentFeeHistory" Property="AmountPaid" Title="Paid" />
-                <RadzenDataGridColumn TItem="StudentFeeHistory" Property="AmountLeft" Title="Left" />
-            </Columns>
-        </RadzenDataGrid>
-    </div>
-</div>
+        <!-- Middle: Term Selection -->
+        <RadzenFieldset Text="SELECT TERM">
+        <RadzenColumn Width="25%" Style="display: flex; flex-direction: column; align-items: center; justify-content: start;">
+            <RadzenFieldset Text="SELECT TERM">
+                @foreach (var term in terms)
+                {
+                    <RadzenCard Style="text-align: center; padding: 10px; width: 100%;">
+                        <RadzenButton Text="@term.Term"
+                        Click="@(() => SelectTerm(term.TermID, term.Term))"
+                        Style="width: 140px;" />
+                    </RadzenCard>
+                }
 
+                @if (!string.IsNullOrEmpty(selectedTermName))
+                {
+                    <div class="mt-4 text-sm font-medium text-gray-700">
+                        Selected Term: <span class="text-blue-600">@selectedTermName</span>
+                    </div>
+                }    
+            </RadzenFieldset>
+        </RadzenColumn>
+        </RadzenFieldset>
+        <!-- Right: Fee History -->
+        <RadzenColumn Width="50%">
+            <RadzenDataGrid Data="@feeHistory" AllowPaging="true" PageSize="5" TItem="StudentFeeHistory" Class="w-full" ShowPagingSummary="false">
+                <Columns>
+                    <RadzenDataGridColumn TItem="StudentFeeHistory" Property="FeeTypeName" Title="Fee Type" />
+                    <RadzenDataGridColumn TItem="StudentFeeHistory" Property="AmountPaid" Title="Paid" />
+                    <RadzenDataGridColumn TItem="StudentFeeHistory" Property="AmountLeft" Title="Left" />
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenColumn>
+
+    </RadzenRow>
+}
 @code {
     private List<StudentDisplay> students = new();
     private List<SchoolTerm> terms = new();
     private List<StudentFeeHistory> feeHistory = new();
-
+    public bool isLoading = false;
     private int selectedStudentID;
     private int selectedTermID;
     private string selectedTermName;
 
     protected override async Task OnInitializedAsync()
     {
-        var rawStudents = await authService.GetAllStudentsAsync();
-        students = rawStudents.Select(s => new StudentDisplay
-            {
-                StudentID = s.StudentID,
-                StudentFirstName = s.StudentFirstName,
-                StudentLastName = s.StudentLastName,
-                ClassID = s.ClassID
-            }).ToList();
+        try
+        {
+            isLoading = true;
+            var rawStudents = await authService.GetAllStudentsAsync();
+            students = rawStudents.Select(s => new StudentDisplay
+                {
+                    StudentID = s.StudentID,
+                    StudentFirstName = s.StudentFirstName,
+                    StudentLastName = s.StudentLastName,
+                    ClassID = s.ClassID
+                }).ToList();
 
-        terms = await authService.GetAllSchoolTermsAsync();
+            terms = await authService.GetAllSchoolTermsAsync();
+        }
+        catch(Exception ex)
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task OnStudentSelected(object value)
     {
-        selectedStudentID = (int)value;
-        await TryLoadHistory();
+        try
+        {
+            isLoading = true;
+            selectedStudentID = (int)value;
+            await TryLoadHistory();
+        }
+        catch(Exception ex)
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task SelectTerm(int termId, string termName)
@@ -85,9 +123,21 @@
 
     private async Task TryLoadHistory()
     {
-        if (selectedStudentID != 0 && selectedTermID != 0)
+        try
         {
-            feeHistory = await authService.GetStudentFeeHistoryByTermAsync(selectedStudentID, selectedTermID);
+            isLoading = true;
+            if (selectedStudentID != 0 && selectedTermID != 0)
+            {
+                feeHistory = await authService.GetStudentFeeHistoryByTermAsync(selectedStudentID, selectedTermID);
+            }
+        }
+        catch(Exception ex)
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }
