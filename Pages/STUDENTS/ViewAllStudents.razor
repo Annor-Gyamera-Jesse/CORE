@@ -59,13 +59,13 @@
    
     <RadzenHeader title="Set School Fees Payment" class="header-container compact-header">
         <RadzenFieldset Text="TOOL COMPONENT" class="right-align">
-              <div class="flex flex-wrap gap-4 mb-4">
+              
                 <RadzenDropDown @bind-Value="selectedClass" Data="@classIds" Placeholder="Filter by Class"Style="width: 200px" Change="@(args => FilterByClass())" AllowClear="true"/>
-                <RadzenCard Style="background-color: #f5f5f5; min-width: 200px;">
+              @*   <RadzenCard Style="background-color: #f5f5f5; min-width: 200px;">
                     <h4 class="text-lg font-semibold mb-1">Total Students</h4>
                     <div class="text-2xl font-bold text-blue-600">@filteredStudents?.Count()</div>
-                </RadzenCard>            
-                    </div>
+                </RadzenCard>  *@           
+                    
         </RadzenFieldset>
     </RadzenHeader>
 
