@@ -3090,64 +3090,37 @@ namespace CORE.SERVICE
                 throw new ApplicationException("An error occurred while saving the student fee.", ex);
             }
 
-        }
-
-        public async Task<List<StudentOwingRecord>> GetUnpaidFeesByStudentAsync(int studentId)
-        {
-            var results = new List<StudentOwingRecord>();
-
-            using (var connection = new SqlConnection(connectionString))
-            {
-                var query = @"
-                                SELECT 
-                                    f.StudentID,
-                                    (s.StudentFirstName + ' ' + s.StudentLastName) AS FullName,
-                                    t.Term,
-                                    f.FeeTypeName,
-                                    ft.Amount AS TotalFeeAmount,
-                                    SUM(f.AmountPaid) AS TotalPaid,
-                                    ft.Amount - SUM(f.AmountPaid) AS AmountOwing
-                                FROM SchoolManagement.StudentFees f
-                                JOIN SchoolManagement.Students s ON f.StudentID = s.StudentID
-                                JOIN SchoolManagement.FeeTypes ft ON f.FeeTypeID = ft.FeeTypeID
-                                JOIN SchoolManagement.SchoolTerm t ON f.TermID = t.TermID
-                                WHERE f.StudentID = @studentId
-                                GROUP BY f.StudentID, s.StudentFirstName, s.StudentLastName, f.FeeTypeName, ft.Amount, t.Term
-                                HAVING ft.Amount - SUM(f.AmountPaid) > 0";
-
-                results = (await connection.QueryAsync<StudentOwingRecord>(query, new { studentId })).ToList();
-            }
-
-            return results;
-        }
+        }   
 
         public async Task<List<StudentOwingRecord>> GetAllStudentsWhoOweFeesAsync()
         {
-            var results = new List<StudentOwingRecord>();
-
             using (var connection = new SqlConnection(connectionString))
             {
                 var query = @"
         SELECT 
-            f.StudentID,
+            s.StudentID,
             (s.StudentFirstName + ' ' + s.StudentLastName) AS FullName,
             t.Term,
-            f.FeeTypeName,
+            ft.FeeTypeName,
             ft.Amount AS TotalFeeAmount,
-            SUM(f.AmountPaid) AS TotalPaid,
-            ft.Amount - SUM(f.AmountPaid) AS AmountOwing
-        FROM SchoolManagement.StudentFees f
-        JOIN SchoolManagement.Students s ON f.StudentID = s.StudentID
-        JOIN SchoolManagement.FeeTypes ft ON f.FeeTypeID = ft.FeeTypeID
-        JOIN SchoolManagement.SchoolTerm t ON f.TermID = t.TermID
-        GROUP BY f.StudentID, s.StudentFirstName, s.StudentLastName, f.FeeTypeName, ft.Amount, t.Term
-        HAVING ft.Amount - SUM(f.AmountPaid) > 0";
+            ISNULL(SUM(f.AmountPaid), 0) AS TotalPaid,
+            ft.Amount - ISNULL(SUM(f.AmountPaid), 0) AS AmountOwing
+        FROM SchoolManagement.Students s
+        JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
+        LEFT JOIN SchoolManagement.StudentFees f 
+            ON s.StudentID = f.StudentID AND ft.FeeTypeID = f.FeeTypeID
+        LEFT JOIN SchoolManagement.SchoolTerm t ON f.TermID = t.TermID
+        GROUP BY 
+            s.StudentID, s.StudentFirstName, s.StudentLastName,
+            ft.FeeTypeName, ft.Amount, t.Term
+        HAVING ft.Amount - ISNULL(SUM(f.AmountPaid), 0) > 0
+        ORDER BY FullName";
 
-                results = (await connection.QueryAsync<StudentOwingRecord>(query)).ToList();
+                var results = await connection.QueryAsync<StudentOwingRecord>(query);
+                return results.ToList();
             }
-
-            return results;
         }
+
 
 
         public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId)
