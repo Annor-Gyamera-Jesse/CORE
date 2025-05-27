@@ -23,6 +23,7 @@ using CORE.MODEL.Salary_Payment_History;
 using Microsoft.Extensions.Caching.Memory;
 using System.Text;
 using static CORE.Pages.FEES.STUDENT_FEES_VIEWING.Students_Fees_Viewing;
+using Microsoft.AspNetCore.Connections;
 
 namespace CORE.SERVICE
 {
@@ -3089,6 +3090,85 @@ namespace CORE.SERVICE
                 throw new ApplicationException("An error occurred while saving the student fee.", ex);
             }
 
+        }
+
+        public async Task<List<StudentOwingRecord>> GetUnpaidFeesByStudentAsync(int studentId)
+        {
+            var results = new List<StudentOwingRecord>();
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+                                SELECT 
+                                    f.StudentID,
+                                    (s.StudentFirstName + ' ' + s.StudentLastName) AS FullName,
+                                    t.Term,
+                                    f.FeeTypeName,
+                                    ft.Amount AS TotalFeeAmount,
+                                    SUM(f.AmountPaid) AS TotalPaid,
+                                    ft.Amount - SUM(f.AmountPaid) AS AmountOwing
+                                FROM SchoolManagement.StudentFees f
+                                JOIN SchoolManagement.Students s ON f.StudentID = s.StudentID
+                                JOIN SchoolManagement.FeeTypes ft ON f.FeeTypeID = ft.FeeTypeID
+                                JOIN SchoolManagement.SchoolTerm t ON f.TermID = t.TermID
+                                WHERE f.StudentID = @studentId
+                                GROUP BY f.StudentID, s.StudentFirstName, s.StudentLastName, f.FeeTypeName, ft.Amount, t.Term
+                                HAVING ft.Amount - SUM(f.AmountPaid) > 0";
+
+                results = (await connection.QueryAsync<StudentOwingRecord>(query, new { studentId })).ToList();
+            }
+
+            return results;
+        }
+
+        public async Task<List<StudentOwingRecord>> GetAllStudentsWhoOweFeesAsync()
+        {
+            var results = new List<StudentOwingRecord>();
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+        SELECT 
+            f.StudentID,
+            (s.StudentFirstName + ' ' + s.StudentLastName) AS FullName,
+            t.Term,
+            f.FeeTypeName,
+            ft.Amount AS TotalFeeAmount,
+            SUM(f.AmountPaid) AS TotalPaid,
+            ft.Amount - SUM(f.AmountPaid) AS AmountOwing
+        FROM SchoolManagement.StudentFees f
+        JOIN SchoolManagement.Students s ON f.StudentID = s.StudentID
+        JOIN SchoolManagement.FeeTypes ft ON f.FeeTypeID = ft.FeeTypeID
+        JOIN SchoolManagement.SchoolTerm t ON f.TermID = t.TermID
+        GROUP BY f.StudentID, s.StudentFirstName, s.StudentLastName, f.FeeTypeName, ft.Amount, t.Term
+        HAVING ft.Amount - SUM(f.AmountPaid) > 0";
+
+                results = (await connection.QueryAsync<StudentOwingRecord>(query)).ToList();
+            }
+
+            return results;
+        }
+
+
+        public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                // Get total fee expected for the given fee type
+                var feeAmount = await connection.QuerySingleAsync<decimal>(
+                    "SELECT Amount FROM SchoolManagement.FeeTypes WHERE FeeTypeID = @FeeTypeID",
+                    new { FeeTypeID = feeTypeId });
+
+                // Get total amount paid by the student for this fee type
+                var amountPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
+                    @"SELECT ISNULL(SUM(AmountPaid), 0) 
+              FROM SchoolManagement.StudentFees 
+              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID",
+                    new { StudentID = studentId, FeeTypeID = feeTypeId });
+
+                // Return the difference (amount still owed)
+                return feeAmount - amountPaid;
+            }
         }
 
         public async Task<int> GetBankIDAsync(string paymentMethod)

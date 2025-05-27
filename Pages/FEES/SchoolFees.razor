@@ -123,11 +123,18 @@
                     <RadzenDatePicker @bind-Value="PaymentDate" Style="width: 100%;" />
                 </div>
                 <div class="col-md-8">
-                    <RadzenLabel Text="Outstanding Balance" />
+                    <RadzenLabel Text="This Term Outstanding Balance" />
                     <RadzenTextBox Value="@OutstandingBalance.ToString("F2")"
                                    Style="width: 100%; background-color: #ffe2e6;"
                                    Disabled="true"
                                    Placeholder="Outstanding Balance" />
+                    <RadzenCard Style="background-color: #ffe2e6; padding: 16px; margin-top: 20px; border-left: 6px solid red;">
+                        <h3 style="color: #b00020;">Previous Outstanding Balance</h3>
+                        <p style="font-size: 1.2em;">
+                            @((OutstandingBalance > 0) ? $"- ₵{OutstandingBalance:F2}" : "No balance owed")
+                        </p>
+                    </RadzenCard>
+
 
                 </div>
             </div>
@@ -346,6 +353,10 @@
         try
         {
             SelectedFeeTypeID = Convert.ToInt32(value);
+            if (SelectedStudentID > 0 && SelectedFeeTypeID > 0)
+            {
+                OutstandingBalance = await StudentService.GetOutstandingBalanceAsync(SelectedStudentID, SelectedFeeTypeID);
+            }
 
             // Fetch fee details for the selected fee type
             var feeType = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID);
