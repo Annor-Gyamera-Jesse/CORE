@@ -175,12 +175,19 @@
                 Style="width: 100%;" />
 
 
-                <RadzenLabel Text="Payment To Which Bank" Style="margin-top: 10px;" />
-                <RadzenDropDown @bind-Value="PaymentMethod"
-                Data="@PaymentMethods"
-                Placeholder="Select Payment Method"
-                Style="width: 100%;" />
+                @if (!IsCashInHand)
+                {
+                    <RadzenLabel Text="Payment To Which Bank" Style="margin-top: 10px;" />
+                    <RadzenDropDown @bind-Value="PaymentMethod"
+                                    Data="@PaymentMethods"
+                                    Placeholder="Select Payment Method"
+                                    Style="width: 100%;" />
+                }
 
+
+                <RadzenCheckBox @bind-Value="IsCashInHand" Style="margin-top: 10px;" TValue="bool" />
+                <RadzenLabel Text="Cash In Hand" Style="margin-left: 10px;" />
+                <br/>
                 <RadzenLabel Text="Note" Style="margin-top: 10px;" />
                 <RadzenTextBox @bind-Value="Note"
                 Style="width: 100%;"
@@ -238,6 +245,20 @@
     private string SearchTerm = string.Empty;
     private string SelectedClassID; // Holds the selected class
     private List<Class> Classes = new List<Class>(); // Stores the list of classes
+    // private bool IsCashInHand = false;
+    private bool _isCashInHand;
+    private bool IsCashInHand
+    {
+        get => _isCashInHand;
+        set
+        {
+            _isCashInHand = value;
+            if (_isCashInHand)
+            {
+                PaymentMethod = "Cash In Hand";
+            }
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {        
@@ -445,7 +466,16 @@
             NotificationService.ShowNotification("Validation Error", "All fields are required.", NotificationSeverity.Warning);
             return;
         }
+        if (SelectedStudentID == 0 || SelectedTermID == 0 || SelectedFeeTypeID == 0 || AmountPaid <= 0)
+        {
+            NotificationService.ShowNotification("Validation Error", "Please complete all required fields.", NotificationSeverity.Warning);
+            return;
+        }
 
+        if (IsCashInHand)
+        {
+            PaymentMethod = "Cash In Hand";
+        }
         try
         {
             var payment = new StudentFee
