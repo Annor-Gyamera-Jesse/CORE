@@ -68,8 +68,12 @@
 {
 
     <RadzenHeader title="School Fees Payment" class="header-container compact-header">
-        <RadzenFieldset Text="EXPORT STUDENT REPORT" class="right-align">
-            <FeesToolPanelComponent OnFeesDialog="FeesDialog" />
+        <RadzenFieldset Text="EXPORT STUDENT REPORT" class="right-align">            
+              @*   <RadzenCard Style="width: 300px; padding: 20px; background: linear-gradient(to right, #00c6ff, #0072ff); color: white; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                    <h3 class="text-white text-xl font-bold">💵 Cash In Hand</h3>
+                    <p class="text-2xl mt-3 font-semibold">@TotalCashInHand.ToString("C")</p>
+                </RadzenCard>         *@    
+            <FeesToolPanelComponent OnFeesDialog="FeesDialog" OnTransferOfFundsDialog="TransferOfFunds" />
         </RadzenFieldset>
     </RadzenHeader>
     <br />
@@ -247,6 +251,8 @@
     private List<Class> Classes = new List<Class>(); // Stores the list of classes
     // private bool IsCashInHand = false;
     private bool _isCashInHand;
+     private decimal TotalCashInHand = 0;
+
     private bool IsCashInHand
     {
         get => _isCashInHand;
@@ -265,6 +271,7 @@
         try
         {
             isLoading = true;
+            // TotalCashInHand = await StudentService.GetTotalCashInHandAsync();
             Terms = await StudentService.GetAllSchoolTermsAsync();
             // Fetch classes
             Classes = await StudentService.GetsAllClassesAsync();
@@ -547,4 +554,6 @@
 
 
     async void FeesDialog() => await OpenPaymentDialog();
+
+    async void TransferOfFunds() => await OpenTransferOfFundsDialog();
 }

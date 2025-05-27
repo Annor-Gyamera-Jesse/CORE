@@ -4869,7 +4869,94 @@ VALUES (
                 await LogsBankTransactionAsync(null, "Deposit", deposit.AmountTransferred, "Failed", ex.Message);
                 return false;
             }
-        }        
+        }
+
+        public async Task<bool> TransferFundsAsync(FundTransfer transfer, int userId)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            try
+            {
+                Console.WriteLine("Opening SQL connection...");
+                await connection.OpenAsync();
+                Console.WriteLine("SQL connection opened.");
+
+                using var transaction = connection.BeginTransaction();
+                Console.WriteLine("Transaction started.");
+
+                var systemTransferId = new Random().Next(100000, 999999);
+
+                var fromBank = await connection.QueryFirstOrDefaultAsync<dynamic>(
+                    "SELECT TOP 1 * FROM SchoolManagement.Bank WHERE MethodName = @MethodName ORDER BY BankID DESC",
+                    new { MethodName = transfer.FromMethod }, transaction: transaction);
+
+                var toBank = await connection.QueryFirstOrDefaultAsync<dynamic>(
+                    "SELECT TOP 1 * FROM SchoolManagement.Bank WHERE MethodName = @MethodName ORDER BY BankID DESC",
+                    new { MethodName = transfer.ToMethod }, transaction: transaction);
+
+                if (fromBank == null || toBank == null)
+                    throw new Exception("One of the selected payment methods does not exist.");
+
+                if ((decimal)fromBank.AmountInHand < transfer.Amount)
+                    throw new Exception("Insufficient funds in the source method.");
+
+                string insertQuery = @"INSERT INTO SchoolManagement.Bank 
+            (PaymentMethodID, BankNumber, MethodName, AmountTransferred, SystemTransferID, AmountInHand, Remarks, UserID)
+            VALUES 
+            (@PaymentMethodID, @BankNumber, @MethodName, @AmountTransferred, @SystemTransferID, @AmountInHand, @Remarks, @UserID)";
+
+                // Deduct
+                await connection.ExecuteAsync(insertQuery, new
+                {
+                    PaymentMethodID = fromBank.PaymentMethodID,
+                    BankNumber = fromBank.BankNumber,
+                    MethodName = transfer.FromMethod,
+                    AmountTransferred = -transfer.Amount,
+                    SystemTransferID = systemTransferId,
+                    AmountInHand = (decimal)fromBank.AmountInHand - transfer.Amount,
+                    Remarks = "Fund transfer to " + transfer.ToMethod + " - " + transfer.Remarks,
+                    UserID = userId
+                }, transaction);
+
+                // Credit
+                await connection.ExecuteAsync(insertQuery, new
+                {
+                    PaymentMethodID = toBank.PaymentMethodID,
+                    BankNumber = toBank.BankNumber,
+                    MethodName = transfer.ToMethod,
+                    AmountTransferred = transfer.Amount,
+                    SystemTransferID = systemTransferId,
+                    AmountInHand = (decimal)toBank.AmountInHand + transfer.Amount,
+                    Remarks = "Fund received from " + transfer.FromMethod + " - " + transfer.Remarks,
+                    UserID = userId
+                }, transaction);
+
+                transaction.Commit();
+                Console.WriteLine("Transaction committed.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception occurred: " + ex.Message);
+                Console.WriteLine(ex.StackTrace);
+                throw new Exception($"Transfer failed: {ex.Message}", ex);
+            }
+        }
+
+
+        public async Task<decimal> GetTotalCashInHandAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                string sql = @"
+            SELECT ISNULL(SUM(AmountPaid), 0)
+            FROM SchoolManagement.Bank
+            WHERE PaymentMethod = 'Cash In Hand'";
+
+                return await connection.ExecuteScalarAsync<decimal>(sql);
+            }
+        }
+
 
         /*Atendance Print per class and student*/
         public async Task<IEnumerable<SchoolTerm>> GetAllTermsAsync()

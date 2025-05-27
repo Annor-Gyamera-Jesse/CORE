@@ -30,4 +30,13 @@
         public decimal AmountPaid { get; set; }
         public DateTime PaymentDate { get; set; }
     }
+
+    public class FundTransfer
+    {
+        public string FromMethod { get; set; }
+        public string ToMethod { get; set; }
+        public decimal Amount { get; set; }
+        public string Remarks { get; set; }
+    }
+
 }

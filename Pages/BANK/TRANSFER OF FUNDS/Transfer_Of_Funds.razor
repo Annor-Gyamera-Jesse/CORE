@@ -1,1 +1,81 @@
 ﻿@page "/core/pages/ban/k/transfer_of_funds" 
+@using CORE.MODEL
+@using CORE.MODEL.Expenses
+@using CORE.SERVICE
+@inject AuthService authService
+@inject NotificationService Notify
+@inject IJSRuntime jsRuntime
+
+<RadzenNotification />
+
+<RadzenCard Style="padding:2rem; max-width:600px; margin:auto; border-radius:1rem; box-shadow:0 4px 10px rgba(0,0,0,0.1)">
+    <RadzenTemplateForm Data="@transferModel" TItem="FundTransfer" Submit="@SubmitTransfer">
+        <div class="grid grid-cols-1 gap-4">
+
+            <RadzenDropDown @bind-Value="transferModel.FromMethod" Data="@paymentMethods"
+                            Placeholder="From Method" Style="width:100%" />
+
+            <RadzenDropDown @bind-Value="transferModel.ToMethod" Data="@paymentMethods"
+                            Placeholder="To Method" Style="width:100%" />
+
+            <RadzenNumeric @bind-Value="transferModel.Amount"
+                           Placeholder="Transfer Amount"
+                           Style="width:100%" Min="1" Step="0.01" />
+
+            <RadzenTextArea @bind-Value="transferModel.Remarks"
+                            Placeholder="Optional Remarks"
+                            Style="width:100%" Rows="3" />
+
+            <div class="flex justify-end">
+                <RadzenButton Text="Transfer Funds"
+                              Icon="account_balance"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Style="border-radius:8px; min-width:160px;"
+                              Type="Submit" />
+            </div>
+        </div>
+    </RadzenTemplateForm>
+</RadzenCard>
+
+@code {
+    private FundTransfer transferModel = new();
+    private List<string> paymentMethods = new();
+    private int userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var user = await authService.GetUserByUsernameAsync(username);
+        userId = user.UserID;
+
+        paymentMethods = await authService.GetPaymentMethodsAsync();
+    }
+
+    private async Task SubmitTransfer()
+    {
+        try
+        {
+            if (transferModel.FromMethod == transferModel.ToMethod)
+            {
+                Notify.Notify(NotificationSeverity.Warning, "Invalid Transfer", "Cannot transfer to the same method.");
+                return;
+            }
+
+            bool result = await authService.TransferFundsAsync(transferModel, userId);
+
+            if (result)
+            {
+                Notify.Notify(NotificationSeverity.Success, "Success", "Funds transferred successfully.");
+                transferModel = new(); // reset form
+            }
+            else
+            {
+                Notify.Notify(NotificationSeverity.Error, "Error", "Fund transfer failed.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Notify.Notify(NotificationSeverity.Error, "Exception", ex.Message);
+        }
+    }
+}

@@ -1,24 +1,23 @@
-﻿@using CORE.Pages.LOADING_COMPONENT
-@* ToolComponent Page *@
-
-<style>
+﻿<style>
+    .toolset-container {
+        display: flex;
+        gap: 10px; /* Adjust the spacing between buttons */
+    }
 
     .toolset-btn {
-    margin-bottom: 5px;
-    width: 100%;
-    font-size: 14px
+        font-size: 14px;
+        flex: 1; /* Makes both buttons take equal space */
     }
 </style>
 
-<LoadingSpinner Visible="isLoading" />
-@if (!isLoading)
-{
-    <div class="row mt-2">
-        <RadzenButton Text="Export Fees" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OnFeesDialog />   
-    </div>
-}
+  <div class="toolset-container mt-2">
+        <RadzenButton Text="Export Fees" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OnFeesDialog />
+    <RadzenButton Text="TRANFERS OF FUNDS" Icon="bank" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnTransferOfFundsDialog />
+</div>
+
 @code {
-    private bool isLoading = false;
+    
     [Parameter] public Action OnFeesDialog { get; set; }
+    [Parameter] public Action OnTransferOfFundsDialog { get; set; }
    
 }
