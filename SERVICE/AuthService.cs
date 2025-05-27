@@ -163,11 +163,6 @@ namespace CORE.SERVICE
 
         public async Task<(string, string)> GetLoginScreenDetailsAsync()
         {
-            if (_cache.TryGetValue("LoginScreenDetails", out (string, string) details))
-            {
-                return details;
-            }
-
             using var connection = new SqlConnection(connectionString);
             await connection.OpenAsync();
 
@@ -179,10 +174,7 @@ namespace CORE.SERVICE
             {
                 string schoolName = reader.GetString(reader.GetOrdinal("SchoolName"));
                 string companyName = reader.GetString(reader.GetOrdinal("CompanyRegisteredName"));
-                details = (schoolName, companyName);
-
-                _cache.Set("LoginScreenDetails", details, TimeSpan.FromHours(1));
-                return details;
+                return (schoolName, companyName);
             }
 
             return (null, null);
@@ -5113,15 +5105,39 @@ VALUES (
             return result.ToList();
         }
 
-        public async Task<List<StudentFeeHistory>> GetStudentFeeHistoryByTermAsync(int studentId, int termId)
+        public async Task<IEnumerable<StudentFeeHistory>> GetStudentFeeHistoryAsync(int studentId, int termId)
         {
             using var connection = new SqlConnection(connectionString);
-            var sql = @"
-        SELECT FeeTypeName, AmountPaid, AmountLeft
-        FROM SchoolManagement.StudentFees
-        WHERE StudentID = @StudentID AND TermID = @TermID";
+            string query = @"SELECT FeeTypeName, 
+                                    AmountLeft, 
+                                    AmountPaid, 
+                                    (AmountLeft + AmountPaid) AS Amount
+                             FROM SchoolManagement.StudentFees
+                             WHERE StudentID = @StudentID AND TermID = @TermID";
+            return await connection.QueryAsync<StudentFeeHistory>(query, new { StudentID = studentId, TermID = termId });
+        }
 
-            return (await connection.QueryAsync<StudentFeeHistory>(sql, new { StudentID = studentId, TermID = termId })).ToList();
+        public async Task<IEnumerable<Student>> GetStudentsWithClassAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"SELECT s.StudentID, 
+                            s.StudentFirstName, 
+                            s.StudentLastName, 
+                            s.ClassID 
+                     FROM SchoolManagement.Students s";
+            return await connection.QueryAsync<Student>(query);
+        }
+
+        public async Task<ClassFeeInfo?> GetClassFeeInfoAsync(string classId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+                SELECT FeeTypeName, Amount
+                FROM SchoolManagement.FeeTypes
+                WHERE ClassID = @ClassID AND DeletedBy IS NULL
+                ORDER BY RecDateCreated DESC";
+
+            return await connection.QueryFirstOrDefaultAsync<ClassFeeInfo>(query, new { ClassID = classId });
         }
 
     }

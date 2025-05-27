@@ -47,6 +47,7 @@ namespace CORE.MODEL
         public string FeeTypeName { get; set; }
         public decimal AmountPaid { get; set; }
         public decimal AmountLeft { get; set; }
+        public decimal Amount { get; set; }
     }
 
     public class StudentDisplay
@@ -57,5 +58,11 @@ namespace CORE.MODEL
         public string StudentLastName { get; set; }
         public string ClassID { get; set; }
     }
+    public class ClassFeeInfo
+    {
+        public string FeeTypeName { get; set; }
+        public decimal Amount { get; set; }
+    }
+
 }
 
