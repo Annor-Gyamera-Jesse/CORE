@@ -1,0 +1,50 @@
+﻿@page "/core/pages/fees/student-owing"
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@inject AuthService StudentService
+@inject IJSRuntime jsRuntime
+
+<h3>Students Who Owe Fees</h3>
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    @if (OwingRecords?.Any() == true)
+    {
+        <RadzenDataGrid Data="@OwingRecords" TItem="StudentOwingRecord" ShowPagingSummary="true" AllowPaging="true" PageSize="10">
+            <Columns>
+                <RadzenDataGridColumn TItem="StudentOwingRecord" Property="FullName" Title="Student Name" />
+                <RadzenDataGridColumn TItem="StudentOwingRecord" Property="Term" Title="Term" />
+                <RadzenDataGridColumn TItem="StudentOwingRecord" Property="FeeTypeName" Title="Fee Type" />
+                <RadzenDataGridColumn TItem="StudentOwingRecord" Property="TotalFeeAmount" Title="Fee Amount" />
+                <RadzenDataGridColumn TItem="StudentOwingRecord" Property="TotalPaid" Title="Amount Paid" />
+                <RadzenDataGridColumn TItem="StudentOwingRecord" Property="AmountOwing" Title="Amount Owing" />
+            </Columns>
+        </RadzenDataGrid>
+    }
+    else
+    {
+        <p>No students with unpaid fees Or Refresh Page Network Fault.</p>
+    }
+}
+@code {
+    private List<StudentOwingRecord> OwingRecords = new();
+    public bool isLoading = false;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            OwingRecords = await StudentService.GetAllStudentsWhoOweFeesAsync();
+        }
+        catch(Exception ex)
+        {
+
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

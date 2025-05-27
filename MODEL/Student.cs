@@ -42,5 +42,38 @@ namespace CORE.MODEL
         public string ClassID { get; set; }
     }
 
+    public class StudentOwingRecord
+    {
+        public int StudentID { get; set; }
+        public string FullName { get; set; }
+        public string Term { get; set; }
+        public string FeeTypeName { get; set; }
+        public decimal TotalFeeAmount { get; set; }
+        public decimal TotalPaid { get; set; }
+        public decimal AmountOwing { get; set; }
+    }
+
+    public class StudentFeeHistory
+    {
+        public string FeeTypeName { get; set; }
+        public decimal AmountPaid { get; set; }
+        public decimal AmountLeft { get; set; }
+        public decimal Amount { get; set; }
+    }
+
+    public class StudentDisplay
+    {
+        public int StudentID { get; set; }
+        public string DisplayName => $"{StudentFirstName} {StudentLastName} - {ClassID}";
+        public string StudentFirstName { get; set; }
+        public string StudentLastName { get; set; }
+        public string ClassID { get; set; }
+    }
+    public class ClassFeeInfo
+    {
+        public string FeeTypeName { get; set; }
+        public decimal Amount { get; set; }
+    }
+
 }
 
