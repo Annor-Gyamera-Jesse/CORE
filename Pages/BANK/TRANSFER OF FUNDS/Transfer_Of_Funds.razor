@@ -19,7 +19,7 @@
             <div class="grid grid-cols-1 gap-6">
 
                 <div>
-                    <label class="block text-gray-600 text-sm mb-1">From Method</label>
+                    <label class="block text-gray-600 text-sm mb-1">From Which Account</label>
                     <RadzenDropDown @bind-Value="transferModel.FromMethod"
                                     Data="@paymentMethods"
                                     Placeholder="Select source"
@@ -27,7 +27,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-gray-600 text-sm mb-1">To Method</label>
+                    <label class="block text-gray-600 text-sm mb-1">To Which Account</label>
                     <RadzenDropDown @bind-Value="transferModel.ToMethod"
                                     Data="@paymentMethods"
                                     Placeholder="Select destination"
