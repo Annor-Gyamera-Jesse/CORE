@@ -4949,9 +4949,9 @@ VALUES (
             using (var connection = new SqlConnection(connectionString))
             {
                 string sql = @"
-            SELECT ISNULL(SUM(AmountPaid), 0)
+            SELECT ISNULL(SUM(AmountTransferred), 0)
             FROM SchoolManagement.Bank
-            WHERE PaymentMethod = 'Cash In Hand'";
+            WHERE MethodName = 'Cash In Hand'";
 
                 return await connection.ExecuteScalarAsync<decimal>(sql);
             }
