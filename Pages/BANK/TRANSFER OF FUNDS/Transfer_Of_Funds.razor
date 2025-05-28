@@ -1,0 +1,104 @@
+﻿@page "/core/pages/ban/k/transfer_of_funds"
+@using CORE.MODEL
+@using CORE.MODEL.Expenses
+@using CORE.SERVICE
+@inject AuthService authService
+@inject NotificationService Notify
+@inject IJSRuntime jsRuntime
+
+<RadzenNotification />
+
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-tr from-gray-100 to-white p-6">
+    <RadzenCard Style="padding:2rem; max-width:650px; width:100%; border-radius:2rem; box-shadow:0 8px 30px rgba(0,0,0,0.07); background:#fff">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-semibold text-gray-700">Transfer of Funds</h1>
+            <p class="text-sm text-gray-500">Securely move funds between payment methods</p>
+        </div>
+
+        <RadzenTemplateForm Data="@transferModel" TItem="FundTransfer" Submit="@SubmitTransfer">
+            <div class="grid grid-cols-1 gap-6">
+
+                <div>
+                    <label class="block text-gray-600 text-sm mb-1">From Method</label>
+                    <RadzenDropDown @bind-Value="transferModel.FromMethod"
+                                    Data="@paymentMethods"
+                                    Placeholder="Select source"
+                                    Style="width:100%; border-radius:12px;" />
+                </div>
+
+                <div>
+                    <label class="block text-gray-600 text-sm mb-1">To Method</label>
+                    <RadzenDropDown @bind-Value="transferModel.ToMethod"
+                                    Data="@paymentMethods"
+                                    Placeholder="Select destination"
+                                    Style="width:100%; border-radius:12px;" />
+                </div>
+
+                <div>
+                    <label class="block text-gray-600 text-sm mb-1">Transfer Amount</label>
+                    <RadzenNumeric @bind-Value="transferModel.Amount"
+                                   Placeholder="0.00"
+                                   Style="width:100%; border-radius:12px;" Min="1" Step="0.01" />
+                </div>
+
+                <div>
+                    <label class="block text-gray-600 text-sm mb-1">Remarks</label>
+                    <RadzenTextArea @bind-Value="transferModel.Remarks"
+                                    Placeholder="Add any notes (optional)..."
+                                    Style="width:100%; border-radius:12px;" Rows="3" />
+                </div>
+
+                <div class="flex justify-end">
+                    <RadzenButton Text="Transfer Funds"
+                                  Icon="payments"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Style="border-radius:12px; padding:12px 24px; font-weight:600; min-width:180px;"
+                                  Type="Submit" />
+                </div>
+            </div>
+        </RadzenTemplateForm>
+    </RadzenCard>
+</div>
+
+@code {
+    private FundTransfer transferModel = new();
+    private List<string> paymentMethods = new();
+    private int userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+        var user = await authService.GetUserByUsernameAsync(username);
+        userId = user.UserID;
+
+        paymentMethods = await authService.GetPaymentMethodsAsync();
+    }
+
+    private async Task SubmitTransfer()
+    {
+        try
+        {
+            if (transferModel.FromMethod == transferModel.ToMethod)
+            {
+                Notify.Notify(NotificationSeverity.Warning, "Invalid Transfer", "Source and destination methods cannot be the same.");
+                return;
+            }
+
+            bool result = await authService.TransferFundsAsync(transferModel, userId);
+
+            if (result)
+            {
+                Notify.Notify(NotificationSeverity.Success, "Transfer Complete", "Funds transferred successfully.");
+                transferModel = new(); // Reset form
+            }
+            else
+            {
+                Notify.Notify(NotificationSeverity.Error, "Transfer Failed", "An error occurred while transferring funds.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Notify.Notify(NotificationSeverity.Error, "Unexpected Error", ex.Message);
+        }
+    }
+}

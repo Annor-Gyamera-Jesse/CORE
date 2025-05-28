@@ -1,0 +1,36 @@
+﻿@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@inject AuthService StudentService
+@inject IJSRuntime jsRuntime
+
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+
+    <RadzenCard Style="width: 300px; padding: 20px; background: linear-gradient(to right, #00c6ff, #0072ff); color: white; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+        <h3 class="text-white text-xl font-bold">💵 Cash In Hand</h3>
+                    <p class="text-2xl mt-3 font-semibold">@TotalCashInHand.ToString("C")</p>
+                </RadzenCard>  
+}
+@code {
+    private decimal TotalCashInHand = 0;
+    private bool isLoading = false;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            TotalCashInHand = await StudentService.GetTotalCashInHandAsync();
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions (e.g., log error, show notification)
+            Console.WriteLine($"Error fetching cash in hand: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
