@@ -20,14 +20,14 @@ namespace CORE.Pages.FEES
 
         public async Task OpenTransferOfFundsDialog()
         {
-            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "600px", Resizable = false, Height = "355px" };
+            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "600px", Resizable = false, Height = "582px" };
             var dialogTitle = $"BANK TRANSFER";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<Transfer_Of_Funds>(dialogTitle, null, dialogOptions);
         } 
         public async Task OpenCashInHandsDialog()
         {
-            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "360px", Resizable = false, Height = "582px" };
+            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "360px", Resizable = false, Height = "209px" };
             var dialogTitle = $"CASH IN HANDS";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<Cash_In_Hand>(dialogTitle, null, dialogOptions);
