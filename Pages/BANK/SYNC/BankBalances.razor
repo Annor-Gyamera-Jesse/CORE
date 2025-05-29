@@ -1,0 +1,125 @@
+﻿@page "/core/pages/ban/k/sync/bank_balances"
+@inject AuthService authService
+@inject IJSRuntime jsRuntime
+@inject NotificationService Notify
+
+@using CORE.MODEL.Bank
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using Radzen
+
+<RadzenNotification />
+
+<h3 class="text-xl font-bold mb-3">Bank Balances</h3>
+
+<LoadingSpinner Visible="isLoading" />
+
+<RadzenButton Icon="refresh" Text="Sync Bank Balances" Click="@SyncBalances" Style="margin-bottom:15px" Disabled="@isLoading" />
+
+@if (!isLoading)
+{
+    <RadzenDataGrid Data="@bankBalances" TItem="BankBalance" ColumnWidth="200px" Class="w-full">
+        <Columns>
+            <RadzenDataGridColumn TItem="BankBalance" Property="MethodName" Title="Method Name" />
+            <RadzenDataGridColumn TItem="BankBalance" Property="TotalAmount" Title="Total Amount" />
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    private List<BankBalance> bankBalances = new();
+    private int userId;
+    private bool isLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+
+        try
+        {
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                Notify.Notify(NotificationSeverity.Error, "User Error", "User not logged in or session expired.");
+                return;
+            }
+
+            var user = await authService.GetUserByUsernameAsync(username);
+            if (user == null)
+            {
+                Notify.Notify(NotificationSeverity.Error, "User Error", "User not found.");
+                return;
+            }
+
+            userId = user.UserID;
+            await LoadBankBalancesAsync();
+        }
+        catch (Exception ex)
+        {
+            Notify.Notify(NotificationSeverity.Error, "Error loading bank balances", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadBankBalancesAsync()
+    {
+        if (userId <= 0)
+        {
+            Notify.Notify(NotificationSeverity.Error, "Invalid User", "User ID is invalid.");
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            var balances = await authService.GetBankBalancesAsync();
+            bankBalances = balances.ToList();
+        }
+        catch (Exception ex)
+        {
+            Notify.Notify(NotificationSeverity.Error, "Load Error", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SyncBalances()
+    {
+        if (userId <= 0)
+        {
+            Notify.Notify(NotificationSeverity.Error, "Invalid User", "User ID is invalid.");
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            var result = await authService.SyncBankBalancesAsync(userId);
+
+            if (result == 1)
+            {
+                Notify.Notify(NotificationSeverity.Success, "Sync Completed", "Bank balances have been synced successfully.");
+            }
+            else
+            {
+                Notify.Notify(NotificationSeverity.Error, "Sync Failed", "Failed to sync bank balances.");
+            }
+
+            await LoadBankBalancesAsync();
+        }
+        catch (Exception ex)
+        {
+            Notify.Notify(NotificationSeverity.Error, "Sync Error", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

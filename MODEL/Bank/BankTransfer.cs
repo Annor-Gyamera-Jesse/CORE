@@ -22,4 +22,10 @@
         public string Remarks { get; set; }
     }
 
+
+    public class BankBalance
+    {
+        public string MethodName { get; set; }
+        public decimal TotalAmount { get; set; }
+    }
 }
