@@ -5351,6 +5351,21 @@ VALUES (
             }
         }
 
+        public async Task<(int StudentOwingByClass, decimal TotalOwingAmount)> GetStudentsOwingSummaryAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var sql = @"
+            SELECT 
+                COUNT(DISTINCT StudentID) AS TotalOwingStudents,
+                ISNULL(SUM(AmountLeft), 0) AS TotalOwingAmount
+            FROM SchoolManagement.StudentFees
+            WHERE AmountLeft > 0";
+
+                var result = await connection.QueryFirstOrDefaultAsync<(int, decimal)>(sql);
+                return result;
+            }
+        }
 
     }
 
