@@ -8,7 +8,7 @@
 @inject NotificationMessageService Notify
 @inject NavigationManager Navigation
 @inject AuthStateService authStateService
-
+@inject IJSRuntime jsRuntime
 <RadzenNotification />
 <LoadingSpinner Visible="isLoading" />
 
@@ -144,7 +144,7 @@ else
     private decimal totalTransactionAmount;
     private bool isLoading = true;  
     private decimal totalBankTransferAmount;
-
+    private int userId;
     private List<ChartData> chartData = new();
     private List<ChartData> lineChartData = new();
 
@@ -153,6 +153,24 @@ else
         try
         {
             isLoading = true;
+
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                Notify.ShowNotification("User Error", "User not logged in or session expired.",NotificationSeverity.Error);
+                return;
+            }
+
+            var user = await authService.GetUserByUsernameAsync(username);
+            if (user == null)
+            {
+                Notify.ShowNotification("User Error", "User not found.",NotificationSeverity.Error);
+                return;
+            }
+
+            userId = user.UserID;
+
             await authStateService.EnsureAuthenticated();
             totalStudentsCount = await authService.GetTotalStudentsCount();
             totalTeachersCount = await authService.GetTotalTeachersCount();
