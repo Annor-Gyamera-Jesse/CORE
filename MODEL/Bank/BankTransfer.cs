@@ -28,4 +28,12 @@
         public string MethodName { get; set; }
         public decimal TotalAmount { get; set; }
     }
+
+    public class StudentOwingByClass
+    {
+        public string ClassID { get; set; }
+        public int TotalOwingStudents { get; set; }
+        public decimal TotalOwingAmount { get; set; }
+    }
+
 }

@@ -113,6 +113,14 @@
                 <h2>GHS @totalBankTransferAmount</h2>
             </div>
 
+            <div class="dashboard-card" style="background: linear-gradient(135deg, #ff9966, #ff5e62);">
+                <i class="fas fa-money-bill-wave"></i>
+                <h1>Students Owing</h1>
+                <h2>@totalOwingStudentsCount</h2>
+                <p style="margin-top: 10px; font-size: 1.2rem;">GHS @totalOwingAmount.ToString("F2")</p>
+            </div>
+
+
         </div>
 
         <!-- Charts Section -->
@@ -148,6 +156,10 @@ else
     private List<ChartData> chartData = new();
     private List<ChartData> lineChartData = new();
 
+    private int totalOwingStudentsCount;
+    private decimal totalOwingAmount;
+
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -176,6 +188,9 @@ else
             totalTeachersCount = await authService.GetTotalTeachersCount();
             totalStaffsCount = await authService.GetStaffsCount();            
             totalBankTransferAmount = await authService.GetTotalBankTransferredAsync();
+            (var studentsOwingCount, var amountOwing) = await authService.GetStudentsOwingSummaryAsync();
+            totalOwingStudentsCount = studentsOwingCount;
+            totalOwingAmount = amountOwing;
 
 
             var transactions = await PaymentService.GetAllSuccessfulPaymentsAsync();
