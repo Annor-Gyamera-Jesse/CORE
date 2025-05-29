@@ -5280,6 +5280,78 @@ VALUES (
             return await connection.QueryFirstOrDefaultAsync<ClassFeeInfo>(query, new { ClassID = classId });
         }
 
+        /*bank balance*/
+
+        public async Task<IEnumerable<BankBalance>> GetBankBalancesAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            const string sql = "SELECT MethodName, TotalAmount FROM SchoolManagement.BankBalances";
+            return await connection.QueryAsync<BankBalance>(sql);
+        }
+
+        public async Task<int> SyncBankBalancesAsync(int userId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            // Start a database transaction to ensure atomicity
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Clear the BankBalances table before inserting fresh totals
+                const string deleteSql = "DELETE FROM SchoolManagement.BankBalances";
+                await connection.ExecuteAsync(deleteSql, transaction: transaction);
+
+                // Insert the sum of AmountTransferred grouped by MethodName
+                const string insertSql = @"
+            INSERT INTO SchoolManagement.BankBalances (MethodName, TotalAmount)
+            SELECT MethodName, SUM(AmountTransferred)
+            FROM SchoolManagement.Bank
+            GROUP BY MethodName";
+
+                await connection.ExecuteAsync(insertSql, transaction: transaction);
+
+                // Log the successful sync operation
+                const string logSql = @"
+            INSERT INTO SchoolManagement.BankBalanceSyncLog (SyncByUserID, Status)
+            VALUES (@UserID, 'SUCCESS')";
+
+                await connection.ExecuteAsync(logSql, new { UserID = userId }, transaction: transaction);
+
+                // Commit the transaction
+                await transaction.CommitAsync();
+
+                return 1;  // success
+            }
+            catch (Exception ex)
+            {
+                // Attempt to log the failure, ignoring any logging errors
+                try
+                {
+                    const string logFailSql = @"
+                INSERT INTO SchoolManagement.BankBalanceSyncLog (SyncByUserID, Status, ErrorMessage)
+                VALUES (@UserID, 'FAILED', @ErrorMessage)";
+
+                    await connection.ExecuteAsync(logFailSql, new
+                    {
+                        UserID = userId,
+                        ErrorMessage = ex.Message
+                    }, transaction: transaction);
+                }
+                catch
+                {
+                    // Ignored: logging failure should not throw
+                }
+
+                // Roll back the transaction since an error occurred
+                await transaction.RollbackAsync();
+
+                return 0;  // failure
+            }
+        }
+
+
     }
 
 }
