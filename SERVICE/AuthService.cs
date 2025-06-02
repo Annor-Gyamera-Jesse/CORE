@@ -4973,19 +4973,19 @@ VALUES (
             using var conn = new SqlConnection(connectionString);
             await conn.OpenAsync();
             const string sql = @"
-            SELECT 
-              a.StudentFirstName,
-              a.StudentLastName,
-              a.ClassID,
-              a.EnableSwitch,
-              a.AttendanceDate,
-              t.Term
-            FROM SchoolManagement.StudentsAttendance a
-            JOIN SchoolManagement.SchoolTerm t
-              ON a.TermID = t.TermID
-            WHERE a.ClassID = @ClassID
-              AND a.TermID = @TermID
-              AND a.AttendanceDate = @Date;";
+                    SELECT 
+                      a.StudentFirstName,
+                      a.StudentLastName,
+                      a.ClassID,
+                      a.EnableSwitch,
+                      a.RecDateCreated,
+                      t.Term
+                    FROM SchoolManagement.StudentsAttendance a
+                    JOIN SchoolManagement.SchoolTerm t
+                      ON a.TermID = t.TermID
+                    WHERE a.ClassID = @ClassID
+                      AND a.TermID = @TermID
+                      AND CAST(a.RecDateCreated AS DATE) = @Date;";
 
             return await conn.QueryAsync<StudentsAttendance>(sql,
                 new { ClassID = classId, TermID = termId, Date = date.Date });
