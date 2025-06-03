@@ -5356,16 +5356,60 @@ VALUES (
             using (var connection = new SqlConnection(connectionString))
             {
                 var sql = @"
-            SELECT 
-                COUNT(DISTINCT StudentID) AS TotalOwingStudents,
-                ISNULL(SUM(AmountLeft), 0) AS TotalOwingAmount
-            FROM SchoolManagement.StudentFees
-            WHERE AmountLeft > 0";
+                    WITH ExpectedFeesPerStudent AS (
+                        SELECT 
+                            s.StudentID,
+                            s.StudentFirstName + ' ' + s.StudentLastName AS StudentFullName,
+                            s.ClassID,
+                            ft.FeeTypeID,
+                            ft.FeeTypeName,
+                            ft.Amount AS ExpectedAmount
+                        FROM SchoolManagement.Students s
+                        INNER JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
+                    ),
+                    ActualPayments AS (
+                        SELECT 
+                            sf.StudentID,
+                            sf.FeeTypeID,
+                            sf.AmountLeft
+                        FROM SchoolManagement.StudentFees sf
+                    ),
+                    FeesOwed AS (
+                        SELECT 
+                            efps.StudentID,
+                            efps.StudentFullName,
+                            efps.FeeTypeName,
+                            efps.ExpectedAmount,
+                            ap.AmountLeft,
+                            CASE 
+                                WHEN ap.StudentID IS NULL THEN efps.ExpectedAmount
+                                WHEN ap.AmountLeft IS NULL THEN 0
+                                ELSE ap.AmountLeft
+                            END AS OwedAmount
+                        FROM ExpectedFeesPerStudent efps
+                        LEFT JOIN ActualPayments ap 
+                            ON efps.StudentID = ap.StudentID AND efps.FeeTypeID = ap.FeeTypeID
+                    ),
+                    OwingStudents AS (
+                        SELECT 
+                            StudentID,
+                            SUM(OwedAmount) AS TotalOwed
+                        FROM FeesOwed
+                        GROUP BY StudentID
+                        HAVING SUM(OwedAmount) > 0
+                    )
+
+                    SELECT 
+                        COUNT(*) AS StudentOwingByClass,
+                        SUM(TotalOwed) AS TotalOwingAmount
+                    FROM OwingStudents;
+                    ";
 
                 var result = await connection.QueryFirstOrDefaultAsync<(int, decimal)>(sql);
                 return result;
             }
         }
+
 
     }
 

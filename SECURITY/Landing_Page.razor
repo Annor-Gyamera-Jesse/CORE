@@ -101,11 +101,11 @@
                 <h2>@totalStaffsCount</h2>
             </div>
 
-            <div class="dashboard-card" style="background: linear-gradient(135deg, #42e695, #3bb2b8);">
+          @*   <div class="dashboard-card" style="background: linear-gradient(135deg, #42e695, #3bb2b8);">
                 <i class="fas fa-credit-card"></i>
                 <h1>Total Online Transactions</h1>
                 <h2>GHS @totalTransactionAmount</h2>
-            </div>
+            </div> *@
 
             <div class="dashboard-card" style="background: linear-gradient(135deg, #00b09b, #96c93d);">
                 <i class="fas fa-university"></i>
@@ -131,11 +131,11 @@
                 <RadzenPieSeries Data="@chartData" CategoryProperty="Category" ValueProperty="Value" />
             </RadzenChart>
 
-            <RadzenChart Style="height: 300px;" Class="mt-4">
+           @*  <RadzenChart Style="height: 300px;" Class="mt-4">
                 <RadzenLineSeries Data="@lineChartData" CategoryProperty="Category" ValueProperty="Value" />
                 <RadzenCategoryAxis />
                 <RadzenValueAxis />
-            </RadzenChart>
+            </RadzenChart> *@
         </div>
     </div>
 }
@@ -201,7 +201,7 @@ else
                 new ChartData { Category = "Students", Value = totalStudentsCount },
                 new ChartData { Category = "Teachers", Value = totalTeachersCount },
                 new ChartData { Category = "Staff", Value = totalStaffsCount },
-                new ChartData { Category = "Transactions", Value = (int)totalTransactionAmount }
+               // new ChartData { Category = "Transactions", Value = (int)totalTransactionAmount }
             };
 
             // Simulate monthly trend (example)
