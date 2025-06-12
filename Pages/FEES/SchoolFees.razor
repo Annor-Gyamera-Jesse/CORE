@@ -267,7 +267,24 @@
         try
         {
             isLoading = true;
-        
+            
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                NotificationService.ShowNotification("User Error", "User not logged in or session expired.", NotificationSeverity.Error);
+                return;
+            }
+
+            var user = await StudentService.GetUserByUsernameAsync(username);
+            if (user == null)
+            {
+                NotificationService.ShowNotification("User Error", "User not found.", NotificationSeverity.Error);
+                return;
+            }
+
+            userId = user.UserID;
+
             Terms = await StudentService.GetAllSchoolTermsAsync();
             // Fetch classes
             Classes = await StudentService.GetsAllClassesAsync();
@@ -275,12 +292,12 @@
             PaymentMethods = await StudentService.GetPaymentMethodsAsync();
 
             // Existing initialization logic
-            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
-            var user = await StudentService.GetUserByUsernameAsync(username);
-            if (user != null)
-            {
-                userId = user.UserID;
-            }
+            // var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+            // var user = await StudentService.GetUserByUsernameAsync(username);
+            // if (user != null)
+            // {
+            //     userId = user.UserID;
+            // }
 
             Students = await StudentService.GetAllStudents();
             FilteredStudents = Students; // Initialize the filtered list with all students
