@@ -385,6 +385,18 @@
         }
     }
 
+    private void ResetPaymentForm()
+    {
+        PaymentDate = DateTime.Now;
+        SelectedTermID = 0;
+        SelectedFeeTypeID = 0;
+        AmountPaid = 0;
+        Note = string.Empty;
+        OutstandingBalance = 0;
+        TotalAmountLeft = 0;
+        IsCashInHand = false;
+        PaymentMethod = null;
+    }
 
 
     private async Task LoadClassFeeDetails(object value)
@@ -529,6 +541,8 @@
                 // Log the transaction
                 await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
                 NotificationService.ShowNotification("Success", "Payment saved successfully and logged.", NotificationSeverity.Success);
+                // ✅ Reset form fields
+                ResetPaymentForm();
             }
             else
             {
