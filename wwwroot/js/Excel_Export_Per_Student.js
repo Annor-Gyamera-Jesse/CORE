@@ -11,44 +11,59 @@
 
     let yOffset = 10;
 
-    // === Company Logo ===
+    // === Company Logo with Border ===
     if (logoBase64) {
-        // Centered image: x=85 (PDF width 210 - image width 40) / 2
-        doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', 85, yOffset, 40, 25);
-        yOffset += 30;
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.3);
+        doc.rect(82, yOffset, 46, 28); // border
+        doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', 85, yOffset + 1.5, 40, 25);
+        yOffset += 35;
     }
 
-    // === Company Name ===
+    // === Colored Company Name Title Bar ===
+    doc.setFillColor(41, 128, 185); // blue color
+    doc.rect(20, yOffset, 170, 12, 'F');
+    doc.setFontSize(16);
+    doc.setTextColor(255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(24);
-    doc.text(companyName, 105, yOffset, { align: 'center' });
+    doc.text(companyName.toUpperCase(), 105, yOffset + 8, { align: 'center' });
+
+    yOffset += 18;
 
     // === Report Title ===
-    yOffset += 10;
-    doc.setFontSize(18);
-    doc.text('Student Fee Report', 105, yOffset, { align: 'center' });
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Student Fee Report'.toUpperCase(), 105, yOffset, { align: 'center' });
 
-    // === Metadata ===
     yOffset += 10;
-    doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
     doc.text('Generated on: ' + new Date().toLocaleString(), 20, yOffset);
-    doc.text('Term: ' + termId, 20, yOffset + 7);
-    doc.line(20, yOffset + 12, 190, yOffset + 12);
+    doc.text('Term: ' + termId, 160, yOffset, { align: 'right' });
 
-    // === Table Headers ===
+    yOffset += 5;
+    doc.setDrawColor(200);
+    doc.line(20, yOffset, 190, yOffset);
+
+    // === Table Headers with Background ===
     const headers = ['Student Name', 'Fee Type', 'Class', 'Amount Paid', 'Amount Left'];
     const columnWidths = [60, 40, 30, 30, 30];
     const tableX = 20;
-    const tableY = yOffset + 17;
+    const tableY = yOffset + 5;
 
     doc.setFont('helvetica', 'bold');
+    doc.setFillColor(230, 230, 230);
+    doc.rect(tableX, tableY - 5, columnWidths.reduce((a, b) => a + b), 8, 'F');
+
     let currentX = tableX;
     headers.forEach((header, index) => {
+        doc.setTextColor(0);
         doc.text(header, currentX + columnWidths[index] / 2, tableY, { align: 'center' });
         currentX += columnWidths[index];
     });
 
+    doc.setDrawColor(100);
     doc.line(tableX, tableY + 2, tableX + columnWidths.reduce((a, b) => a + b), tableY + 2);
 
     // === Table Rows ===
@@ -57,7 +72,7 @@
     let totalPaid = 0;
     let totalLeft = 0;
 
-    tableData.forEach(row => {
+    tableData.forEach((row, rowIndex) => {
         let rowX = tableX;
 
         const paid = parseFloat(row[3]) || 0;
@@ -67,24 +82,39 @@
 
         for (let i = 0; i < headers.length; i++) {
             const cell = row[i] !== undefined ? row[i] : '';
+            doc.setTextColor(0);
             doc.text(String(cell), rowX + columnWidths[i] / 2, rowY, { align: 'center' });
             rowX += columnWidths[i];
         }
         rowY += 10;
     });
 
-    doc.line(20, rowY + 5, 190, rowY + 5); // Bottom border after table
+    doc.setDrawColor(150);
+    doc.line(20, rowY + 5, 190, rowY + 5);
 
-    // === Totals ===
+    // === Totals in Highlight Box ===
     rowY += 15;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text(`Total Amount Paid: GH₵ ${totalPaid.toFixed(2)}`, 20, rowY);
-    doc.text(`Total Amount Left to be Paid: GH₵ ${totalLeft.toFixed(2)}`, 20, rowY + 10);
+    doc.setDrawColor(0);
+    doc.setFillColor(245, 245, 245);
+    doc.rect(20, rowY - 8, 170, 20, 'F');
 
-    // === School Name at Bottom ===
-    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(`Total Amount Paid: GH₵ ${totalPaid.toFixed(2)}`, 25, rowY);
+    doc.text(`Total Amount Left: GH₵ ${totalLeft.toFixed(2)}`, 25, rowY + 8);
+
+    // === Signature Line (Optional) ===
+    rowY += 25;
+    doc.setDrawColor(100);
+    doc.line(140, rowY, 190, rowY);
+    doc.setFontSize(10);
+    doc.text('Authorized Signature', 165, rowY + 5, { align: 'center' });
+
+    // === Footer ===
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(100);
     doc.text(schoolName, 105, 290, { align: 'center' });
 
     // === Save PDF ===
