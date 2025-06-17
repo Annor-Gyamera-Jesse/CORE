@@ -1,44 +1,35 @@
-﻿function downloadPdf(fileName, base64Csv) {
-    const { jsPDF } = window.jspdf; // Access jsPDF from the window object
+﻿function downloadPdf(fileName, base64Csv, companyName, schoolName) {
+    const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // Decode base64 CSV data and split it into lines
     const decodedCsv = atob(base64Csv);
     const lines = decodedCsv.split('\n');
+    const csvHeaders = lines[0].split(',');
+    const tableData = lines.slice(1).filter(line => line.trim() !== '').map(line => line.split(','));
 
-    // Extract headers and rows
-    const csvHeaders = lines[0].split(','); // Extract the first line as headers
-    const tableData = lines.slice(1) // Skip the headers for data rows
-        .filter(line => line.trim() !== '') // Exclude any empty lines
-        .map(line => line.split(',')); // Split rows into cells
-
-    // Extract TermID from the first row (assuming it's the last column)
     const termId = tableData.length > 0 ? tableData[0][5] : '';
 
-    // Set document font and title
+    // === Company Name Top ===
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.text('Student Fee Report', 105, 20, { align: 'center' });
+    doc.setFontSize(24);
+    doc.text(companyName, 105, 15, { align: 'center' });
 
-    // Add space after the title
+    // === Report Title ===
+    doc.setFontSize(18);
+    doc.text('Student Fee Report', 105, 25, { align: 'center' });
+
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text('Generated on: ' + new Date().toLocaleString(), 20, 30);
-    doc.text('Term: ' + termId, 20, 37);
+    doc.text('Generated on: ' + new Date().toLocaleString(), 20, 35);
+    doc.text('Term: ' + termId, 20, 42);
+    doc.line(20, 47, 190, 47);
 
-    // Add a line separator
-    doc.setLineWidth(0.5);
-    doc.line(20, 42, 190, 42); // Horizontal line below the title
-
-    // Define table headers and column widths
+    // === Table Headers ===
     const headers = ['Student Name', 'Fee Type', 'Class', 'Amount Paid', 'Amount Left'];
-    const columnWidths = [60, 40, 30, 30, 30]; // Adjust column widths for better fit
-
-    // Table positioning
+    const columnWidths = [60, 40, 30, 30, 30];
     const tableX = 20;
-    const tableY = 40;
+    const tableY = 52;
 
-    // Draw the table header
     doc.setFont('helvetica', 'bold');
     let currentX = tableX;
     headers.forEach((header, index) => {
@@ -46,26 +37,44 @@
         currentX += columnWidths[index];
     });
 
-    // Add a line below the header
     doc.line(tableX, tableY + 2, tableX + columnWidths.reduce((a, b) => a + b), tableY + 2);
 
-    // Draw the table rows
+    // === Table Rows ===
     doc.setFont('helvetica', 'normal');
-    let rowY = tableY + 10; // Start from the next line after the header
+    let rowY = tableY + 10;
+    let totalPaid = 0;
+    let totalLeft = 0;
+
     tableData.forEach(row => {
         let rowX = tableX;
-        for (let index = 0; index < headers.length; index++) {
-            const cell = row[index] !== undefined ? row[index] : '';
-            doc.text(String(cell), rowX + columnWidths[index] / 2, rowY, { align: 'center' });
-            rowX += columnWidths[index];
+
+        const paid = parseFloat(row[3]) || 0;
+        const left = parseFloat(row[4]) || 0;
+        totalPaid += paid;
+        totalLeft += left;
+
+        for (let i = 0; i < headers.length; i++) {
+            const cell = row[i] !== undefined ? row[i] : '';
+            doc.text(String(cell), rowX + columnWidths[i] / 2, rowY, { align: 'center' });
+            rowX += columnWidths[i];
         }
         rowY += 10;
     });
 
-    // Add a footer line
-    doc.setLineWidth(0.5);
-    doc.line(20, rowY + 10, 190, rowY + 10); // Horizontal line at the bottom
+    doc.line(20, rowY + 5, 190, rowY + 5); // bottom line below table
 
-    // Save the PDF
+    // === Display Totals ===
+    rowY += 15;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text(`Total Amount Paid: GH₵ ${totalPaid.toFixed(2)}`, 20, rowY);
+    doc.text(`Total Amount Left to be Paid: GH₵ ${totalLeft.toFixed(2)}`, 20, rowY + 10);
+
+    // === Display School Name at Bottom ===
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(schoolName, 105, 290, { align: 'center' });
+
+    // === Save PDF ===
     doc.save(fileName);
 }

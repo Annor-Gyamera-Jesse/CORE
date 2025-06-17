@@ -24,6 +24,7 @@ using Microsoft.Extensions.Caching.Memory;
 using System.Text;
 using static CORE.Pages.FEES.STUDENT_FEES_VIEWING.Students_Fees_Viewing;
 using Microsoft.AspNetCore.Connections;
+using CORE.MODEL.Login_Name_Display;
 
 namespace CORE.SERVICE
 {
@@ -3049,6 +3050,17 @@ namespace CORE.SERVICE
                 commandType: CommandType.StoredProcedure);
             return result;
         }
+
+        public async Task<(string CompanyName, string SchoolName)> GetPdfLoginScreenDetailsAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            var result = await connection.QueryFirstOrDefaultAsync<LoginScreenDetails>(
+                "SELECT TOP 1 CompanyRegisteredName, SchoolName FROM SchoolManagement.LoginScreenDetails"
+            );
+
+            return (result?.CompanyRegisteredName ?? "Company Name", result?.SchoolName ?? "School Name");
+        }
+
 
         public async Task<List<FeeType>> GetFeeTypesByClassAsync(string classId)
         {
