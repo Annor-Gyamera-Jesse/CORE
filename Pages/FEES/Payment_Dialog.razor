@@ -148,9 +148,10 @@
 
             var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
             var base64Csv = Convert.ToBase64String(csvData);
-
+            // Get company and school name for the report header
+            var (companyName, schoolName) = await authService.GetPdfLoginScreenDetailsAsync();
             var fileName = $"Student_Fees_{selectedStudentId}.pdf";
-            await JSRuntime.InvokeVoidAsync("downloadPdf", fileName, base64Csv);
+            await JSRuntime.InvokeVoidAsync("downloadPdf", fileName, base64Csv, companyName, schoolName);
 
             Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
         }
