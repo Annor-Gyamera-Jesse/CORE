@@ -1,4 +1,4 @@
-﻿function downloadPdf(fileName, base64Csv, companyName, schoolName) {
+﻿function downloadPdf(fileName, base64Csv, companyName, schoolName, logoBase64) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
@@ -9,26 +9,38 @@
 
     const termId = tableData.length > 0 ? tableData[0][5] : '';
 
-    // === Company Name Top ===
+    let yOffset = 10;
+
+    // === Company Logo ===
+    if (logoBase64) {
+        // Centered image: x=85 (PDF width 210 - image width 40) / 2
+        doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', 85, yOffset, 40, 25);
+        yOffset += 30;
+    }
+
+    // === Company Name ===
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(24);
-    doc.text(companyName, 105, 15, { align: 'center' });
+    doc.text(companyName, 105, yOffset, { align: 'center' });
 
     // === Report Title ===
+    yOffset += 10;
     doc.setFontSize(18);
-    doc.text('Student Fee Report', 105, 25, { align: 'center' });
+    doc.text('Student Fee Report', 105, yOffset, { align: 'center' });
 
+    // === Metadata ===
+    yOffset += 10;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text('Generated on: ' + new Date().toLocaleString(), 20, 35);
-    doc.text('Term: ' + termId, 20, 42);
-    doc.line(20, 47, 190, 47);
+    doc.text('Generated on: ' + new Date().toLocaleString(), 20, yOffset);
+    doc.text('Term: ' + termId, 20, yOffset + 7);
+    doc.line(20, yOffset + 12, 190, yOffset + 12);
 
     // === Table Headers ===
     const headers = ['Student Name', 'Fee Type', 'Class', 'Amount Paid', 'Amount Left'];
     const columnWidths = [60, 40, 30, 30, 30];
     const tableX = 20;
-    const tableY = 52;
+    const tableY = yOffset + 17;
 
     doc.setFont('helvetica', 'bold');
     let currentX = tableX;
@@ -61,16 +73,16 @@
         rowY += 10;
     });
 
-    doc.line(20, rowY + 5, 190, rowY + 5); // bottom line below table
+    doc.line(20, rowY + 5, 190, rowY + 5); // Bottom border after table
 
-    // === Display Totals ===
+    // === Totals ===
     rowY += 15;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
     doc.text(`Total Amount Paid: GH₵ ${totalPaid.toFixed(2)}`, 20, rowY);
     doc.text(`Total Amount Left to be Paid: GH₵ ${totalLeft.toFixed(2)}`, 20, rowY + 10);
 
-    // === Display School Name at Bottom ===
+    // === School Name at Bottom ===
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text(schoolName, 105, 290, { align: 'center' });

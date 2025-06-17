@@ -4,5 +4,6 @@
     {
         public string CompanyRegisteredName { get; set; }
         public string SchoolName { get; set; }
+        public byte[] CompanyImage { get; set; }
     }
 }

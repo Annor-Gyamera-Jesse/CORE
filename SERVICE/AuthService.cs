@@ -25,6 +25,7 @@ using System.Text;
 using static CORE.Pages.FEES.STUDENT_FEES_VIEWING.Students_Fees_Viewing;
 using Microsoft.AspNetCore.Connections;
 using CORE.MODEL.Login_Name_Display;
+using Microsoft.Extensions.Configuration;
 
 namespace CORE.SERVICE
 {
@@ -3051,15 +3052,23 @@ namespace CORE.SERVICE
             return result;
         }
 
-        public async Task<(string CompanyName, string SchoolName)> GetPdfLoginScreenDetailsAsync()
+        public async Task<(string CompanyName, string SchoolName, string CompanyImageBase64)> GetPdfLoginScreenDetailsAsync()
         {
             using var connection = new SqlConnection(connectionString);
+
             var result = await connection.QueryFirstOrDefaultAsync<LoginScreenDetails>(
-                "SELECT TOP 1 CompanyRegisteredName, SchoolName FROM SchoolManagement.LoginScreenDetails"
+                "SELECT TOP 1 CompanyRegisteredName, SchoolName, CompanyImage FROM SchoolManagement.LoginScreenDetails"
             );
 
-            return (result?.CompanyRegisteredName ?? "Company Name", result?.SchoolName ?? "School Name");
+            string base64Image = result?.CompanyImage != null ? Convert.ToBase64String(result.CompanyImage) : null;
+
+            return (
+                result?.CompanyRegisteredName ?? "Company Name",
+                result?.SchoolName ?? "School Name",
+                base64Image
+            );
         }
+
 
 
         public async Task<List<FeeType>> GetFeeTypesByClassAsync(string classId)
