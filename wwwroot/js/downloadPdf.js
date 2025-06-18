@@ -5,18 +5,6 @@
     const decodedCsv = atob(base64Csv);
     const lines = decodedCsv.split('\n');
 
-    // === Extract and remove Expected Fee Amounts section ===
-    let expectedFeeLines = [];
-    const expectedStartIndex = lines.findIndex(line => line.trim() === "Expected Fee Amounts:");
-    if (expectedStartIndex !== -1) {
-        let i = expectedStartIndex + 1;
-        while (i < lines.length && lines[i].trim() !== "") {
-            expectedFeeLines.push(lines[i].trim());
-            i++;
-        }
-        lines.splice(expectedStartIndex, i - expectedStartIndex); // remove the expected section
-    }
-
     const csvHeaders = lines[0].split(',');
     const tableData = lines.slice(1).filter(line => line.trim() !== '').map(line => line.split(','));
     const termId = tableData.length > 0 ? tableData[0][5] : '';
@@ -28,7 +16,7 @@
         doc.setDrawColor(0);
         doc.setLineWidth(0.3);
         doc.rect(82, yOffset, 46, 28);
-        doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', 85, yOffset + 1.5, 40, 25);
+        doc.addImage(data: image / png; base64, ${ logoBase64 }, 'PNG', 85, yOffset + 1.5, 40, 25);
         yOffset += 35;
     }
 
@@ -115,7 +103,18 @@
     doc.text(`Total Amount Paid: GH₵ ${totalPaid.toFixed(2)}`, 25, rowY);
     doc.text(`Total Amount Left: GH₵ ${totalLeft.toFixed(2)}`, 25, rowY + 8);
 
-    // === Expected Fee Amounts Section ===
+    // Extract and Show Expected Fee Amounts *right here*
+    let expectedFeeLines = [];
+    if (lines[1] && lines[1].startsWith("Expected Fee Amounts:")) {
+        let i = 2;
+        while (i < lines.length && lines[i].trim() !== "") {
+            expectedFeeLines.push(lines[i]);
+            i++;
+        }
+        i++; // skip blank line
+        lines.splice(0, i); // remove the expected block from main CSV
+    }
+
     if (expectedFeeLines.length > 0) {
         rowY += 25;
         doc.setFont('helvetica', 'bold');

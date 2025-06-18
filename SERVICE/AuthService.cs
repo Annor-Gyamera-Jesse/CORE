@@ -145,6 +145,14 @@ namespace CORE.SERVICE
             }
         }
 
+        public async Task<IEnumerable<(string FeeTypeName, decimal Amount)>> GetFeeAmountsByClassIDAsync(string classId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            return await connection.QueryAsync<(string FeeTypeName, decimal Amount)>(
+                "GetFeeAmountsByClassID",
+                new { ClassID = classId },
+                commandType: CommandType.StoredProcedure);
+        }
 
         //--- For company LoginLayout display--///
         public async Task<string> GetSoftwareVersionAsync()
