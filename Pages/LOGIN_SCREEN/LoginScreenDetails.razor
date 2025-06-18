@@ -1,0 +1,61 @@
+﻿@page "/pages/login_screen/loginscreendetails"
+@using CORE.MODEL.Login_Name_Display
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService authService
+@inject NotificationMessageService Notify
+<RadzenNotification />
+
+<h3 class="text-xl font-semibold">Login Screen Settings</h3>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+    <RadzenTextBox @bind-Value="details.Title" Name="Title" Placeholder="Title" Style="width:100%" />
+    <RadzenTextBox @bind-Value="details.SchoolName" Name="SchoolName" Placeholder="School Name" Style="width:100%" />
+    <RadzenTextBox @bind-Value="details.CompanyRegisteredName" Name="CompanyRegisteredName" Placeholder="Registered Name" Style="width:100%" />
+    <RadzenTextBox @bind-Value="details.SoftWareVerssion" Name="SoftWareVerssion" Placeholder="Software Version" Style="width:100%" />
+
+    <div class="col-span-2">
+        <label class="block mb-1 font-semibold">Company Logo (Max: 500 KB)</label>
+        <InputFile id="companyLogo" OnChange="HandleFileChange" key="@inputfileKey" />
+    </div>
+
+    <RadzenButton Text="Save" Icon="save" Click="@Save" Style="margin-top:10px;" />
+</div>
+
+@code {
+    LoginScreenDetail details = new();
+    IBrowserFile selectedFile;
+    string inputfileKey = Guid.NewGuid().ToString(); // to reset InputFile
+    const long MaxImageSize = 500 * 1024; // 500 KB
+
+    protected override async Task OnInitializedAsync()
+    {
+        details = await authService.GetsLoginScreenDetailsAsync() ?? new();
+    }
+
+    async Task Save()
+    {
+        if (selectedFile != null)
+        {
+            using var stream = selectedFile.OpenReadStream(MaxImageSize);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            details.CompanyImage = ms.ToArray();
+        }
+
+        await authService.InsertOrUpdateLoginScreenDetailsAsync(details);
+        Notify.ShowNotification("Login screen details saved successfully.", "", NotificationSeverity.Success);
+    }
+
+    private void HandleFileChange(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+
+        if (selectedFile.Size > MaxImageSize)
+        {
+            Notify.ShowNotification("File too large", "Please upload an image smaller than 500 KB.", NotificationSeverity.Error);
+            selectedFile = null;
+            inputfileKey = Guid.NewGuid().ToString(); // Reset input file control
+        }
+    }
+}

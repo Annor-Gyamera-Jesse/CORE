@@ -26,6 +26,7 @@ using static CORE.Pages.FEES.STUDENT_FEES_VIEWING.Students_Fees_Viewing;
 using Microsoft.AspNetCore.Connections;
 using CORE.MODEL.Login_Name_Display;
 using Microsoft.Extensions.Configuration;
+using CORE.Pages.LOGIN_SCREEN;
 
 namespace CORE.SERVICE
 {
@@ -3056,7 +3057,7 @@ namespace CORE.SERVICE
         {
             using var connection = new SqlConnection(connectionString);
 
-            var result = await connection.QueryFirstOrDefaultAsync<LoginScreenDetails>(
+            var result = await connection.QueryFirstOrDefaultAsync<LoginScreenDetail>(
                 "SELECT TOP 1 CompanyRegisteredName, SchoolName, CompanyImage FROM SchoolManagement.LoginScreenDetails"
             );
 
@@ -3069,6 +3070,38 @@ namespace CORE.SERVICE
             );
         }
 
+        public async Task<LoginScreenDetail> GetsLoginScreenDetailsAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string sql = "SELECT TOP 1 * FROM SchoolManagement.LoginScreenDetails";
+            return await connection.QueryFirstOrDefaultAsync<LoginScreenDetail>(sql);
+        }
+
+        public async Task InsertOrUpdateLoginScreenDetailsAsync(LoginScreenDetail data)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            string checkSql = "SELECT COUNT(*) FROM SchoolManagement.LoginScreenDetails";
+            int count = await connection.ExecuteScalarAsync<int>(checkSql);
+
+            if (count == 0)
+            {
+                string insertSql = @"
+            INSERT INTO SchoolManagement.LoginScreenDetails 
+            (Title, CompanyImage, SchoolName, CompanyRegisteredName, SoftWareVerssion)
+            VALUES (@Title, @CompanyImage, @SchoolName, @CompanyRegisteredName, @SoftWareVerssion)";
+                await connection.ExecuteAsync(insertSql, data);
+            }
+            else
+            {
+                string updateSql = @"
+            UPDATE SchoolManagement.LoginScreenDetails 
+            SET Title = @Title, CompanyImage = @CompanyImage, 
+                SchoolName = @SchoolName, CompanyRegisteredName = @CompanyRegisteredName,
+                SoftWareVerssion = @SoftWareVerssion";
+                await connection.ExecuteAsync(updateSql, data);
+            }
+        }
 
 
         public async Task<List<FeeType>> GetFeeTypesByClassAsync(string classId)
