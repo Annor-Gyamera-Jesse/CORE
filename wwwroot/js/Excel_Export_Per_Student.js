@@ -113,7 +113,7 @@
     doc.setFontSize(12);
     doc.setTextColor(0);
     doc.text(`Total Amount Paid: GH₵ ${totalPaid.toFixed(2)}`, 25, rowY);
-    doc.text(`Total Amount Left: GH₵ ${totalLeft.toFixed(2)}`, 25, rowY + 8);
+   /* doc.text(`Total Amount Left: GH₵ ${totalLeft.toFixed(2)}`, 25, rowY + 8);*/
 
     // === Expected Fee Amounts Section (Centered, Bold, Courier Font) ===
     if (expectedFeeLines.length > 0) {
