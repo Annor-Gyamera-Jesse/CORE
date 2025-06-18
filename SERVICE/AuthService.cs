@@ -3206,20 +3206,6 @@ namespace CORE.SERVICE
             }
         }
 
-        public async Task<List<StudentFee>> GetUnpaidPreviousClassFeesAsync(int studentId)
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                return (await connection.QueryAsync<StudentFee>(
-                    @"SELECT * FROM SchoolManagement.StudentFees 
-              WHERE StudentID = @StudentID 
-              AND AmountLeft > 0 
-              AND ClassID <> (SELECT ClassID FROM SchoolManagement.Students WHERE StudentID = @StudentID)",
-                    new { StudentID = studentId })).ToList();
-            }
-        }
-
-
         public async Task<int> GetBankIDAsync(string paymentMethod)
         {
             using var connection = new SqlConnection(connectionString);
