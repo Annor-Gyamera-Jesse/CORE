@@ -115,21 +115,26 @@
     doc.text(`Total Amount Paid: GH₵ ${totalPaid.toFixed(2)}`, 25, rowY);
     doc.text(`Total Amount Left: GH₵ ${totalLeft.toFixed(2)}`, 25, rowY + 8);
 
-    // === Expected Fee Amounts Section ===
+    // === Expected Fee Amounts Section (Centered, Bold, Courier Font) ===
     if (expectedFeeLines.length > 0) {
         rowY += 25;
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.text("Expected Fee Amounts", 20, rowY);
-        rowY += 7;
 
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
+        // Title
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(13);
+        doc.setTextColor(0);
+        doc.text("EXPECTED FEES AMOUNT", doc.internal.pageSize.getWidth() / 2, rowY, { align: 'center' });
+
+        rowY += 10;
+
+        // Each Line (centered, bold, trimmed)
         expectedFeeLines.forEach(line => {
-            doc.text(line, 25, rowY);
-            rowY += 6;
+            const cleanLine = line.trim();
+            doc.text(cleanLine, doc.internal.pageSize.getWidth() / 2, rowY, { align: 'center' });
+            rowY += 7;
         });
     }
+
 
     // === Signature Line ===
     rowY += 20;
