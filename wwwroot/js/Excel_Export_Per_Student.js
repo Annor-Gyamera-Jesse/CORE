@@ -113,19 +113,18 @@
     doc.setFontSize(11);
     doc.setTextColor(0);
     doc.text(`Total Amount Paid: GH ${totalPaid.toFixed(2)}`, 25, rowY);
-    doc.text(`Total Amount Left: GH ${totalLeft.toFixed(2)}`, 25, rowY + 8);
-
+   /* doc.text(`Total Amount Left: GH ${totalLeft.toFixed(2)}`, 25, rowY + 8);*/
 
     // === Expected Fee Amounts Section (Centered, Bold, Courier Font) ===
     if (expectedFeeLines.length > 0) {
-        rowY += 30; // Extra padding after total section
+        rowY += 30; // Push it well below the totals section
 
-        const pageWidth = doc.internal.pageSize.getWidth(); // Page width for centering
+        const pageWidth = doc.internal.pageSize.getWidth();
         const blockWidth = 150;
         const blockX = (pageWidth - blockWidth) / 2;
         const boxHeight = expectedFeeLines.length * 7 + 15;
 
-        // Background box (optional)
+        // Background box
         doc.setFillColor(245, 245, 245);
         doc.rect(blockX, rowY - 10, blockWidth, boxHeight, 'F');
 
@@ -137,7 +136,7 @@
 
         rowY += 10;
 
-        // Fee Lines (centered inside box)
+        // Fee lines centered
         doc.setFont('courier', 'bold');
         doc.setFontSize(12);
         expectedFeeLines.forEach(line => {

@@ -151,7 +151,7 @@
             }
 
             // === Special marker so JS knows to add this AFTER totals ===
-            csvBuilder.AppendLine("EXPECTED FEES AMOUNT");
+            csvBuilder.AppendLine("Expected Fee Amounts:");
             foreach (var item in feeAmounts)
             {
                 csvBuilder.AppendLine($"{item.FeeTypeName.ToUpper()}: GH {item.Amount:F2}");
