@@ -1,0 +1,128 @@
+﻿@page "/core/pages/fees/Pdf_per_date/term-date-report"
+@inject AuthService authService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+@using CORE.MODEL
+@using CORE.MODEL.Term
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using System.Text
+
+<RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <div class="card" style="padding: 20px; max-width: 600px; margin: auto;">
+        <RadzenDropDown Data="@terms" TextProperty="Term" ValueProperty="TermID"
+                        @bind-Value="selectedTermId" Placeholder="Select Term"
+                        Style="width: 100%; margin-bottom: 20px;" />
+
+        <RadzenDatePicker @bind-Value="selectedPaymentDate" Placeholder="Select Payment Date"
+                          Style="width: 100%; margin-bottom: 20px;" />
+
+        <RadzenButton Text="Generate Report" Icon="save_alt" Click="@GenerateTermDateReport"
+                      Disabled="@isLoading" Style="width: 100%;" />
+    </div>
+}
+@code {
+    private bool isLoading;
+    private List<SchoolTerm> terms = new();
+    private int selectedTermId;
+    private DateTime? selectedPaymentDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            terms = (await authService.GetAllSchoolTermsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Failed to load terms: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task GenerateTermDateReport()
+    {
+        if (selectedTermId == 0 || selectedPaymentDate == null)
+        {
+            Notify.ShowNotification("Please select both term and payment date.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+
+            // STEP 1: Get all fees on that term and date
+            var studentFees = (await authService.GetStudentFeesByTermAndPaymentDateAsync(selectedTermId, selectedPaymentDate.Value)).ToList();
+            if (!studentFees.Any())
+            {
+                Notify.ShowNotification("No data found for the selected term and date.", "", NotificationSeverity.Warning);
+                return;
+            }
+
+            // STEP 2: Get company/school branding details
+            var (companyName, schoolName, logoBase64) = await authService.GetPdfLoginScreenDetailsAsync();
+
+            // STEP 3: Group fees by student
+            var groupedFees = studentFees
+                .GroupBy(fee => new { fee.StudentID, fee.StudentName, fee.ClassID })
+                .ToList();
+
+            // STEP 4: Prepare student reports for all pages
+            var reports = new List<object>();
+
+            foreach (var group in groupedFees)
+            {
+                var classId = group.Key.ClassID;
+                var expectedFees = (await authService.GetFeeAmountsByClassIDAsync(classId)).ToList();
+                var expectedTotal = expectedFees.Sum(x => x.Amount);
+
+                var csvBuilder = new StringBuilder();
+                foreach (var fee in group)
+                {
+                    csvBuilder.AppendLine($"{fee.StudentName}, {fee.FeeTypeName}, {fee.ClassID}, {fee.AmountPaid}, {fee.AmountLeft}, {fee.TermID}");
+                }
+
+                csvBuilder.AppendLine("Expected Fee Amounts:");
+                foreach (var ef in expectedFees)
+                {
+                    csvBuilder.AppendLine($"{ef.FeeTypeName.ToUpper()}: GH {ef.Amount:F2}");
+                }
+                csvBuilder.AppendLine($"TOTAL EXPECTED FEES: GH {expectedTotal:F2}");
+
+                reports.Add(new
+                {
+                    studentName = group.Key.StudentName,
+                    termId = selectedTermId.ToString(),
+                    feeDataCsv = Convert.ToBase64String(Encoding.UTF8.GetBytes(csvBuilder.ToString()))
+                });
+            }
+
+            // STEP 5: Call the JS function to download all pages into 1 PDF
+            await JSRuntime.InvokeVoidAsync("downloadPdfForMultipleStudents",
+                $"Student_Fee_Report_{selectedTermId}_{selectedPaymentDate:yyyyMMdd}.pdf",
+                reports, companyName, schoolName, logoBase64);
+
+            Notify.ShowNotification("All student reports generated successfully.", "", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error generating reports: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+}

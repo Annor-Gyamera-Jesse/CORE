@@ -3078,6 +3078,18 @@ namespace CORE.SERVICE
             );
         }
 
+        // Get student fees by term and payment date
+        public async Task<IEnumerable<StudentFee>> GetStudentFeesByTermAndPaymentDateAsync(int termId, DateTime paymentDate)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var result = await connection.QueryAsync<StudentFee>(
+                "GetStudentFeesByTermAndPaymentDate",
+                new { TermID = termId, PaymentDate = paymentDate.Date },
+                commandType: CommandType.StoredProcedure);
+            return result;
+        }
+
+
         public async Task<LoginScreenDetail> GetsLoginScreenDetailsAsync()
         {
             using var connection = new SqlConnection(connectionString);
