@@ -154,9 +154,9 @@
             csvBuilder.AppendLine("EXPECTED FEES AMOUNT");
             foreach (var item in feeAmounts)
             {
-                csvBuilder.AppendLine($"{item.FeeTypeName.ToUpper()}: Ghana Cedi {item.Amount:F2}");
+                csvBuilder.AppendLine($"{item.FeeTypeName.ToUpper()}: GH {item.Amount:F2}");
             }
-            csvBuilder.AppendLine($"TOTAL EXPECTED FEES: Ghana Cedi {expectedTotal:F2}");
+            csvBuilder.AppendLine($"TOTAL EXPECTED FEES: GH {expectedTotal:F2}");
 
             var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
             var base64Csv = Convert.ToBase64String(csvData);
