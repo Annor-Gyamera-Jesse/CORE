@@ -285,9 +285,7 @@
     {
         try
         {
-            isLoading = true;
-            if (IsValid(student))
-            {
+            isLoading = true;         
                 if (selectedFile != null)
                 {
                     using (var stream = selectedFile.OpenReadStream())
@@ -314,7 +312,7 @@
                     // Handle failure, show error messages, etc.
                     Notify.ShowNotification("Failed to register the student", "Please try again Hint Check If Gender Is M or F.", NotificationSeverity.Error);
                 }
-            }
+            
         }
         catch (Exception ex)
         {

@@ -69,7 +69,7 @@
 
     <RadzenHeader title="School Fees Payment" class="header-container compact-header">
         <RadzenFieldset Text="EXPORT STUDENT REPORT" class="right-align">
-            <FeesToolPanelComponent OnFeesDialog="FeesDialog" OnTransferOfFundsDialog="TransferOfFunds" OnCashInHandsDialog="CashInHandsDialog" />
+            <FeesToolPanelComponent OnFeesDialog="FeesDialog" OnFeesPerDateDialog="FeesPerDate" OnTransferOfFundsDialog="TransferOfFunds" OnCashInHandsDialog="CashInHandsDialog" />
         </RadzenFieldset>
     </RadzenHeader>
     <br />
@@ -541,6 +541,8 @@
 
 
     async void FeesDialog() => await OpenPaymentDialog();
+    
+    async void FeesPerDate() => await OpenFeesPerDateDialog();
 
     async void TransferOfFunds() => await OpenTransferOfFundsDialog();
     

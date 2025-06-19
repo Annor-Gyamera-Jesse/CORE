@@ -495,13 +495,13 @@ namespace CORE.SERVICE
                         command.Parameters.Add("@ImageData", SqlDbType.VarBinary).Value = student.ImageData ?? (object)DBNull.Value;
                         // Add parameter for ClassID
                         command.Parameters.AddWithValue("@ClassID", student.ClassID);
-                        command.Parameters.AddWithValue("@GuardianFullName", student.GuardianFullName);
+                        command.Parameters.AddWithValue("@GuardianFullName", student.GuardianFullName ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@GuardianGender", student.GuardianGender);
-                        command.Parameters.AddWithValue("@GuardianHouseAddress", student.GuardianHouseAddress);
-                        command.Parameters.AddWithValue("@GuardianWorkAddress", student.GuardianWorkAddress);
-                        command.Parameters.AddWithValue("@GuardianEmail", student.GuardianEmail);
-                        command.Parameters.AddWithValue("@GuardianFirstContact", student.GuardianFirstContact);
-                        command.Parameters.AddWithValue("@GuardianSecondContact", student.GuardianSecondContact);
+                        command.Parameters.AddWithValue("@GuardianHouseAddress", student.GuardianHouseAddress ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@GuardianWorkAddress", student.GuardianWorkAddress ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@GuardianEmail", student.GuardianEmail ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@GuardianFirstContact", student.GuardianFirstContact ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@GuardianSecondContact", student.GuardianSecondContact ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@EnableSwitch", student.EnableSwitch);
                         command.Parameters.AddWithValue("@StudentMedicalReport", student.StudentMedicalReport ?? (object)DBNull.Value);
 
@@ -3077,6 +3077,18 @@ namespace CORE.SERVICE
                 base64Image
             );
         }
+
+        // Get student fees by term and payment date
+        public async Task<IEnumerable<StudentFee>> GetStudentFeesByTermAndPaymentDateAsync(int termId, DateTime paymentDate)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var result = await connection.QueryAsync<StudentFee>(
+                "GetStudentFeesByTermAndPaymentDate",
+                new { TermID = termId, PaymentDate = paymentDate.Date },
+                commandType: CommandType.StoredProcedure);
+            return result;
+        }
+
 
         public async Task<LoginScreenDetail> GetsLoginScreenDetailsAsync()
         {
