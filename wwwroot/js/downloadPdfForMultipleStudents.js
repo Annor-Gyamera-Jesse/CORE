@@ -2,9 +2,9 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    reports.forEach((report, index) => {
-        if (index > 0) doc.addPage(); // New page per student
+    let isFirstPage = true;
 
+    reports.forEach((report) => {
         const decodedCsv = atob(report.feeDataCsv);
         const lines = decodedCsv.split('\n');
 
@@ -20,12 +20,24 @@
             lines.splice(expectedStartIndex, i - expectedStartIndex);
         }
 
-        const csvHeaders = lines[0].split(',');
-        const tableData = lines.slice(1).filter(l => l.trim() !== "").map(l => l.split(','));
+        // Extract table data (skip empty lines and expected fees block)
+        const tableData = lines
+            .filter(line => line.trim() !== "" && !line.trim().startsWith("Expected Fee Amounts:"))
+            .map(line => line.split(','))
+            .filter(row => row.length >= 5);
+
+        if (tableData.length === 0) {
+            return; // Skip blank reports
+        }
+
+        if (!isFirstPage) {
+            doc.addPage();
+        }
+        isFirstPage = false;
 
         let yOffset = 10;
 
-        // Logo
+        // === Logo ===
         if (logoBase64) {
             doc.setDrawColor(0);
             doc.setLineWidth(0.3);
@@ -34,7 +46,7 @@
             yOffset += 35;
         }
 
-        // Title
+        // === Header Bar ===
         doc.setFillColor(41, 128, 185);
         doc.rect(20, yOffset, 170, 12, 'F');
         doc.setFontSize(16);
@@ -44,27 +56,32 @@
 
         yOffset += 18;
 
+        // === Title and Student Name ===
         doc.setFontSize(14);
         doc.setTextColor(0);
-        doc.text('Student Fee Report'.toUpperCase(), 105, yOffset, { align: 'center' });
+        doc.text('STUDENT FEE REPORT', 105, yOffset, { align: 'center' });
+
+        yOffset += 8;
+        doc.setFontSize(12);
+        doc.text(`Student: ${report.studentName}`, 105, yOffset, { align: 'center' });
 
         yOffset += 10;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text('Generated on: ' + new Date().toLocaleString(), 20, yOffset);
-        doc.text('Term: ' + report.termId, 160, yOffset, { align: 'right' });
+        doc.text('Term: ' + report.termId, 190, yOffset, { align: 'right' });
 
         yOffset += 5;
+        doc.setDrawColor(200);
         doc.line(20, yOffset, 190, yOffset);
 
-        // Table
+        // === Table Headers ===
         const headers = ['Student Name', 'Fee Type', 'Class', 'Amount Paid', 'Amount Left'];
         const columnWidths = [60, 40, 30, 30, 30];
-        let rowY = yOffset + 15;
+        let rowY = yOffset + 10;
         let totalPaid = 0;
         let totalLeft = 0;
 
-        // Header
         let currentX = 20;
         doc.setFont('helvetica', 'bold');
         doc.setFillColor(230, 230, 230);
@@ -93,14 +110,14 @@
             rowY += 10;
         });
 
-        // Totals
+        // === Totals Box ===
         rowY += 10;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
         doc.text(`Total Paid: GH ${totalPaid.toFixed(2)}`, 25, rowY);
         // doc.text(`Total Left: GH ${totalLeft.toFixed(2)}`, 25, rowY + 7);
 
-        // Expected Fees block
+        // === Expected Fees Section ===
         if (expectedFeeLines.length > 0) {
             rowY += 20;
             doc.setFont('courier', 'bold');
@@ -115,13 +132,13 @@
             });
         }
 
-        // Signature line
+        // === Signature Line ===
         rowY += 20;
         doc.line(140, rowY, 190, rowY);
         doc.setFontSize(10);
         doc.text('Authorized Signature', 165, rowY + 5, { align: 'center' });
 
-        // Footer
+        // === Footer ===
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         doc.setTextColor(100);
