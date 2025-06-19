@@ -145,7 +145,6 @@
                         </ul>
                     </RadzenCard>
 
-
                 </div>
             </div>
 
@@ -257,8 +256,7 @@
     private List<Class> Classes = new List<Class>(); // Stores the list of classes
     // private bool IsCashInHand = false;
     private bool _isCashInHand;
-    private List<StudentFee> UnpaidPreviousClassFees = new List<StudentFee>();
-
+   
 
     private bool IsCashInHand
     {
@@ -372,9 +370,6 @@
             Note = string.Empty;
             SelectedFeeTypeID = 0;  // Reset Fee Type
 
-            // ✅ Get the selected student
-            var student = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID);
-
             // Fetch the selected student's fees
             var studentFees = await StudentService.GetStudentFeesByStudentIdAsync(SelectedStudentID);
 
@@ -384,18 +379,8 @@
             {
                 TotalAmount = feeType.Amount;
                 var studentFee = studentFees.FirstOrDefault(f => f.FeeTypeID == SelectedFeeTypeID);
+
                 OutstandingBalance = studentFee != null ? (feeType.Amount - studentFee.AmountPaid) : feeType.Amount;
-            }
-
-            // ✅ Use the fetched student safely here
-            if (student != null)
-            {
-                var currentClassID = student.ClassID;
-
-                // Fetch unpaid fees from previous classes
-                UnpaidPreviousClassFees = studentFees
-                    .Where(f => f.ClassID != currentClassID && f.AmountLeft > 0)
-                    .ToList();
             }
         }
         catch (Exception ex)
@@ -408,7 +393,6 @@
             StateHasChanged();
         }
     }
-
 
     private void ResetPaymentForm()
     {
@@ -465,68 +449,35 @@
 
     private async Task SavePayment()
     {
-        isLoading = true;
+        isLoading = true;  // Start loading
         StateHasChanged();
 
+        if (AmountPaid <= 0 || SelectedStudentID == 0 || SelectedFeeTypeID == 0)
+        {
+            NotificationService.ShowNotification("Validation Error", "All fields are required.", NotificationSeverity.Warning);
+            return;
+        }
+        if (SelectedStudentID == 0 || SelectedTermID == 0 || SelectedFeeTypeID == 0 || AmountPaid <= 0)
+        {
+            NotificationService.ShowNotification("Validation Error", "Please complete all required fields.", NotificationSeverity.Warning);
+            return;
+        }
+
+        if (IsCashInHand)
+        {
+            PaymentMethod = "Cash In Hand";
+        }
         try
         {
-            if (AmountPaid <= 0 || SelectedStudentID == 0 || SelectedFeeTypeID == 0 || SelectedTermID == 0)
-            {
-                NotificationService.ShowNotification("Validation Error", "Please complete all required fields.", NotificationSeverity.Warning);
-                return;
-            }
-
-            if (IsCashInHand)
-            {
-                PaymentMethod = "Cash In Hand";
-            }
-
-            // 🔍 STEP 1: Get current student info and class
-            var student = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID);
-            if (student == null)
-            {
-                NotificationService.ShowNotification("Error", "Student not found.", NotificationSeverity.Error);
-                return;
-            }
-
-            string currentClassID = student.ClassID;
-            if (string.IsNullOrEmpty(currentClassID))
-            {
-                NotificationService.ShowNotification("Error", "Student has no class assigned.", NotificationSeverity.Error);
-                return;
-            }
-
-            // 🔍 STEP 2: Get FeeType for current class
-            var feeType = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID);
-            if (feeType == null)
-            {
-                NotificationService.ShowNotification("Error", "Fee Type not found.", NotificationSeverity.Error);
-                return;
-            }
-
-            decimal totalFeeAmount = feeType.Amount;
-
-            // 🧮 STEP 3: Get total previously paid in the same class and FeeType
-            var studentFees = await StudentService.GetStudentFeesByStudentIdAsync(SelectedStudentID);
-            decimal totalPreviouslyPaid = studentFees
-                .Where(f => f.FeeTypeID == SelectedFeeTypeID && f.ClassID == currentClassID)
-                .Sum(f => f.AmountPaid);
-
-            // 💵 STEP 4: Calculate updated balance
-            decimal newTotalPaid = totalPreviouslyPaid + AmountPaid;
-            decimal newAmountLeft = totalFeeAmount - newTotalPaid;
-            if (newAmountLeft < 0) newAmountLeft = 0;
-
-            // 💾 STEP 5: Create payment object
             var payment = new StudentFee
                 {
                     StudentID = SelectedStudentID,
                     FeeTypeID = SelectedFeeTypeID,
-                    StudentName = student.FullName,
-                    FeeTypeName = feeType.FeeTypeName,
-                    ClassID = currentClassID, // 💡 Save the class at time of payment
+                    StudentName = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.FullName,
+                    FeeTypeName = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID)?.FeeTypeName,
+                    ClassID = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.ClassID,
                     AmountPaid = AmountPaid,
-                    AmountLeft = newAmountLeft,
+                    AmountLeft = TotalAmountLeft - AmountPaid,
                     PaymentDate = PaymentDate,
                     PaymentMethod = PaymentMethod,
                     TermID = SelectedTermID,
@@ -534,19 +485,22 @@
                     UserID = userId
                 };
 
-            //STEP 6: Save fee and log transaction
+            // Save the student fee
             var success = await StudentService.SaveStudentFeeAsync(payment);
             if (success)
             {
+                // Retrieve the BankID based on the selected payment method
                 int bankId = await StudentService.GetBankIDAsync(PaymentMethod);
-                if (bankId == 0)
+                if (bankId == 0) // Check if BankID is valid
                 {
                     NotificationService.ShowNotification("Error", "Invalid payment method selected.", NotificationSeverity.Error);
                     return;
                 }
 
+                // Log the transaction
                 await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
-                NotificationService.ShowNotification("Success", "Payment saved and logged successfully.", NotificationSeverity.Success);
+                NotificationService.ShowNotification("Success", "Payment saved successfully and logged.", NotificationSeverity.Success);
+                // ✅ Reset form fields
                 ResetPaymentForm();
             }
             else
@@ -564,8 +518,6 @@
             StateHasChanged();
         }
     }
-
-
 
     private void UpdateAmountLeft(decimal value)
     {
