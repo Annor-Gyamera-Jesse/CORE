@@ -110,8 +110,8 @@
 
             // STEP 5: Call the JS function to download all pages into 1 PDF
             await JSRuntime.InvokeVoidAsync("downloadPdfForMultipleStudents",
-                $"Student_Fee_Report_{selectedTermId}_{selectedPaymentDate:yyyyMMdd}.pdf",
-                reports, companyName, schoolName, logoBase64);
+        $"Student_Fee_Report_{selectedTermId}_{selectedPaymentDate:yyyyMMdd}.pdf",
+        reports, companyName, schoolName, logoBase64, selectedPaymentDate.Value.ToString("yyyy-MM-dd"));
 
             Notify.ShowNotification("All student reports generated successfully.", "", NotificationSeverity.Success);
         }

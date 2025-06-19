@@ -35,7 +35,7 @@ namespace CORE.Pages.FEES
         }
         public async Task OpenFeesPerDateDialog()
         {
-            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "360px", Resizable = false, Height = "209px" };
+            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "360px", Resizable = false, Height = "295px" };
             var dialogTitle = $"Fees Export To PDF Per Date";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<StudentFeeReportByDate>(dialogTitle, null, dialogOptions);

@@ -1,4 +1,4 @@
-﻿function downloadPdfForMultipleStudents(fileName, reports, companyName, schoolName, logoBase64) {
+﻿function downloadPdfForMultipleStudents(fileName, reports, companyName, schoolName, logoBase64, paymentDate) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
@@ -70,6 +70,17 @@
         doc.setFont('helvetica', 'normal');
         doc.text('Generated on: ' + new Date().toLocaleString(), 20, yOffset);
         doc.text('Term: ' + report.termId, 190, yOffset, { align: 'right' });
+
+        //doc.text('Generated on: ' + new Date().toLocaleString(), 20, yOffset);
+        //doc.text('Term: ' + report.termId, 105, yOffset, { align: 'center' });
+
+        yOffset += 5;
+        doc.text('Payment Date: ' + paymentDate, 105, yOffset, { align: 'center' });
+
+        yOffset += 5;
+        doc.setDrawColor(200);
+        doc.line(20, yOffset, 190, yOffset);
+
 
         yOffset += 5;
         doc.setDrawColor(200);
