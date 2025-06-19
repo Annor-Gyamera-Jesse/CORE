@@ -129,12 +129,21 @@
                                    Disabled="true"
                                    Placeholder="Outstanding Balance" />
                     <RadzenCard Style="background-color: #ffe2e6; padding: 16px; margin-top: 20px; border-left: 6px solid red;">
-                        <h3 style="color: #b00020;">Previous Outstanding Balance</h3>
+                        <h3 style="color: #b00020;">This Term Outstanding Balance</h3>
                         <p style="font-size: 1.2em;">
                             @((OutstandingBalance > 0) ? $"- ₵{OutstandingBalance:F2}" : "No balance owed")
                         </p>
                     </RadzenCard>
 
+                    <RadzenCard Style="background-color: #fef3c7; padding: 16px; margin-top: 20px; border-left: 6px solid orange;">
+                        <h3 style="color: #b45309;">Unpaid Previous Balances</h3>
+                        <ul>
+                            @foreach (var fee in UnpaidPreviousClassFees)
+                            {
+                                <li>@fee.FeeTypeName (@fee.ClassID): ₵@fee.AmountLeft</li>
+                            }
+                        </ul>
+                    </RadzenCard>
 
                 </div>
             </div>

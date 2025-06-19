@@ -110,27 +110,37 @@
     doc.rect(20, rowY - 8, 170, 20, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setTextColor(0);
-    doc.text(`Total Amount Paid: GH₵ ${totalPaid.toFixed(2)}`, 25, rowY);
-    doc.text(`Total Amount Left: GH₵ ${totalLeft.toFixed(2)}`, 25, rowY + 8);
+    doc.text(`Total Amount Paid: GH ${totalPaid.toFixed(2)}`, 25, rowY);
+   /* doc.text(`Total Amount Left: GH ${totalLeft.toFixed(2)}`, 25, rowY + 8);*/
 
     // === Expected Fee Amounts Section (Centered, Bold, Courier Font) ===
     if (expectedFeeLines.length > 0) {
-        rowY += 25;
+        rowY += 30; // Push it well below the totals section
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const blockWidth = 150;
+        const blockX = (pageWidth - blockWidth) / 2;
+        const boxHeight = expectedFeeLines.length * 7 + 15;
+
+        // Background box
+        doc.setFillColor(245, 245, 245);
+        doc.rect(blockX, rowY - 10, blockWidth, boxHeight, 'F');
 
         // Title
         doc.setFont('courier', 'bold');
         doc.setFontSize(13);
         doc.setTextColor(0);
-        doc.text("EXPECTED FEES AMOUNT", doc.internal.pageSize.getWidth() / 2, rowY, { align: 'center' });
+        doc.text("EXPECTED FEES AMOUNT", pageWidth / 2, rowY, { align: 'center' });
 
         rowY += 10;
 
-        // Each Line (centered, bold, trimmed)
+        // Fee lines centered
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(12);
         expectedFeeLines.forEach(line => {
-            const cleanLine = line.trim();
-            doc.text(cleanLine, doc.internal.pageSize.getWidth() / 2, rowY, { align: 'center' });
+            doc.text(line.trim(), pageWidth / 2, rowY, { align: 'center' });
             rowY += 7;
         });
     }
