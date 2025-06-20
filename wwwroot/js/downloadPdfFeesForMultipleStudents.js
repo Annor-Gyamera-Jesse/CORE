@@ -1,4 +1,4 @@
-﻿function downloadPdfForMultipleStudents(fileName, reports, companyName, schoolName, logoBase64, paymentDate) {
+﻿function downloadPdfFeesForMultipleStudents(fileName, reports, companyName, schoolName, logoBase64, paymentDate) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
