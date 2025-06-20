@@ -27,6 +27,7 @@ using Microsoft.AspNetCore.Connections;
 using CORE.MODEL.Login_Name_Display;
 using Microsoft.Extensions.Configuration;
 using CORE.Pages.LOGIN_SCREEN;
+using CORE.SERVICE.Caching;
 
 namespace CORE.SERVICE
 {
@@ -36,10 +37,12 @@ namespace CORE.SERVICE
         private readonly IMemoryCache _cache;
         private readonly string connectionString;
         private Timer _timer;
-        public AuthService(string connectionString, IMemoryCache memoryCache)
+        private readonly CacheService _cacheService;
+        public AuthService(string connectionString, IMemoryCache memoryCache, CacheService cacheService)
         {
             this.connectionString = connectionString;
             _cache = memoryCache;
+            _cacheService = cacheService;
             StartAutoTransfer();          
         }
 
@@ -114,26 +117,32 @@ namespace CORE.SERVICE
         //FOR CHECKING USER ROLE ND IT MENU ITEM
         public async Task<UserRoleAndMenuAccess> GetUserRoleAndMenuAccessAsync(int userId)
         {
-            using (var connection = new SqlConnection(connectionString))
+            string cacheKey = $"UserRoleAndMenuAccess_{userId}";
+
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
             {
-                var userRoleAndMenuAccess = new UserRoleAndMenuAccess();
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    var result = new UserRoleAndMenuAccess();
 
-                // Get user role
-                userRoleAndMenuAccess.Role = await connection.QuerySingleAsync<string>(
-                    "SELECT r.RoleName FROM SchoolManagementSecurity.MainSystemRoles r " +
-                    "JOIN SchoolManagement.Users u ON r.RoleID = u.RoleID WHERE u.UserID = @UserID",
-                    new { UserID = userId });
+                    // Get user role
+                    result.Role = await connection.QuerySingleAsync<string>(
+                        "SELECT r.RoleName FROM SchoolManagementSecurity.MainSystemRoles r " +
+                        "JOIN SchoolManagement.Users u ON r.RoleID = u.RoleID WHERE u.UserID = @UserID",
+                        new { UserID = userId });
 
-                // Get menu items accessible to this role
-                userRoleAndMenuAccess.MenuItems = (await connection.QueryAsync<MenuItem>(
-                    "SELECT m.* FROM SchoolManagementSecurity.MainMenu m " +
-                    "JOIN SchoolManagementSecurity.MenuAccess a ON m.MenuID = a.MenuID " +
-                    "WHERE a.RoleID = (SELECT RoleID FROM SchoolManagement.Users WHERE UserID = @UserID) AND a.CanAccess = 1",
-                    new { UserID = userId })).ToList();
+                    // Get menu items
+                    result.MenuItems = (await connection.QueryAsync<MenuItem>(
+                        "SELECT m.* FROM SchoolManagementSecurity.MainMenu m " +
+                        "JOIN SchoolManagementSecurity.MenuAccess a ON m.MenuID = a.MenuID " +
+                        "WHERE a.RoleID = (SELECT RoleID FROM SchoolManagement.Users WHERE UserID = @UserID) AND a.CanAccess = 1",
+                        new { UserID = userId })).ToList();
 
-                return userRoleAndMenuAccess;
-            }
+                    return result;
+                }
+            }, minutes: 15); // Cache for 15 minutes
         }
+
 
         //Userlogs on when user logs in and out of the main system//
         public async Task LogUserEventAsync(int userId, string eventName)
@@ -923,48 +932,44 @@ namespace CORE.SERVICE
         //for school course
         public async Task<List<SchoolCourse>> GetSchoolCoursesAsync()
         {
-            try
+            return await _cacheService.GetOrSetAsync("AllSchoolCourses", async () =>
             {
-                using (var connection = new SqlConnection(connectionString))
+                try
                 {
-                    await connection.OpenAsync();
-
-                    var query = "SELECT SCID, SchoolCourse FROM SchoolManagement.SchoolCourse";
-
-                    using (var command = new SqlCommand(query, connection))
-                    using (var reader = await command.ExecuteReaderAsync())
+                    using (var connection = new SqlConnection(connectionString))
                     {
-                        var schoolCourses = new List<SchoolCourse>();
+                        await connection.OpenAsync();
 
-                        while (await reader.ReadAsync())
+                        var query = "SELECT SCID, SchoolCourse FROM SchoolManagement.SchoolCourse";
+
+                        using (var command = new SqlCommand(query, connection))
+                        using (var reader = await command.ExecuteReaderAsync())
                         {
+                            var schoolCourses = new List<SchoolCourse>();
 
-                            var schoolCourse = new SchoolCourse
+                            while (await reader.ReadAsync())
                             {
-                                SCID = reader.IsDBNull(0) ? null : reader.GetString(0),
-                                SchoolCourseName = reader.IsDBNull(1) ? null : reader.GetString(1)
-                            };
+                                var schoolCourse = new SchoolCourse
+                                {
+                                    SCID = reader.IsDBNull(0) ? null : reader.GetString(0),
+                                    SchoolCourseName = reader.IsDBNull(1) ? null : reader.GetString(1)
+                                };
 
-                            //                             var schoolCourse = new SchoolCourse();
+                                schoolCourses.Add(schoolCourse);
+                            }
 
-                            //                             // Check for null values before retrieving
-                            //                             schoolCourse.SCID = reader.IsDBNull(0) ? null : reader.GetString(0);
-                            //                             schoolCourse.SchoolCourseName = reader.IsDBNull(1) ? null : reader.GetString(1);
-
-
-                            schoolCourses.Add(schoolCourse);
+                            return schoolCourses;
                         }
-
-                        return schoolCourses;
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetSchoolCoursesAsync: {ex.Message}");
-                throw;
-            }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in GetSchoolCoursesAsync: {ex.Message}");
+                    throw;
+                }
+            }, minutes: 30); // Cache for 30 minutes
         }
+
 
 
         public async Task<int> AddSchoolCourseAsync(SchoolCourse schoolCourse)
@@ -979,11 +984,15 @@ namespace CORE.SERVICE
 
                     using (var command = new SqlCommand(query, connection))
                     {
-                        // Check for null and DBNull.Value for nullable properties
                         command.Parameters.AddWithValue("@SCID", (object)schoolCourse.SCID ?? DBNull.Value);
                         command.Parameters.AddWithValue("@SchoolCourse", (object)schoolCourse.SchoolCourseName ?? DBNull.Value);
 
-                        return await command.ExecuteNonQueryAsync();
+                        var result = await command.ExecuteNonQueryAsync();
+
+                        // Invalidate cache after successful insert
+                        _cacheService.Invalidate("AllSchoolCourses");
+
+                        return result;
                     }
                 }
             }
@@ -993,6 +1002,7 @@ namespace CORE.SERVICE
                 throw;
             }
         }
+
 
         public async Task<int> UpdateSchoolCourseAsync(SchoolCourse schoolCourse)
         {
@@ -1011,7 +1021,12 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@SCID", schoolCourse.SCID);
                         command.Parameters.AddWithValue("@SchoolCourse", schoolCourse.SchoolCourseName);
 
-                        return await command.ExecuteNonQueryAsync();
+                        var result = await command.ExecuteNonQueryAsync();
+
+                        // Invalidate cache after update
+                        _cacheService.Invalidate("AllSchoolCourses");
+
+                        return result;
                     }
                 }
             }
@@ -1036,13 +1051,17 @@ namespace CORE.SERVICE
                     {
                         command.Parameters.AddWithValue("@SCID", scid);
 
-                        return await command.ExecuteNonQueryAsync();
+                        var result = await command.ExecuteNonQueryAsync();
+
+                        // Invalidate course cache
+                        _cacheService.Invalidate("AllSchoolCourses");
+
+                        return result;
                     }
                 }
             }
             catch (Exception ex)
             {
-                // Use a logging framework or log to a file instead of Console.WriteLine
                 Console.WriteLine($"Error in DeleteSchoolCourseAsync: {ex.Message}");
                 throw;
             }
@@ -1056,23 +1075,26 @@ namespace CORE.SERVICE
         //Assign Teachers 
         public async Task<List<TeachersRegistration>> GetAllTeachersAsync()
         {
-            try
+            return await _cacheService.GetOrSetAsync("AllTeachers", async () =>
             {
-                using (var connection = new SqlConnection(connectionString))
+                try
                 {
-                    await connection.OpenAsync();
+                    using (var connection = new SqlConnection(connectionString))
+                    {
+                        await connection.OpenAsync();
 
-                    var query = "SELECT * FROM SchoolManagement.Teacher";
-                    var result = await connection.QueryAsync<TeachersRegistration>(query);
+                        var query = "SELECT * FROM SchoolManagement.Teacher";
+                        var result = await connection.QueryAsync<TeachersRegistration>(query);
 
-                    return result.AsList();
+                        return result.AsList();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetAllTeachersAsync: {ex.Message}");
-                throw;
-            }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in GetAllTeachersAsync: {ex.Message}");
+                    throw;
+                }
+            }, minutes: 20); // Cache for 20 minutes
         }
 
         public async Task<int> AssignTeacherToClassAsync(int teacherId, string classId)
@@ -1089,8 +1111,13 @@ namespace CORE.SERVICE
                         new { TeacherId = teacherId }
                     );
 
+                    if (teacher == null)
+                        throw new Exception("Teacher not found.");
+
                     // Insert data into the Classes table with a fixed class name
-                    var query = "INSERT INTO SchoolManagement.Classes (ClassID, ClassName, TeacherFirstName, TeacherLastName, TeacherPhoneNumber) VALUES (@ClassId, 'DefaultClass', @TeacherFirstName, @TeacherLastName, @TeacherPhoneNumber)";
+                    var query = "INSERT INTO SchoolManagement.Classes (ClassID, ClassName, TeacherFirstName, TeacherLastName, TeacherPhoneNumber) " +
+                                "VALUES (@ClassId, 'DefaultClass', @TeacherFirstName, @TeacherLastName, @TeacherPhoneNumber)";
+
                     var parameters = new DynamicParameters();
                     parameters.Add("@ClassId", classId);
                     parameters.Add("@TeacherFirstName", teacher.TeacherFirstName);
@@ -1099,12 +1126,15 @@ namespace CORE.SERVICE
 
                     var result = await connection.ExecuteAsync(query, parameters);
 
+                    // Invalidate related caches
+                    _cacheService.Invalidate("AllClasses");
+                    _cacheService.Invalidate($"TeacherClassAssignments_{teacherId}");
+
                     return result;
                 }
             }
             catch (Exception ex)
             {
-                // Use a logging framework to log the error
                 Console.WriteLine($"Error in AssignTeacherToClassAsync: {ex.Message}");
                 throw;
             }
@@ -1125,6 +1155,10 @@ namespace CORE.SERVICE
 
                     var result = await connection.ExecuteAsync(query, parameters);
 
+                    // Invalidate related cache
+                    _cacheService.Invalidate("AllClasses");
+                    _cacheService.Invalidate($"ClassAssignmentsByTeacher_{teacherId}");
+
                     return result;
                 }
             }
@@ -1134,6 +1168,7 @@ namespace CORE.SERVICE
                 throw;
             }
         }
+
 
         public async Task<int> DeleteAssignmentAsync(int teacherId, string classId)
         {
@@ -1148,6 +1183,10 @@ namespace CORE.SERVICE
 
                     var result = await connection.ExecuteAsync(query, parameters);
 
+                    // Invalidate cache after deletion
+                    _cacheService.Invalidate("AllClasses");
+                    _cacheService.Invalidate($"ClassAssignmentsByTeacher_{teacherId}");
+
                     return result;
                 }
             }
@@ -1160,44 +1199,50 @@ namespace CORE.SERVICE
 
         public async Task<List<Class>> GetAllClassAsync() ///This Service is been use by assignteachers page and studentsregistration page for the dropdown of classid and is being used by Exams page 
         {
-            try
+            return await _cacheService.GetOrSetAsync("AllClasses", async () =>
             {
-                using (var connection = new SqlConnection(connectionString))
+                try
                 {
-                    await connection.OpenAsync();
+                    using (var connection = new SqlConnection(connectionString))
+                    {
+                        await connection.OpenAsync();
 
-                    var query = "SELECT * FROM SchoolManagement.Class";
-                    var result = await connection.QueryAsync<Class>(query);
+                        var query = "SELECT * FROM SchoolManagement.Class";
+                        var result = await connection.QueryAsync<Class>(query);
 
-                    return result.AsList();
+                        return result.AsList();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetAllClassesAsync: {ex.Message}");
-                throw;
-            }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in GetAllClassAsync: {ex.Message}");
+                    throw;
+                }
+            }, minutes: 30); // Cached for 30 minutes
         }
 
         //TeacherAssignClassService
         public async Task<List<TeachersAssignClasses>> GetAllClassesAsync()
         {
-            try
+            return await _cacheService.GetOrSetAsync("AllAssignedClasses", async () =>
             {
-                using (var connection = new SqlConnection(connectionString))
+                try
                 {
-                    await connection.OpenAsync();
+                    using (var connection = new SqlConnection(connectionString))
+                    {
+                        await connection.OpenAsync();
 
-                    var query = "SELECT ClassID, ClassName, TeacherFirstName, TeacherLastName, TeacherPhoneNumber FROM SchoolManagement.Classes";
+                        var query = "SELECT ClassID, ClassName, TeacherFirstName, TeacherLastName, TeacherPhoneNumber FROM SchoolManagement.Classes";
 
-                    return (await connection.QueryAsync<TeachersAssignClasses>(query)).AsList();
+                        return (await connection.QueryAsync<TeachersAssignClasses>(query)).AsList();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetAllClassesAsync: {ex.Message}");
-                return null; // Handle the exception as needed
-            }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in GetAllClassesAsync: {ex.Message}");
+                    throw;
+                }
+            }, minutes: 20); // Cached for 20 minutes
         }
 
         public async Task<bool> DeleteClassAsync(string classId)
@@ -1212,13 +1257,17 @@ namespace CORE.SERVICE
 
                     await connection.ExecuteAsync(query, new { ClassID = classId });
 
+                    // Invalidate all class-related cache keys
+                    _cacheService.Invalidate("AllClasses");           // Used by dropdowns etc.
+                    _cacheService.Invalidate("AllAssignedClasses");   // Used by teacher/class listing page
+
                     return true;
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in DeleteClassAsync: {ex.Message}");
-                return false; // Handle the exception as needed
+                return false;
             }
         }
         //Ends
@@ -1408,32 +1457,36 @@ namespace CORE.SERVICE
         //-------------Students Attendance----------------//
         public async Task<List<Student>> GetStudentsByClassAsync(string classID)
         {
-            try
+            return await _cacheService.GetOrSetAsync($"StudentsByClass_{classID}", async () =>
             {
-                using (var connection = new SqlConnection(connectionString))
+                try
                 {
-                    await connection.OpenAsync();
+                    using (var connection = new SqlConnection(connectionString))
+                    {
+                        await connection.OpenAsync();
 
-                    var query = "SELECT StudentFirstName, StudentLastName, ClassID, EnableSwitch " +
-                                "FROM SchoolManagement.Students " +
-                                "WHERE ClassID = @ClassID";
+                        var query = "SELECT StudentFirstName, StudentLastName, ClassID, EnableSwitch " +
+                                    "FROM SchoolManagement.Students " +
+                                    "WHERE ClassID = @ClassID";
 
-                    var parameters = new { ClassID = classID };
+                        var parameters = new { ClassID = classID };
 
-                    return (await connection.QueryAsync<Student>(query, parameters)).ToList();
+                        return (await connection.QueryAsync<Student>(query, parameters)).ToList();
+                    }
                 }
-            }
-            catch (SqlException ex)
-            {
-                Console.WriteLine($"SQL Exception: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Exception: {ex.Message}");
-            }
+                catch (SqlException ex)
+                {
+                    Console.WriteLine($"SQL Exception: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception: {ex.Message}");
+                }
 
-            return null;
+                return null;
+            }, minutes: 15); // Cache for 15 minutes
         }
+
 
         public async Task SaveAttendanceAsync(List<Student> students, string classID, int userID, int termID, DateTime attendanceDate)
         {
@@ -2020,80 +2073,93 @@ namespace CORE.SERVICE
         //-------Display All Students------//
         public async Task<List<Student>> GetAllStudents()
         {
-            try
+            return await _cacheService.GetOrSetAsync("AllStudents", async () =>
             {
-                using (var connection = new SqlConnection(connectionString))
+                try
                 {
-                    await connection.OpenAsync();
+                    using (var connection = new SqlConnection(connectionString))
+                    {
+                        await connection.OpenAsync();
 
-                    var query = "SELECT * FROM SchoolManagement.Students";
-                    var result = await connection.QueryAsync<Student>(query);
+                        var query = "SELECT * FROM SchoolManagement.Students";
+                        var result = await connection.QueryAsync<Student>(query);
 
-                    return result.AsList();
+                        return result.AsList();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetAllTeachersAsync: {ex.Message}");
-                throw;
-            }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in GetAllStudents: {ex.Message}");
+                    throw;
+                }
+            }, minutes: 20); // Cache for 20 minutes (adjust as needed)
         }
+
 
         //-----Total Number of Students displayed in the Card---//
         public async Task<int> GetTotalStudentsCount()
         {
-            int totalStudents = 0;
-
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            return await _cacheService.GetOrSetAsync("TotalStudentCount", async () =>
             {
-                string query = "SELECT COUNT(*) FROM SchoolManagement.Students";
-                SqlCommand command = new SqlCommand(query, connection);
+                int totalStudents = 0;
 
-                try
+                using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    connection.Open();
-                    totalStudents = (int)command.ExecuteScalar();
-                }
-                catch (Exception ex)
-                {
-                    // Handle exception
-                }
-            }
+                    string query = "SELECT COUNT(*) FROM SchoolManagement.Students";
+                    SqlCommand command = new SqlCommand(query, connection);
 
-            return totalStudents;
+                    try
+                    {
+                        await connection.OpenAsync();
+                        totalStudents = (int)await command.ExecuteScalarAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error in GetTotalStudentsCount: {ex.Message}");
+                        throw;
+                    }
+                }
+
+                return totalStudents;
+            }, minutes: 10); // Cache for 10 minutes (adjust as needed)
         }
 
         public async Task<decimal> GetTotalBankTransferredAsync()
         {
-            using var connection = new SqlConnection(connectionString);
-            var query = @"
-        SELECT ISNULL(SUM(AmountTransferred), 0) 
-        FROM SchoolManagement.Bank";
-            return await connection.ExecuteScalarAsync<decimal>(query);
+            return await _cacheService.GetOrSetAsync("TotalBankTransferred", async () =>
+            {
+                using var connection = new SqlConnection(connectionString);
+                var query = "SELECT ISNULL(SUM(AmountTransferred), 0) FROM SchoolManagement.Bank";
+                return await connection.ExecuteScalarAsync<decimal>(query);
+            }, minutes: 10); // Cache for 10 minutes (adjust as needed)
         }
 
 
         public async Task<int> GetTotalTeachersCount()
         {
-            int totalStudents = 0;
-
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            return await _cacheService.GetOrSetAsync("TotalTeachersCount", async () =>
             {
-                string query = "SELECT COUNT(*) FROM SchoolManagement.Teacher";
-                SqlCommand command = new SqlCommand(query, connection);
+                int totalTeachers = 0;
 
-                try
+                using (var connection = new SqlConnection(connectionString))
                 {
-                    connection.Open();
-                    totalStudents = (int)command.ExecuteScalar();
-                }
-                catch (Exception ex)
-                {
-                    // Handle exception
-                }
-            }
+                    const string query = "SELECT COUNT(*) FROM SchoolManagement.Teacher";
+                    var command = new SqlCommand(query, connection);
 
-            return totalStudents;
+                    try
+                    {
+                        await connection.OpenAsync();
+                        totalTeachers = (int)await command.ExecuteScalarAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error in GetTotalTeachersCount: {ex.Message}");
+                        throw;
+                    }
+                }
+
+                return totalTeachers;
+            }, minutes: 15); // Cache duration can be adjusted as needed
         }
         public async Task<int> GetStaffsCount()
         {
@@ -2987,14 +3053,17 @@ namespace CORE.SERVICE
         // Get all fee types
         public async Task<List<FeeType>> GetFeeTypesAsync()
         {
-            using (var connection = new SqlConnection(connectionString))
+            return await _cacheService.GetOrSetAsync("AllFeeTypes", async () =>
             {
-                const string query = @"SELECT FeeTypeID, FeeTypeName, Description, Amount, ClassID, RecDateCreated 
-                                       FROM SchoolManagement.FeeTypes";
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    const string query = @"SELECT FeeTypeID, FeeTypeName, Description, Amount, ClassID, RecDateCreated 
+                                   FROM SchoolManagement.FeeTypes";
 
-                var feeTypes = await connection.QueryAsync<FeeType>(query);
-                return feeTypes.AsList();
-            }
+                    var feeTypes = await connection.QueryAsync<FeeType>(query);
+                    return feeTypes.AsList();
+                }
+            }, minutes: 20); // Cache for 20 minutes
         }
 
         // Get all student fees
@@ -3126,17 +3195,20 @@ namespace CORE.SERVICE
 
         public async Task<List<FeeType>> GetFeeTypesByClassAsync(string classId)
         {
-            using (var connection = new SqlConnection(connectionString))
+            return await _cacheService.GetOrSetAsync($"FeeTypes_ByClass_{classId}", async () =>
             {
-                const string query = @"
-      SELECT FeeTypeID, FeeTypeName, Description, Amount, ClassID, RecDateCreated
-      FROM SchoolManagement.FeeTypes
-      WHERE ClassID = @ClassID 
-      AND DeletedBy IS NULL"; // Ensure the fee type has not been deleted
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    const string query = @"
+                    SELECT FeeTypeID, FeeTypeName, Description, Amount, ClassID, RecDateCreated
+                    FROM SchoolManagement.FeeTypes
+                    WHERE ClassID = @ClassID 
+                    AND DeletedBy IS NULL"; // Only non-deleted fee types
 
-                var feeTypes = await connection.QueryAsync<FeeType>(query, new { ClassID = classId });
-                return feeTypes.AsList();
-            }
+                    var feeTypes = await connection.QueryAsync<FeeType>(query, new { ClassID = classId });
+                    return feeTypes.AsList();
+                }
+            }, minutes: 15); // Cache each class-specific result for 15 minutes
         }
 
 
@@ -3164,67 +3236,89 @@ namespace CORE.SERVICE
                 throw new ApplicationException("An error occurred while saving the student fee.", ex);
             }
 
-        }   
+        }
 
         public async Task<List<StudentOwingRecord>> GetAllStudentsWhoOweFeesAsync()
         {
-            using (var connection = new SqlConnection(connectionString))
+            return await _cacheService.GetOrSetAsync("AllOwingStudents", async () =>
             {
-                var query = @"
-        SELECT 
-            s.StudentID,
-            (s.StudentFirstName + ' ' + s.StudentLastName) AS FullName,
-            t.Term,
-            ft.FeeTypeName,
-            ft.Amount AS TotalFeeAmount,
-            ISNULL(SUM(f.AmountPaid), 0) AS TotalPaid,
-            ft.Amount - ISNULL(SUM(f.AmountPaid), 0) AS AmountOwing
-        FROM SchoolManagement.Students s
-        JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
-        LEFT JOIN SchoolManagement.StudentFees f 
-            ON s.StudentID = f.StudentID AND ft.FeeTypeID = f.FeeTypeID
-        LEFT JOIN SchoolManagement.SchoolTerm t ON f.TermID = t.TermID
-        GROUP BY 
-            s.StudentID, s.StudentFirstName, s.StudentLastName,
-            ft.FeeTypeName, ft.Amount, t.Term
-        HAVING ft.Amount - ISNULL(SUM(f.AmountPaid), 0) > 0
-        ORDER BY FullName";
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    var query = @"
+                        SELECT 
+                            s.StudentID,
+                            (s.StudentFirstName + ' ' + s.StudentLastName) AS FullName,
+                            t.Term,
+                            ft.FeeTypeName,
+                            ft.Amount AS TotalFeeAmount,
+                            ISNULL(SUM(f.AmountPaid), 0) AS TotalPaid,
+                            ft.Amount - ISNULL(SUM(f.AmountPaid), 0) AS AmountOwing
+                        FROM SchoolManagement.Students s
+                        JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
+                        LEFT JOIN SchoolManagement.StudentFees f 
+                            ON s.StudentID = f.StudentID AND ft.FeeTypeID = f.FeeTypeID
+                        LEFT JOIN SchoolManagement.SchoolTerm t ON f.TermID = t.TermID
+                        GROUP BY 
+                            s.StudentID, s.StudentFirstName, s.StudentLastName,
+                            ft.FeeTypeName, ft.Amount, t.Term
+                        HAVING ft.Amount - ISNULL(SUM(f.AmountPaid), 0) > 0
+                        ORDER BY FullName";
 
-                var results = await connection.QueryAsync<StudentOwingRecord>(query);
-                return results.ToList();
-            }
+                    var results = await connection.QueryAsync<StudentOwingRecord>(query);
+                    return results.ToList();
+                }
+            }, minutes: 10); // Cache for 10 minutes (adjust if needed)
         }
 
 
 
-        public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId)
+        public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId, int termId)
         {
-            using (var connection = new SqlConnection(connectionString))
+            var cacheKey = $"OutstandingBalance_Student_{studentId}_FeeType_{feeTypeId}_Term_{termId}";
+
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
             {
-                // Get total fee expected for the given fee type
-                var feeAmount = await connection.QuerySingleAsync<decimal>(
-                    "SELECT Amount FROM SchoolManagement.FeeTypes WHERE FeeTypeID = @FeeTypeID",
-                    new { FeeTypeID = feeTypeId });
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    // Get student class
+                    var classId = await connection.QuerySingleOrDefaultAsync<string>(
+                        "SELECT ClassID FROM SchoolManagement.Students WHERE StudentID = @StudentID",
+                        new { StudentID = studentId });
 
-                // Get total amount paid by the student for this fee type
-                var amountPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
-                    @"SELECT ISNULL(SUM(AmountPaid), 0) 
-              FROM SchoolManagement.StudentFees 
-              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID",
-                    new { StudentID = studentId, FeeTypeID = feeTypeId });
+                    if (string.IsNullOrEmpty(classId))
+                        return 0;
 
-                // Return the difference (amount still owed)
-                return feeAmount - amountPaid;
-            }
+                    // Get expected fee amount for this class and fee type
+                    var feeAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
+                        @"SELECT Amount 
+                  FROM SchoolManagement.FeeTypes 
+                  WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID",
+                        new { FeeTypeID = feeTypeId, ClassID = classId });
+
+                    // Get how much the student has paid for this fee type and term
+                    var amountPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
+                        @"SELECT ISNULL(SUM(AmountPaid), 0) 
+                  FROM SchoolManagement.StudentFees 
+                  WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
+                        new { StudentID = studentId, FeeTypeID = feeTypeId, TermID = termId });
+
+                    return feeAmount - amountPaid;
+                }
+            }, minutes: 10);
         }
 
         public async Task<int> GetBankIDAsync(string paymentMethod)
         {
-            using var connection = new SqlConnection(connectionString);
-            string query = "SELECT BankID FROM SchoolManagement.Bank WHERE MethodName = @PaymentMethod";
-            var bankId = await connection.ExecuteScalarAsync<int?>(query, new { PaymentMethod = paymentMethod });
+            string cacheKey = $"BankID_{paymentMethod}";
 
-            return bankId ?? 0; // Return 0 if no BankID is found
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
+            {
+                using var connection = new SqlConnection(connectionString);
+                string query = "SELECT BankID FROM SchoolManagement.Bank WHERE MethodName = @PaymentMethod";
+                var bankId = await connection.ExecuteScalarAsync<int?>(query, new { PaymentMethod = paymentMethod });
+
+                return bankId ?? 0; // Return 0 if not found
+            }, minutes: 60); // Cache for 1 hour (can be more, unless banks change often)
         }
 
         public async Task LogsBankTransactionAsync(int? bankId, string transactionType, decimal amount, string status, string errorMessage)
@@ -3247,50 +3341,62 @@ namespace CORE.SERVICE
         /*logic to display student outstanding balance*/
         public async Task<StudentFee> GetStudentFeeAsync(int studentId, int feeTypeId)
         {
-            try
+            var cacheKey = $"StudentFee_{studentId}_FeeType_{feeTypeId}";
+
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
             {
                 using var connection = new SqlConnection(connectionString);
                 const string query = @"
-            SELECT TOP 1 AmountLeft
-            FROM SchoolManagement.StudentFees
-            WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID
-            ORDER BY PaymentDate DESC";
+        SELECT TOP 1 AmountLeft
+        FROM SchoolManagement.StudentFees
+        WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID
+        ORDER BY PaymentDate DESC";
 
-                return await connection.QueryFirstOrDefaultAsync<StudentFee>(query, new { StudentID = studentId, FeeTypeID = feeTypeId });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching student fee: {ex.Message}");
-                throw;
-            }
+                return await connection.QueryFirstOrDefaultAsync<StudentFee>(
+                    query, new { StudentID = studentId, FeeTypeID = feeTypeId });
+
+            }, minutes: 10); // Cache for 10 minutes
         }
 
         public async Task<List<string>> GetPaymentMethodsAsync()
         {
-            using var connection = new SqlConnection(connectionString);
-            string query = "SELECT MethodName FROM SchoolManagement.PaymentMethods";
+            const string cacheKey = "AllPaymentMethods";
 
-            var paymentMethods = await connection.QueryAsync<string>(query);
-            return paymentMethods.AsList();
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
+            {
+                using var connection = new SqlConnection(connectionString);
+                string query = "SELECT MethodName FROM SchoolManagement.PaymentMethods";
+
+                var paymentMethods = await connection.QueryAsync<string>(query);
+                return paymentMethods.AsList();
+            }, minutes: 60); // Cache for 1 hour or more
         }
 
         // Method to fetch all classes
         public async Task<List<Class>> GetsAllClassesAsync()
         {
-            using var connection = new SqlConnection(connectionString);
-            string query = "SELECT DISTINCT ClassID FROM SchoolManagement.Class";
-            var classes = await connection.QueryAsync<Class>(query);
-            return classes.AsList();
+            const string cacheKey = "AllClassIDs";
+
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
+            {
+                using var connection = new SqlConnection(connectionString);
+                string query = "SELECT DISTINCT ClassID FROM SchoolManagement.Class";
+                var classes = await connection.QueryAsync<Class>(query);
+                return classes.AsList();
+            }, minutes: 60); // Cache for 1 hour or more
         }
 
         public async Task<List<SchoolTerm>> GetAllSchoolTermsAsync()
         {
-            using (var connection = new SqlConnection(connectionString))
+            const string cacheKey = "AllSchoolTerms";
+
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
             {
+                using var connection = new SqlConnection(connectionString);
                 string query = "SELECT TermID, Term FROM SchoolManagement.SchoolTerm";
                 var terms = await connection.QueryAsync<SchoolTerm>(query);
                 return terms.AsList();
-            }
+            }, minutes: 60); // Cache for 1 hour or more
         }
 
         /**/
@@ -3335,21 +3441,15 @@ namespace CORE.SERVICE
         // Fetch all fee types for the dropdown
         public async Task<List<FeeType>> GetAllFeeTypesAsync()
         {
-            try
+            const string cacheKey = "AllActiveFeeTypes";
+
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
             {
-                using (var connection = new SqlConnection(connectionString))
-                {
-                    await connection.OpenAsync();
-                    var query = "SELECT * FROM SchoolManagement.FeeTypes WHERE DeletedBy IS NULL";
-                    var result = await connection.QueryAsync<FeeType>(query);
-                    return result.AsList();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetAllFeeTypesAsync: {ex.Message}");
-                throw;
-            }
+                using var connection = new SqlConnection(connectionString);
+                var query = "SELECT * FROM SchoolManagement.FeeTypes WHERE DeletedBy IS NULL";
+                var result = await connection.QueryAsync<FeeType>(query);
+                return result.AsList();
+            }, minutes: 60); // Cache for 1 hour or longer
         }
 
         // Insert the fee amount for the selected class and fee type
@@ -3367,14 +3467,17 @@ namespace CORE.SERVICE
 
                     var parameters = new
                     {
-                        ClassID = classId,                        
-                        FeeTypeName = feeTypeName, // Add this parameter
+                        ClassID = classId,
+                        FeeTypeName = feeTypeName,
                         Amount = amount,
                         UserID = userId
                     };
 
                     await connection.ExecuteAsync(query, parameters);
                 }
+
+                // Invalidate cache after insert
+                _cacheService.Invalidate("AllActiveFeeTypes");
             }
             catch (Exception ex)
             {
@@ -3399,6 +3502,9 @@ namespace CORE.SERVICE
 
                     await connection.ExecuteAsync(sql, feeType);
                 }
+
+                // Invalidate cache after insert
+                _cacheService.Invalidate("AllActiveFeeTypes");
             }
             catch (Exception ex)
             {
@@ -3410,21 +3516,16 @@ namespace CORE.SERVICE
 
         public async Task<List<Class>> GetAllforsetfeesFeeTypesAsync()
         {
-            try
+            const string cacheKey = "AllClasses";
+
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
             {
-                using (var connection = new SqlConnection(connectionString))
-                {
-                    await connection.OpenAsync();
-                    var query = "SELECT * FROM SchoolManagement.Class";  // Modify this query based on your database
-                    var result = await connection.QueryAsync<Class>(query);
-                    return result.AsList();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetAllClassesAsync: {ex.Message}");
-                throw;
-            }
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+                var query = "SELECT * FROM SchoolManagement.Class";
+                var result = await connection.QueryAsync<Class>(query);
+                return result.AsList();
+            }, minutes: 60); // Cache for 1 hour or more
         }
 
 
@@ -3446,11 +3547,14 @@ namespace CORE.SERVICE
             {
                 await connection.OpenAsync();
                 var query = @"
-            UPDATE SchoolManagement.FeeTypes
-            SET Amount = @Amount, EditedOnRecDateCreated = GETDATE(), EditBy = @UserID
-            WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID";
+        UPDATE SchoolManagement.FeeTypes
+        SET Amount = @Amount, EditedOnRecDateCreated = GETDATE(), EditBy = @UserID
+        WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID";
+
                 await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, ClassID = classId, Amount = amount, UserID = userId });
             }
+
+            _cacheService.Invalidate("AllActiveFeeTypes"); // Invalidate after update
         }
 
         public async Task DeleteFeeAmountAsync(int feeTypeId, int userId)
@@ -3459,41 +3563,55 @@ namespace CORE.SERVICE
             {
                 await connection.OpenAsync();
                 var query = @"
-            UPDATE SchoolManagement.FeeTypes
-            SET DeletedBy = @UserID, DeletedOnRecDateCreated = GETDATE()
-            WHERE FeeTypeID = @FeeTypeID";
+        UPDATE SchoolManagement.FeeTypes
+        SET DeletedBy = @UserID, DeletedOnRecDateCreated = GETDATE()
+        WHERE FeeTypeID = @FeeTypeID";
+
                 await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, UserID = userId });
             }
+
+            _cacheService.Invalidate("AllActiveFeeTypes"); // Invalidate after soft delete
         }
 
         /*AccountReconciliationService*/
         // Search for students by name
         public async Task<IEnumerable<Student>> SearchStudentAsync(string searchTerm)
         {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                string query = @"
-               SELECT StudentID, StudentFirstName, StudentLastName, ClassID 
-               FROM SchoolManagement.Students
-               WHERE CONCAT(StudentFirstName, ' ', StudentLastName) LIKE @SearchTerm";
+            string cacheKey = $"Search_Students_{searchTerm?.ToLower()}";
 
-                return await connection.QueryAsync<Student>(query, new { SearchTerm = "%" + searchTerm + "%" });
-            }
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    string query = @"
+                SELECT StudentID, StudentFirstName, StudentLastName, ClassID 
+                FROM SchoolManagement.Students
+                WHERE CONCAT(StudentFirstName, ' ', StudentLastName) LIKE @SearchTerm";
+
+                    return await connection.QueryAsync<Student>(query, new { SearchTerm = $"%{searchTerm}%" });
+                }
+            }, minutes: 5); // Cache each search term for 5 minutes
         }
 
 
         // Get student fee details
         public async Task<IEnumerable<StudentFee>> GetStudentFeesAsync(int studentId)
         {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                string query = @"
-                    SELECT FeeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, TermID, PaymentDate, DueDate, Note 
-                    FROM SchoolManagement.StudentFees
-                    WHERE StudentID = @StudentID";
+            string cacheKey = $"StudentFees_{studentId}";
 
-                return await connection.QueryAsync<StudentFee>(query, new { StudentID = studentId });
-            }
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    string query = @"
+                SELECT FeeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, TermID, PaymentDate, DueDate, Note 
+                FROM SchoolManagement.StudentFees
+                WHERE StudentID = @StudentID";
+
+                    var fees = await connection.QueryAsync<StudentFee>(query, new { StudentID = studentId });
+                    return fees;
+                }
+            }, minutes: 10); // Cache for 10 minutes
         }
 
         public async Task<IEnumerable<Staff>> GetAllStaffAsync()
@@ -5236,87 +5354,106 @@ VALUES (
     WHERE CAST(A.ClockIN AS DATE) BETWEEN @From AND @To";
 
             return await connection.QueryAsync<dynamic>(query, new { From = from.Date, To = to.Date });
-        }     
+        }
 
         //transactio fees view
         public async Task<List<FeeTransactionSummary>> GetFeeTransactionSummariesAsync()
         {
-            using var connection = new SqlConnection(connectionString);
-            var query = @"
-        SELECT 
-            sf.FeeTypeName,
-            b.MethodName,
-            sf.AmountPaid,
-            sf.PaymentDate
-        FROM 
-            SchoolManagement.StudentFees sf
-        LEFT JOIN 
-            SchoolManagement.Bank b ON sf.SystemTransferID = b.SystemTransferID
-        WHERE 
-            sf.AmountPaid > 0
-        ORDER BY 
-            sf.PaymentDate DESC;
-    ";
+            string cacheKey = "FeeTransactionSummaries";
 
-            var result = await connection.QueryAsync<FeeTransactionSummary>(query);
-            return result.ToList();
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
+            {
+                using var connection = new SqlConnection(connectionString);
+                var query = @"
+            SELECT 
+                sf.FeeTypeName,
+                b.MethodName,
+                sf.AmountPaid,
+                sf.PaymentDate
+            FROM 
+                SchoolManagement.StudentFees sf
+            LEFT JOIN 
+                SchoolManagement.Bank b ON sf.SystemTransferID = b.SystemTransferID
+            WHERE 
+                sf.AmountPaid > 0
+            ORDER BY 
+                sf.PaymentDate DESC;
+        ";
+
+                var result = await connection.QueryAsync<FeeTransactionSummary>(query);
+                return result.ToList();
+
+            }, minutes: 10); // Cached for 10 minutes
         }
 
         public async Task<List<FeeTransactionSummary>> GetFilteredFeeTransactionSummariesAsync(DateTime? fromDate, DateTime? toDate, string feeTypeName)
         {
-            using var connection = new SqlConnection(connectionString);
+            // Generate a unique cache key based on the parameters
+            string cacheKey = $"FilteredFeeTransactions_{fromDate?.ToString("yyyyMMdd")}_{toDate?.ToString("yyyyMMdd")}_{feeTypeName ?? "All"}";
 
-            var query = new StringBuilder(@"
-        SELECT 
-            sf.FeeTypeName,
-            b.MethodName,
-            sf.AmountPaid,
-            sf.PaymentDate
-        FROM 
-            SchoolManagement.StudentFees sf
-        LEFT JOIN 
-            SchoolManagement.Bank b ON sf.SystemTransferID = b.SystemTransferID
-        WHERE 
-            sf.AmountPaid > 0
-    ");
-
-            var parameters = new DynamicParameters();
-
-            if (fromDate.HasValue)
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
             {
-                query.Append(" AND sf.PaymentDate >= @FromDate");
-                parameters.Add("FromDate", fromDate.Value.Date);
-            }
+                using var connection = new SqlConnection(connectionString);
 
-            if (toDate.HasValue)
-            {
-                query.Append(" AND sf.PaymentDate <= @ToDate");
-                parameters.Add("ToDate", toDate.Value.Date.AddDays(1).AddSeconds(-1));
-            }
+                var query = new StringBuilder(@"
+            SELECT 
+                sf.FeeTypeName,
+                b.MethodName,
+                sf.AmountPaid,
+                sf.PaymentDate
+            FROM 
+                SchoolManagement.StudentFees sf
+            LEFT JOIN 
+                SchoolManagement.Bank b ON sf.SystemTransferID = b.SystemTransferID
+            WHERE 
+                sf.AmountPaid > 0
+        ");
 
-            if (!string.IsNullOrEmpty(feeTypeName))
-            {
-                query.Append(" AND sf.FeeTypeName = @FeeTypeName");
-                parameters.Add("FeeTypeName", feeTypeName);
-            }
+                var parameters = new DynamicParameters();
 
-            query.Append(" ORDER BY sf.PaymentDate DESC");
+                if (fromDate.HasValue)
+                {
+                    query.Append(" AND sf.PaymentDate >= @FromDate");
+                    parameters.Add("FromDate", fromDate.Value.Date);
+                }
 
-            var result = await connection.QueryAsync<FeeTransactionSummary>(query.ToString(), parameters);
-            return result.ToList();
+                if (toDate.HasValue)
+                {
+                    query.Append(" AND sf.PaymentDate <= @ToDate");
+                    parameters.Add("ToDate", toDate.Value.Date.AddDays(1).AddSeconds(-1));
+                }
+
+                if (!string.IsNullOrEmpty(feeTypeName))
+                {
+                    query.Append(" AND sf.FeeTypeName = @FeeTypeName");
+                    parameters.Add("FeeTypeName", feeTypeName);
+                }
+
+                query.Append(" ORDER BY sf.PaymentDate DESC");
+
+                var result = await connection.QueryAsync<FeeTransactionSummary>(query.ToString(), parameters);
+                return result.ToList();
+
+            }, minutes: 10); // Cache for 10 minutes
         }
 
         //view all students page
         public async Task<List<Student>> GetAllStudentsAsync()
         {
-            using var connection = new SqlConnection(connectionString);
-            string query = @"
-        SELECT StudentID, StudentFirstName, StudentLastName, ClassID
-        FROM SchoolManagement.Students
-        ORDER BY ClassID, StudentFirstName
-    ";
-            var result = await connection.QueryAsync<Student>(query);
-            return result.ToList();
+            string cacheKey = "AllStudents";
+
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
+            {
+                using var connection = new SqlConnection(connectionString);
+                string query = @"
+            SELECT StudentID, StudentFirstName, StudentLastName, ClassID
+            FROM SchoolManagement.Students
+            ORDER BY ClassID, StudentFirstName";
+
+                var result = await connection.QueryAsync<Student>(query);
+                return result.ToList();
+
+            }, minutes: 10); // Cache for 10 minutes
         }
 
         public async Task<IEnumerable<StudentFeeHistory>> GetStudentFeeHistoryAsync(int studentId, int termId)
@@ -5427,61 +5564,64 @@ VALUES (
 
         public async Task<(int StudentOwingByClass, decimal TotalOwingAmount)> GetStudentsOwingSummaryAsync()
         {
-            using (var connection = new SqlConnection(connectionString))
+            string cacheKey = "OwingStudentsSummary";
+
+            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
             {
-                var sql = @"
-                    WITH ExpectedFeesPerStudent AS (
-                        SELECT 
-                            s.StudentID,
-                            s.StudentFirstName + ' ' + s.StudentLastName AS StudentFullName,
-                            s.ClassID,
-                            ft.FeeTypeID,
-                            ft.FeeTypeName,
-                            ft.Amount AS ExpectedAmount
-                        FROM SchoolManagement.Students s
-                        INNER JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
-                    ),
-                    ActualPayments AS (
-                        SELECT 
-                            sf.StudentID,
-                            sf.FeeTypeID,
-                            sf.AmountLeft
-                        FROM SchoolManagement.StudentFees sf
-                    ),
-                    FeesOwed AS (
-                        SELECT 
-                            efps.StudentID,
-                            efps.StudentFullName,
-                            efps.FeeTypeName,
-                            efps.ExpectedAmount,
-                            ap.AmountLeft,
-                            CASE 
-                                WHEN ap.StudentID IS NULL THEN efps.ExpectedAmount
-                                WHEN ap.AmountLeft IS NULL THEN 0
-                                ELSE ap.AmountLeft
-                            END AS OwedAmount
-                        FROM ExpectedFeesPerStudent efps
-                        LEFT JOIN ActualPayments ap 
-                            ON efps.StudentID = ap.StudentID AND efps.FeeTypeID = ap.FeeTypeID
-                    ),
-                    OwingStudents AS (
-                        SELECT 
-                            StudentID,
-                            SUM(OwedAmount) AS TotalOwed
-                        FROM FeesOwed
-                        GROUP BY StudentID
-                        HAVING SUM(OwedAmount) > 0
-                    )
-
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    var sql = @"
+                WITH ExpectedFeesPerStudent AS (
                     SELECT 
-                        COUNT(*) AS StudentOwingByClass,
-                        SUM(TotalOwed) AS TotalOwingAmount
-                    FROM OwingStudents;
-                    ";
+                        s.StudentID,
+                        s.StudentFirstName + ' ' + s.StudentLastName AS StudentFullName,
+                        s.ClassID,
+                        ft.FeeTypeID,
+                        ft.FeeTypeName,
+                        ft.Amount AS ExpectedAmount
+                    FROM SchoolManagement.Students s
+                    INNER JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
+                ),
+                ActualPayments AS (
+                    SELECT 
+                        sf.StudentID,
+                        sf.FeeTypeID,
+                        sf.AmountLeft
+                    FROM SchoolManagement.StudentFees sf
+                ),
+                FeesOwed AS (
+                    SELECT 
+                        efps.StudentID,
+                        efps.StudentFullName,
+                        efps.FeeTypeName,
+                        efps.ExpectedAmount,
+                        ap.AmountLeft,
+                        CASE 
+                            WHEN ap.StudentID IS NULL THEN efps.ExpectedAmount
+                            WHEN ap.AmountLeft IS NULL THEN 0
+                            ELSE ap.AmountLeft
+                        END AS OwedAmount
+                    FROM ExpectedFeesPerStudent efps
+                    LEFT JOIN ActualPayments ap 
+                        ON efps.StudentID = ap.StudentID AND efps.FeeTypeID = ap.FeeTypeID
+                ),
+                OwingStudents AS (
+                    SELECT 
+                        StudentID,
+                        SUM(OwedAmount) AS TotalOwed
+                    FROM FeesOwed
+                    GROUP BY StudentID
+                    HAVING SUM(OwedAmount) > 0
+                )
 
-                var result = await connection.QueryFirstOrDefaultAsync<(int, decimal)>(sql);
-                return result;
-            }
+                SELECT 
+                    COUNT(*) AS StudentOwingByClass,
+                    SUM(TotalOwed) AS TotalOwingAmount
+                FROM OwingStudents;";
+
+                    return await connection.QueryFirstOrDefaultAsync<(int, decimal)>(sql);
+                }
+            }, minutes: 15);
         }
 
 
