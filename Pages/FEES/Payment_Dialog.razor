@@ -95,87 +95,95 @@
         }
     }
 
-    private async Task GenerateStudentReport()
+   private async Task GenerateStudentReport()
+{
+    if (string.IsNullOrWhiteSpace(searchText) && selectedStudentId == 0 && selectedTermId == 0)
     {
-        if (string.IsNullOrWhiteSpace(searchText) && selectedStudentId == 0 && selectedTermId == 0)
-        {
-            Notify.ShowNotification("Please enter a student name to search or select a student and term.", "", NotificationSeverity.Warning);
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(searchText) && selectedStudentId == 0)
-        {
-            Notify.ShowNotification("Please enter a student name to search or select a student.", "", NotificationSeverity.Warning);
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(searchText))
-        {
-            Notify.ShowNotification("Please enter a student name to search.", "", NotificationSeverity.Warning);
-            return;
-        }
-        if (selectedStudentId == 0)
-        {
-            Notify.ShowNotification("Please select a student.", "", NotificationSeverity.Warning);
-            return;
-        }
-        if (selectedTermId == 0)
-        {
-            Notify.ShowNotification("Please select a term.", "", NotificationSeverity.Warning);
-            return;
-        }
-
-        try
-        {
-            isLoading = true;
-
-            var studentFeeData = await authService.GetStudentFeesByStudentIdandTermAsync(selectedStudentId, selectedTermId);
-            if (studentFeeData == null || !studentFeeData.Any())
-            {
-                Notify.ShowNotification("No data found for the selected student.", "", NotificationSeverity.Warning);
-                return;
-            }
-
-            var studentClassId = studentFeeData.First().ClassID;
-            var feeAmounts = await authService.GetFeeAmountsByClassIDAsync(studentClassId);
-            var expectedTotal = feeAmounts.Sum(x => x.Amount);
-
-            var csvBuilder = new StringBuilder();
-
-            // === CSV Header ===
-            csvBuilder.AppendLine("Student Fee Report");
-            csvBuilder.AppendLine(); // blank line
-
-            // === Actual Fee Data ===
-            foreach (var fee in studentFeeData)
-            {
-                csvBuilder.AppendLine($"{fee.StudentName}, {fee.FeeTypeName}, {fee.ClassID}, {fee.AmountPaid}, {fee.AmountLeft}, {fee.TermID}");
-            }
-
-            // === Special marker so JS knows to add this AFTER totals ===
-            csvBuilder.AppendLine("Expected Fee Amounts:");
-            foreach (var item in feeAmounts)
-            {
-                csvBuilder.AppendLine($"{item.FeeTypeName.ToUpper()}: GH {item.Amount:F2}");
-            }
-            csvBuilder.AppendLine($"TOTAL EXPECTED FEES: GH {expectedTotal:F2}");
-
-            var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
-            var base64Csv = Convert.ToBase64String(csvData);
-
-            var (companyName, schoolName, logoBase64) = await authService.GetPdfLoginScreenDetailsAsync();
-            var fileName = $"Student_Fees_{selectedStudentId}.pdf";
-
-            await JSRuntime.InvokeVoidAsync("downloadPdf", fileName, base64Csv, companyName, schoolName, logoBase64);
-
-            Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
-        }
-        catch (Exception ex)
-        {
-            Notify.ShowNotification($"Error generating report: {ex.Message}", "", NotificationSeverity.Error);
-        }
-        finally
-        {
-            isLoading = false;
-        }
+        Notify.ShowNotification("Please enter a student name to search or select a student and term.", "", NotificationSeverity.Warning);
+        return;
     }
+    if (string.IsNullOrWhiteSpace(searchText) && selectedStudentId == 0)
+    {
+        Notify.ShowNotification("Please enter a student name to search or select a student.", "", NotificationSeverity.Warning);
+        return;
+    }
+    if (string.IsNullOrWhiteSpace(searchText))
+    {
+        Notify.ShowNotification("Please enter a student name to search.", "", NotificationSeverity.Warning);
+        return;
+    }
+    if (selectedStudentId == 0)
+    {
+        Notify.ShowNotification("Please select a student.", "", NotificationSeverity.Warning);
+        return;
+    }
+    if (selectedTermId == 0)
+    {
+        Notify.ShowNotification("Please select a term.", "", NotificationSeverity.Warning);
+        return;
+    }
+
+    try
+    {
+        isLoading = true;
+
+        var studentFeeData = (await authService.GetStudentFeesByStudentIdandTermAsync(selectedStudentId, selectedTermId)).ToList();
+        if (!studentFeeData.Any())
+        {
+            Notify.ShowNotification("No data found for the selected student.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        var studentClassId = studentFeeData.First().ClassID;
+        var expectedFees = (await authService.GetFeeAmountsByClassIDAsync(studentClassId)).ToList();
+        var expectedTotal = expectedFees.Sum(f => f.Amount);
+
+        var feeSummary = new List<(string FeeType, decimal Paid, decimal Left)>();
+
+        foreach (var expected in expectedFees)
+        {
+            var paidRecord = studentFeeData
+                .Where(f => f.FeeTypeName.Equals(expected.FeeTypeName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            decimal paidAmount = paidRecord.Sum(f => f.AmountPaid);
+            decimal leftAmount = expected.Amount - paidAmount;
+
+            feeSummary.Add((expected.FeeTypeName, paidAmount, leftAmount));
+        }
+
+        var csvBuilder = new StringBuilder();
+        foreach (var item in feeSummary)
+        {
+            csvBuilder.AppendLine($"{studentFeeData.First().StudentName}, {item.FeeType}, {studentClassId}, {item.Paid:F2}, {item.Left:F2}, {selectedTermId}");
+        }
+
+        csvBuilder.AppendLine("Expected Fee Amounts:");
+        foreach (var item in expectedFees)
+        {
+            csvBuilder.AppendLine($"{item.FeeTypeName.ToUpper()}: GH {item.Amount:F2}");
+        }
+        csvBuilder.AppendLine($"TOTAL EXPECTED FEES: GH {expectedTotal:F2}");
+
+        var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+        var base64Csv = Convert.ToBase64String(csvData);
+
+        var (companyName, schoolName, logoBase64) = await authService.GetPdfLoginScreenDetailsAsync();
+        var fileName = $"Student_Fees_{selectedStudentId}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+
+        await JSRuntime.InvokeVoidAsync("downloadPdf", fileName, base64Csv, companyName, schoolName, logoBase64);
+
+        Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
+    }
+    catch (Exception ex)
+    {
+        Notify.ShowNotification($"Error generating report: {ex.Message}", "", NotificationSeverity.Error);
+    }
+    finally
+    {
+        isLoading = false;
+    }
+}
+
 
 }
