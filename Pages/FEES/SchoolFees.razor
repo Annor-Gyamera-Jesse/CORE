@@ -213,17 +213,21 @@
                     Disabled="true"
                     Max="@TotalAmountLeft" />
                 </div>
-                <div class="col-md-6">
-                    <RadzenLabel Text="Total Amount Left" />
-                    <RadzenNumeric TValue="decimal"
+              @*   <div class="col-md-6"> *@
+                  @*   <RadzenLabel Text="Total Amount Left" />  *@
+                 @*  <RadzenNumeric TValue="decimal"
                     @bind-Value="AmountPaid"
                     Style="width: 100%;"
                     Disabled="true"
                     Max="@OutstandingBalance"
                     Change="@((decimal value) => UpdateAmountLeft(value))"
                     Class="custom-background" />
+                    <RadzenNumeric TValue="decimal"
+                                   Value="@(TotalAmountLeft - AmountPaid)"
+                                   Disabled="true"
+                                   Class="custom-background" /> *@
 
-                </div>
+              @*   </div> *@
             </div>
 
             <!-- Save Button -->
@@ -402,7 +406,7 @@
         SelectedFeeTypeID = 0;
         AmountPaid = 0;
         Note = string.Empty;
-        OutstandingBalance = 0;
+        // OutstandingBalance = 0;
         TotalAmountLeft = 0;
         IsCashInHand = false;
         PaymentMethod = null;
@@ -418,7 +422,7 @@
             SelectedFeeTypeID = Convert.ToInt32(value);
             if (SelectedStudentID > 0 && SelectedFeeTypeID > 0)
             {
-                OutstandingBalance = await StudentService.GetOutstandingBalanceAsync(SelectedStudentID, SelectedFeeTypeID);
+               OutstandingBalance = await StudentService.GetOutstandingBalanceAsync(SelectedStudentID, SelectedFeeTypeID, SelectedTermID);
             }
 
             // Fetch fee details for the selected fee type

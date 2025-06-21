@@ -5,22 +5,28 @@
     const decodedCsv = atob(base64Csv);
     const lines = decodedCsv.split('\n');
 
-    const csvHeaders = lines[0].split(',');
-    const tableData = lines.slice(1).filter(line => line.trim() !== '').map(line => line.split(','));
-    const termId = tableData.length > 0 ? tableData[0][5] : '';
+    // Extract expected fee lines from the bottom
+    const expectedStartIndex = lines.findIndex(line => line.trim() === "Expected Fee Amounts:");
+    const expectedFeeLines = expectedStartIndex !== -1 ? lines.slice(expectedStartIndex + 1) : [];
+    const dataLines = expectedStartIndex !== -1 ? lines.slice(2, expectedStartIndex - 1) : lines.slice(2);
 
+    const tableData = dataLines
+        .filter(line => line.trim() !== '')
+        .map(line => line.split(',').map(cell => cell.trim()));
+
+    const termId = tableData.length > 0 ? tableData[0][5] : '';
     let yOffset = 10;
 
-    // === Company Logo with Border ===
+    // === Logo with border ===
     if (logoBase64) {
         doc.setDrawColor(0);
         doc.setLineWidth(0.3);
         doc.rect(82, yOffset, 46, 28);
-        doc.addImage(data: image / png; base64, ${ logoBase64 }, 'PNG', 85, yOffset + 1.5, 40, 25);
+        doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', 85, yOffset + 1.5, 40, 25);
         yOffset += 35;
     }
 
-    // === Colored Company Name Title Bar ===
+    // === Company Header ===
     doc.setFillColor(41, 128, 185);
     doc.rect(20, yOffset, 170, 12, 'F');
     doc.setFontSize(16);
@@ -30,17 +36,17 @@
 
     yOffset += 18;
 
-    // === Report Title ===
-    doc.setFontSize(14);
+    // === Report Metadata ===
     doc.setTextColor(0);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('Student Fee Report'.toUpperCase(), 105, yOffset, { align: 'center' });
+    doc.text("STUDENT FEE REPORT", 105, yOffset, { align: 'center' });
 
     yOffset += 10;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text('Generated on: ' + new Date().toLocaleString(), 20, yOffset);
-    doc.text('Term: ' + termId, 160, yOffset, { align: 'right' });
+    doc.text("Generated on: " + new Date().toLocaleString(), 20, yOffset);
+    doc.text("Term: " + termId, 190, yOffset, { align: 'right' });
 
     yOffset += 5;
     doc.setDrawColor(200);
@@ -49,83 +55,65 @@
     // === Table Headers ===
     const headers = ['Student Name', 'Fee Type', 'Class', 'Amount Paid', 'Amount Left'];
     const columnWidths = [60, 40, 30, 30, 30];
-    const tableX = 20;
-    const tableY = yOffset + 5;
+    let rowY = yOffset + 10;
 
     doc.setFont('helvetica', 'bold');
     doc.setFillColor(230, 230, 230);
-    doc.rect(tableX, tableY - 5, columnWidths.reduce((a, b) => a + b), 8, 'F');
+    doc.rect(20, rowY - 5, 170, 8, 'F');
 
-    let currentX = tableX;
-    headers.forEach((header, index) => {
+    let colX = 20;
+    headers.forEach((header, i) => {
         doc.setTextColor(0);
-        doc.text(header, currentX + columnWidths[index] / 2, tableY, { align: 'center' });
-        currentX += columnWidths[index];
+        doc.text(header, colX + columnWidths[i] / 2, rowY, { align: 'center' });
+        colX += columnWidths[i];
     });
-
-    doc.setDrawColor(100);
-    doc.line(tableX, tableY + 2, tableX + columnWidths.reduce((a, b) => a + b), tableY + 2);
 
     // === Table Rows ===
     doc.setFont('helvetica', 'normal');
-    let rowY = tableY + 10;
+    rowY += 10;
     let totalPaid = 0;
     let totalLeft = 0;
 
-    tableData.forEach((row) => {
-        let rowX = tableX;
+    tableData.forEach(row => {
+        let rowX = 20;
         const paid = parseFloat(row[3]) || 0;
         const left = parseFloat(row[4]) || 0;
         totalPaid += paid;
         totalLeft += left;
 
-        for (let i = 0; i < headers.length; i++) {
-            const cell = row[i] !== undefined ? row[i] : '';
-            doc.setTextColor(0);
+        headers.forEach((_, i) => {
+            const cell = row[i] || '';
             doc.text(String(cell), rowX + columnWidths[i] / 2, rowY, { align: 'center' });
             rowX += columnWidths[i];
-        }
+        });
+
         rowY += 10;
     });
 
-    doc.setDrawColor(150);
-    doc.line(20, rowY + 5, 190, rowY + 5);
-
     // === Totals Box ===
-    rowY += 15;
-    doc.setDrawColor(0);
-    doc.setFillColor(245, 245, 245);
-    doc.rect(20, rowY - 8, 170, 20, 'F');
-
+    rowY += 10;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(0);
-    doc.text(`Total Amount Paid: GH₵ ${totalPaid.toFixed(2)}`, 25, rowY);
-    doc.text(`Total Amount Left: GH₵ ${totalLeft.toFixed(2)}`, 25, rowY + 8);
+    doc.setFontSize(11);
+    doc.setTextColor(34, 153, 84);
+    doc.text(`Total Paid: GH₵ ${totalPaid.toFixed(2)}`, 25, rowY);
 
-    // Extract and Show Expected Fee Amounts *right here*
-    let expectedFeeLines = [];
-    if (lines[1] && lines[1].startsWith("Expected Fee Amounts:")) {
-        let i = 2;
-        while (i < lines.length && lines[i].trim() !== "") {
-            expectedFeeLines.push(lines[i]);
-            i++;
-        }
-        i++; // skip blank line
-        lines.splice(0, i); // remove the expected block from main CSV
-    }
+    doc.setTextColor(192, 57, 43);
+    doc.text(`Outstanding Balance: GH₵ ${totalLeft.toFixed(2)}`, 120, rowY);
 
+    // === Expected Fee Section ===
     if (expectedFeeLines.length > 0) {
-        rowY += 25;
+        rowY += 20;
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.text("Expected Fee Amounts", 20, rowY);
-        rowY += 7;
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        doc.text("EXPECTED FEE AMOUNTS", 105, rowY, { align: 'center' });
 
+        rowY += 10;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
+
         expectedFeeLines.forEach(line => {
-            doc.text(line, 25, rowY);
+            doc.text(line.trim(), 105, rowY, { align: 'center' });
             rowY += 6;
         });
     }
@@ -141,7 +129,7 @@
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(schoolName, 105, 290, { align: 'center' });
+    doc.text(`${schoolName} | Contact: +233 24 045 0421, +233 20 642 9971`, 105, 290, { align: 'center' });
 
     doc.save(fileName);
 }

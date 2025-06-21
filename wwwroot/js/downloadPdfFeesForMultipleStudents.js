@@ -1,4 +1,4 @@
-﻿function downloadPdfForMultipleStudents(fileName, reports, companyName, schoolName, logoBase64, paymentDate) {
+﻿function downloadPdfFeesForMultipleStudents(fileName, reports, companyName, schoolName, logoBase64, paymentDate) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
@@ -8,36 +8,32 @@
         const decodedCsv = atob(report.feeDataCsv);
         const lines = decodedCsv.split('\n');
 
-        // Extract expected fee lines
-        let expectedFeeLines = [];
-        const expectedStartIndex = lines.findIndex(line => line.trim() === "Expected Fee Amounts:");
-        if (expectedStartIndex !== -1) {
-            let i = expectedStartIndex + 1;
+        // === Extract Expected Fee Amounts ===
+        const expectedFeeLines = [];
+        const expectedIndex = lines.findIndex(line => line.trim() === "Expected Fee Amounts:");
+        if (expectedIndex !== -1) {
+            let i = expectedIndex + 1;
             while (i < lines.length && lines[i].trim() !== "") {
                 expectedFeeLines.push(lines[i].trim());
                 i++;
             }
-            lines.splice(expectedStartIndex, i - expectedStartIndex);
+            lines.splice(expectedIndex, i - expectedIndex);
         }
 
-        // Extract table data (skip empty lines and expected fees block)
+        // === Parse Table Data ===
         const tableData = lines
-            .filter(line => line.trim() !== "" && !line.trim().startsWith("Expected Fee Amounts:"))
+            .filter(line => line.trim() !== "")
             .map(line => line.split(','))
             .filter(row => row.length >= 5);
 
-        if (tableData.length === 0) {
-            return; // Skip blank reports
-        }
+        if (tableData.length === 0) return;
 
-        if (!isFirstPage) {
-            doc.addPage();
-        }
+        if (!isFirstPage) doc.addPage();
         isFirstPage = false;
 
         let yOffset = 10;
 
-        // === Logo ===
+        // === Logo Section ===
         if (logoBase64) {
             doc.setDrawColor(0);
             doc.setLineWidth(0.3);
@@ -49,14 +45,14 @@
         // === Header Bar ===
         doc.setFillColor(41, 128, 185);
         doc.rect(20, yOffset, 170, 12, 'F');
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
         doc.setTextColor(255);
-        doc.setFont('helvetica', 'bold');
         doc.text(companyName.toUpperCase(), 105, yOffset + 8, { align: 'center' });
 
         yOffset += 18;
 
-        // === Title and Student Name ===
+        // === Report Title & Info ===
         doc.setFontSize(14);
         doc.setTextColor(0);
         doc.text('STUDENT FEE REPORT', 105, yOffset, { align: 'center' });
@@ -71,37 +67,29 @@
         doc.text('Generated on: ' + new Date().toLocaleString(), 20, yOffset);
         doc.text('Term: ' + report.termId, 190, yOffset, { align: 'right' });
 
-        //doc.text('Generated on: ' + new Date().toLocaleString(), 20, yOffset);
-        //doc.text('Term: ' + report.termId, 105, yOffset, { align: 'center' });
-
         yOffset += 5;
         doc.text('Payment Date: ' + paymentDate, 105, yOffset, { align: 'center' });
 
         yOffset += 5;
-        doc.setDrawColor(200);
         doc.line(20, yOffset, 190, yOffset);
 
-
-        yOffset += 5;
-        doc.setDrawColor(200);
-        doc.line(20, yOffset, 190, yOffset);
-
-        // === Table Headers ===
+        // === Table Header ===
         const headers = ['Student Name', 'Fee Type', 'Class', 'Amount Paid', 'Amount Left'];
-        const columnWidths = [60, 40, 30, 30, 30];
-        let rowY = yOffset + 10;
-        let totalPaid = 0;
-        let totalLeft = 0;
+        const widths = [60, 40, 30, 30, 30];
+        let rowY = yOffset + 15;
+        let totalPaid = 0, totalLeft = 0;
 
-        let currentX = 20;
         doc.setFont('helvetica', 'bold');
         doc.setFillColor(230, 230, 230);
-        doc.rect(currentX, rowY - 5, columnWidths.reduce((a, b) => a + b), 8, 'F');
+        doc.rect(20, rowY - 5, widths.reduce((a, b) => a + b), 8, 'F');
+
+        let currentX = 20;
         headers.forEach((header, i) => {
-            doc.text(header, currentX + columnWidths[i] / 2, rowY, { align: 'center' });
-            currentX += columnWidths[i];
+            doc.text(header, currentX + widths[i] / 2, rowY, { align: 'center' });
+            currentX += widths[i];
         });
 
+        // === Table Rows ===
         rowY += 10;
         doc.setFont('helvetica', 'normal');
 
@@ -113,47 +101,59 @@
             totalLeft += left;
 
             for (let i = 0; i < headers.length; i++) {
-                const cell = row[i] || '';
-                doc.text(String(cell), rowX + columnWidths[i] / 2, rowY, { align: 'center' });
-                rowX += columnWidths[i];
+                const text = row[i] || '';
+                doc.text(String(text), rowX + widths[i] / 2, rowY, { align: 'center' });
+                rowX += widths[i];
             }
-
             rowY += 10;
         });
 
-        // === Totals Box ===
+        // === Totals Section ===
         rowY += 10;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        doc.text(`Total Paid: GH ${totalPaid.toFixed(2)}`, 25, rowY);
-        // doc.text(`Total Left: GH ${totalLeft.toFixed(2)}`, 25, rowY + 7);
+        doc.setTextColor(34, 153, 84);
+        doc.text(`TOTAL PAID: GH₵ ${totalPaid.toFixed(2)}`, 25, rowY);
+
+        doc.setTextColor(192, 57, 43);
+        doc.text(`OUTSTANDING BALANCE: GH₵ ${totalLeft.toFixed(2)}`, 110, rowY);
 
         // === Expected Fees Section ===
         if (expectedFeeLines.length > 0) {
             rowY += 20;
             doc.setFont('courier', 'bold');
             doc.setFontSize(13);
+            doc.setTextColor(0);
             doc.text("EXPECTED FEES AMOUNT", 105, rowY, { align: 'center' });
 
             rowY += 10;
             doc.setFontSize(12);
             expectedFeeLines.forEach(line => {
-                doc.text(line.trim(), 105, rowY, { align: 'center' });
+                doc.text(line, 105, rowY, { align: 'center' });
                 rowY += 7;
             });
         }
 
-        // === Signature Line ===
+        // === Page Space Check ===
+        if (rowY > 270) {
+            doc.addPage();
+            rowY = 20;
+        }
+
+        // === Signature ===
         rowY += 20;
         doc.line(140, rowY, 190, rowY);
         doc.setFontSize(10);
+        doc.setTextColor(0);
         doc.text('Authorized Signature', 165, rowY + 5, { align: 'center' });
 
         // === Footer ===
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         doc.setTextColor(100);
-        doc.text(schoolName, 105, 290, { align: 'center' });
+        doc.text(schoolName, 105, 280, { align: 'center' });
+        doc.text("Contact: +233 24 045 0421 / +233 20 642 9971", 105, 285, { align: 'center' });
+
     });
 
     doc.save(fileName);

@@ -1,6 +1,7 @@
 using CORE.SECURITY;
 using CORE.SECURITY.LOADER;
 using CORE.SERVICE;
+using CORE.SERVICE.Caching;
 using CORE.SERVICE.MainLayout;
 using CORE.SERVICE.NOTIFICATION;
 using FastReport.Data;
@@ -41,13 +42,16 @@ builder.Services.AddFastReport();
 
 builder.Services.AddMemoryCache();
 
+// Register CacheService
+builder.Services.AddScoped<CacheService>();
 
 // Add the UserService registration
 builder.Services.AddScoped<AuthService>(provider =>
 {
     var memoryCache = provider.GetRequiredService<IMemoryCache>();
+    var cacheService = provider.GetRequiredService<CacheService>();
     var connectionString = "workstation id=SmssCore.mssql.somee.com;packet size=4096;user id=Smss_SQLLogin_1;pwd=rh5eysynka;data source=SmssCore.mssql.somee.com;persist security info=False;initial catalog=SmssCore;TrustServerCertificate=True;";
-    return new AuthService(connectionString, memoryCache);
+    return new AuthService(connectionString, memoryCache, cacheService);
 });
 
 // Register MenuService with the necessary connection string
