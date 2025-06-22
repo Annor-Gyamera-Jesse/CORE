@@ -28,6 +28,7 @@ using CORE.MODEL.Login_Name_Display;
 using Microsoft.Extensions.Configuration;
 using CORE.Pages.LOGIN_SCREEN;
 using CORE.SERVICE.Caching;
+using CORE.MODEL.DASHBOARD_AMOUNT_SUM;
 
 namespace CORE.SERVICE
 {
@@ -5622,6 +5623,99 @@ VALUES (
                     return await connection.QueryFirstOrDefaultAsync<(int, decimal)>(sql);
                 }
             }, minutes: 15);
+        }
+
+        //
+        public async Task<List<TermFeeSummary>> GetTermFeeSummariesAsync()
+        {
+            var summaries = new List<TermFeeSummary>();
+
+            using var connection = new SqlConnection(connectionString);
+
+            // Step 1: Get all distinct TermIDs from StudentFees
+            var termIds = (await connection.QueryAsync<int>(
+                "SELECT DISTINCT TermID FROM SchoolManagement.StudentFees")).ToList();
+
+            foreach (var termId in termIds)
+            {
+                decimal expectedTotal = 0;
+                decimal actualTotal = 0;
+
+                // Step 2: Get all students and their ClassID
+                var students = await connection.QueryAsync<(int StudentID, string ClassID)>(
+                    "SELECT StudentID, ClassID FROM SchoolManagement.Students WHERE EnableSwitch = 1");
+
+                foreach (var student in students)
+                {
+                    // Step 3: Get all fee types for the student's class
+                    var classFees = await connection.QueryAsync<decimal>(
+                        "SELECT Amount FROM SchoolManagement.FeeTypes WHERE ClassID = @ClassID",
+                        new { ClassID = student.ClassID });
+
+                    expectedTotal += classFees.Sum(); // Add up all fees for this student
+                }
+
+                // Step 4: Get actual amount paid for this term
+                actualTotal = await connection.ExecuteScalarAsync<decimal>(
+                    "SELECT ISNULL(SUM(AmountPaid), 0) FROM SchoolManagement.StudentFees WHERE TermID = @TermID",
+                    new { TermID = termId });
+
+                summaries.Add(new TermFeeSummary
+                {
+                    TermID = termId,
+                    ExpectedTotal = expectedTotal,
+                    ActualTotal = actualTotal
+                });
+            }
+
+            return summaries;
+        }
+
+        public async Task<List<ClassTermFeeSummary>> GetClassTermFeeSummariesAsync(int termId)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            var sql = @"
+    SELECT 
+        c.ClassID,
+        @TermID AS TermID,
+        -- Total number of students in the class
+        (SELECT COUNT(*) 
+         FROM SchoolManagement.Students s 
+         WHERE s.ClassID = c.ClassID AND s.EnableSwitch = 1) AS TotalStudents,
+
+        -- Total number of fee types for the class
+        (SELECT COUNT(*) 
+         FROM SchoolManagement.FeeTypes f 
+         WHERE f.ClassID = c.ClassID) AS FeeTypesCount,
+
+        -- ExpectedTotal = Total fee per student * Number of students
+        (SELECT ISNULL(SUM(f.Amount), 0) 
+         FROM SchoolManagement.FeeTypes f 
+         WHERE f.ClassID = c.ClassID) 
+         * 
+        (SELECT COUNT(*) 
+         FROM SchoolManagement.Students s 
+         WHERE s.ClassID = c.ClassID AND s.EnableSwitch = 1) AS ExpectedTotal,
+
+        -- ActualTotal paid by students for the selected term
+        (SELECT ISNULL(SUM(sf.AmountPaid), 0) 
+         FROM SchoolManagement.StudentFees sf 
+         WHERE sf.ClassID = c.ClassID AND sf.TermID = @TermID) AS ActualTotal
+
+    FROM 
+        (SELECT DISTINCT ClassID FROM SchoolManagement.Students) c;
+    ";
+
+            var result = await connection.QueryAsync<ClassTermFeeSummary>(sql, new { TermID = termId });
+
+            // Calculate Outstanding after query (safe in C#)
+            foreach (var summary in result)
+            {
+                summary.Outstanding = summary.ExpectedTotal - summary.ActualTotal;
+            }
+
+            return result.ToList();
         }
 
 

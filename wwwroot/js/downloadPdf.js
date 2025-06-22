@@ -8,7 +8,7 @@
     // Extract expected fee lines from the bottom
     const expectedStartIndex = lines.findIndex(line => line.trim() === "Expected Fee Amounts:");
     const expectedFeeLines = expectedStartIndex !== -1 ? lines.slice(expectedStartIndex + 1) : [];
-    const dataLines = expectedStartIndex !== -1 ? lines.slice(2, expectedStartIndex - 1) : lines.slice(2);
+    const dataLines = expectedStartIndex !== -1 ? lines.slice(0, expectedStartIndex) : lines;
 
     const tableData = dataLines
         .filter(line => line.trim() !== '')
