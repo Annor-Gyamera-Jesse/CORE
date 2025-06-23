@@ -3275,37 +3275,32 @@ namespace CORE.SERVICE
 
         public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId, int termId)
         {
-            var cacheKey = $"OutstandingBalance_Student_{studentId}_FeeType_{feeTypeId}_Term_{termId}";
-
-            return await _cacheService.GetOrSetAsync(cacheKey, async () =>
+            using (var connection = new SqlConnection(connectionString))
             {
-                using (var connection = new SqlConnection(connectionString))
-                {
-                    // Get student class
-                    var classId = await connection.QuerySingleOrDefaultAsync<string>(
-                        "SELECT ClassID FROM SchoolManagement.Students WHERE StudentID = @StudentID",
-                        new { StudentID = studentId });
+                // Get student class
+                var classId = await connection.QuerySingleOrDefaultAsync<string>(
+                    "SELECT ClassID FROM SchoolManagement.Students WHERE StudentID = @StudentID",
+                    new { StudentID = studentId });
 
-                    if (string.IsNullOrEmpty(classId))
-                        return 0;
+                if (string.IsNullOrEmpty(classId))
+                    return 0;
 
-                    // Get expected fee amount for this class and fee type
-                    var feeAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
-                        @"SELECT Amount 
-                  FROM SchoolManagement.FeeTypes 
-                  WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID",
-                        new { FeeTypeID = feeTypeId, ClassID = classId });
+                // Get expected fee amount for this class and fee type
+                var feeAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
+                    @"SELECT Amount 
+              FROM SchoolManagement.FeeTypes 
+              WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID",
+                    new { FeeTypeID = feeTypeId, ClassID = classId });
 
-                    // Get how much the student has paid for this fee type and term
-                    var amountPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
-                        @"SELECT ISNULL(SUM(AmountPaid), 0) 
-                  FROM SchoolManagement.StudentFees 
-                  WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
-                        new { StudentID = studentId, FeeTypeID = feeTypeId, TermID = termId });
+                // Get how much the student has paid for this fee type and term
+                var amountPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
+                    @"SELECT ISNULL(SUM(AmountPaid), 0) 
+              FROM SchoolManagement.StudentFees 
+              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
+                    new { StudentID = studentId, FeeTypeID = feeTypeId, TermID = termId });
 
-                    return feeAmount - amountPaid;
-                }
-            }, minutes: 10);
+                return feeAmount - amountPaid;
+            }
         }
 
         public async Task<int> GetBankIDAsync(string paymentMethod)
