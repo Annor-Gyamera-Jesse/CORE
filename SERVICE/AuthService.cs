@@ -5718,6 +5718,22 @@ VALUES (
             return result.ToList();
         }
 
+        public async Task<List<StudentFee>> GetStudentFeesByClassAndTerm(string classId, int termId)
+        {
+            var query = @"
+        SELECT 
+            FeeID, StudentID, StudentName, ClassID, FeeTypeName,
+            AmountPaid, AmountLeft, PaymentDate, TermID
+        FROM SchoolManagement.StudentFees
+        WHERE ClassID = @ClassID AND TermID = @TermID AND AmountPaid > 0
+        ORDER BY StudentName";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var result = await connection.QueryAsync<StudentFee>(query, new { ClassID = classId, TermID = termId });
+                return result.ToList();
+            }
+        }
 
     }
 

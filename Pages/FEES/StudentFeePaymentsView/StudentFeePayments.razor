@@ -1,0 +1,95 @@
+﻿@page "/pages/fees/students-fees-payment-viewing/student-fee-payments"
+@using CORE.MODEL
+@using CORE.MODEL.Term
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService authService
+@inject NotificationMessageService NotificationService
+<RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <h3 class="text-2xl font-bold mb-4">Student Fee Payments</h3>
+    <RadzenFieldset Text="TOOL COMPONENT">
+    <div class="mb-4">
+        <RadzenDropDown @bind-Value="selectedClassId"
+        Data="@classList"
+        TextProperty="ClassID"
+        ValueProperty="ClassID"
+        Placeholder="Select Class"
+        Style="width: 200px; margin-right: 20px;" />
+
+        <RadzenDropDown @bind-Value="selectedTermId"
+        Data="@termList"
+        TextProperty="Term"
+        ValueProperty="TermID"
+        Placeholder="Select Term"
+        Style="width: 200px;" />
+
+        <RadzenButton Text="Filter" Click="LoadStudentFees" Icon="search" Style="margin-left: 20px;" />
+    </div>
+    </RadzenFieldset>
+
+    <RadzenFieldset Text="DATA">
+    <RadzenDataGrid TItem="StudentFee" AllowPaging="true" Data="@studentFees" ColumnWidth="200px" ShowPagingSummary="true" PageSize="10">
+        <Columns>
+            <RadzenDataGridColumn TItem="StudentFee" Property="StudentName" Title="Student Name" />
+            <RadzenDataGridColumn TItem="StudentFee" Property="ClassID" Title="Class" />
+            <RadzenDataGridColumn TItem="StudentFee" Property="FeeTypeName" Title="Fee Type" />
+            <RadzenDataGridColumn TItem="StudentFee" Property="AmountPaid" Title="Amount Paid (GHS)" />
+            <RadzenDataGridColumn TItem="StudentFee" Property="AmountLeft" Title="Amount Left (GHS)" />
+            <RadzenDataGridColumn TItem="StudentFee" Property="PaymentDate" Title="Payment Date" />
+        </Columns>
+    </RadzenDataGrid>
+    </RadzenFieldset>
+}
+
+@code {
+    List<StudentFee> studentFees = new();
+    List<Class> classList = new();
+    List<SchoolTerm> termList = new();
+    public bool isLoading = false;
+    string selectedClassId;
+    int selectedTermId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            classList = await authService.GetsAllClassesAsync();
+            termList = await authService.GetAllSchoolTermsAsync();
+        }
+        catch(Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Failed to OnInitialized: {ex.Message}", NotificationSeverity.Warning);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadStudentFees()
+    {
+        try
+        {
+            isLoading = true;
+            if (!string.IsNullOrEmpty(selectedClassId) && selectedTermId > 0)
+            {
+                studentFees = await authService.GetStudentFeesByClassAndTerm(selectedClassId, selectedTermId);
+            }
+        }
+        catch (Exception ex)
+        {  
+
+            NotificationService.ShowNotification("Error", $"Failed to load data: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
