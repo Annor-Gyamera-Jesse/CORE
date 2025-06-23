@@ -29,7 +29,7 @@ namespace CORE.MODEL
         public string ImageBase64 { get; set; }
         public string SchoolName { get; set; }
         public byte[] CompanyImage { get; set; }
-        public string SchoolImageBase64 { get; set; }
+        public string SchoolImageBase64 { get; set; }        
 
     }
 
