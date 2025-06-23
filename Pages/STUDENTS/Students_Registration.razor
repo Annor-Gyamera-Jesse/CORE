@@ -1,5 +1,6 @@
 ﻿@page "/studentsregistration"
 @using CORE.MODEL
+@using CORE.MODEL.Term
 @using CORE.Pages.KYS.Student_Search_Dialog
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
@@ -7,6 +8,8 @@
 @using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
 @inject NotificationMessageService Notify
+@inject IJSRuntime jsRuntime
+
 <RadzenNotification />
 @inject DialogService DialogService
 
@@ -121,6 +124,26 @@
             </div>
             <div class="col-md-3">
                 <RadzenTextBox class="form-control form-control-sm" @bind-Value="@student.StudentEmail" AutoComplete="false" />
+            </div>
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Select Term" />
+            </div>
+            <div class="col-md-3">
+                <RadzenDropDown Data="@schoolTerms"
+                                TextProperty="Term"
+                                ValueProperty="TermID"
+                                TValue="int"
+                                @bind-Value="@selectedTermId"
+                                Style="width: 100%;" />
+            </div>
+
+
+            <div class="col-md-3 text-md-end form-label">
+                <RadzenLabel Text="Cash In Hand Amount (₵)" />
+            </div>
+            <div class="col-md-3">
+                <RadzenNumeric TValue="decimal" @bind-Value="@cashInHandAmount" Style="width: 100%;" Min="0" />
             </div>
 
             <div class="col-md-3 text-md-end form-label">
@@ -276,10 +299,12 @@
     private IBrowserFile selectedFile;
     private const int MaxImageSize = 500 * 1024; // 500 KB in bytes
     private int inputfileKey = 0;
-
+    private decimal cashInHandAmount = 0;
     string classId = "";
-
+    private int selectedTermId = 0;
+    private List<SchoolTerm> schoolTerms = new List<SchoolTerm>();
     List<Class> classList = new List<Class>();
+    private int userId;
 
     async Task SubmitForm()
     {
@@ -307,6 +332,28 @@
                 {
                     Notify.ShowNotification("Success", $"Student successfully registered. StudentID: {newStudentId}", NotificationSeverity.Success);
                 }
+                    // If Cash In Hand value is entered, insert into StudentFees
+                    if (cashInHandAmount > 0 && selectedTermId > 0)
+                    {
+                        var studentFee = new StudentFee
+                            {
+                                StudentID = newStudentId,
+                                StudentName = $"{student.StudentFirstName} {student.StudentLastName}",
+                                ClassID = student.ClassID,
+                                FeeTypeName = "Cash In Hand",
+                                AmountPaid = cashInHandAmount,
+                                AmountLeft = 0,
+                                PaymentDate = DateTime.Now,
+                                Note = "Registration Fee Payment",
+                                PaymentMethod = "Cash In Hand",
+                                TermID = selectedTermId,
+                                UserID = userId
+                            };
+
+                        await authService.SaveStudentFeeAsync(studentFee);
+                    }
+
+
                 else
                 {
                     // Handle failure, show error messages, etc.
@@ -362,6 +409,8 @@
         newStudentId = 0;
         successMessage = string.Empty;
         errorMessage = string.Empty;
+        cashInHandAmount = 0;
+        selectedTermId = 0;
 
         // Create a new instance of InputFile to replace the existing one
         inputfileKey++;
@@ -376,11 +425,30 @@
         try
         {
             isLoading = true;
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                Notify.ShowNotification("User Error", "User not logged in or session expired.", NotificationSeverity.Error);
+                return;
+            }
+
+            var user = await authService.GetUserByUsernameAsync(username);
+            if (user == null)
+            {
+                Notify.ShowNotification("User Error", "User not found.", NotificationSeverity.Error);
+                return;
+            }
+
+            userId = user.UserID;
+
             // Load the class list
             classList = await authService.GetAllClassAsync();
 
             //load all the students for view 
             ViewStudents = await authService.GetAllStudents();
+
+            schoolTerms = await authService.GetAllSchoolTermsAsync();
 
             StateHasChanged();
         }
