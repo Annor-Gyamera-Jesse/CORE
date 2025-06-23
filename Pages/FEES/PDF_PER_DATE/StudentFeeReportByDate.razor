@@ -87,10 +87,22 @@
                 var expectedFees = (await authService.GetFeeAmountsByClassIDAsync(classId)).ToList();
                 var expectedTotal = expectedFees.Sum(x => x.Amount);
 
+                // Build a map of actual payments
+                var studentPaidMap = group
+                    .GroupBy(x => x.FeeTypeName)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Sum(f => f.AmountPaid)
+                    );
+
                 var csvBuilder = new StringBuilder();
-                foreach (var fee in group)
+
+                // Always output all expected fee types
+                foreach (var ef in expectedFees)
                 {
-                    csvBuilder.AppendLine($"{fee.StudentName}, {fee.FeeTypeName}, {fee.ClassID}, {fee.AmountPaid}, {fee.AmountLeft}, {fee.TermID}");
+                    var paid = studentPaidMap.ContainsKey(ef.FeeTypeName) ? studentPaidMap[ef.FeeTypeName] : 0;
+                    var left = ef.Amount - paid;
+                    csvBuilder.AppendLine($"{group.Key.StudentName}, {ef.FeeTypeName}, {classId}, {paid}, {left}, {selectedTermId}");
                 }
 
                 csvBuilder.AppendLine("Expected Fee Amounts:");
@@ -107,6 +119,7 @@
                     feeDataCsv = Convert.ToBase64String(Encoding.UTF8.GetBytes(csvBuilder.ToString()))
                 });
             }
+
 
             // STEP 5: Call the JS function to download all pages into 1 PDF
             await JSRuntime.InvokeVoidAsync("downloadPdfFeesForMultipleStudents",

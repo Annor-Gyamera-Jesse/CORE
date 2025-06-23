@@ -42,15 +42,18 @@
             yOffset += 35;
         }
 
-        // === Header Bar ===
+        // === Header Bar with Contact Info under Company Name ===
         doc.setFillColor(41, 128, 185);
-        doc.rect(20, yOffset, 170, 12, 'F');
+        doc.rect(20, yOffset, 170, 20, 'F'); // increased height for two lines
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
+        doc.setFontSize(14);
         doc.setTextColor(255);
-        doc.text(companyName.toUpperCase(), 105, yOffset + 8, { align: 'center' });
+        doc.text(companyName.toUpperCase(), 105, yOffset + 7, { align: 'center' });
 
-        yOffset += 18;
+        doc.setFontSize(10);
+        doc.text("Contact: +233 24 045 0421 / +233 20 642 9971", 105, yOffset + 14.5, { align: 'center' });
+
+        yOffset += 26;
 
         // === Report Title & Info ===
         doc.setFontSize(14);
@@ -113,10 +116,10 @@
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
         doc.setTextColor(34, 153, 84);
-        doc.text(`TOTAL PAID: GH₵ ${totalPaid.toFixed(2)}`, 25, rowY);
+        doc.text(`TOTAL PAID: GH ${totalPaid.toFixed(2)}`, 25, rowY);
 
         doc.setTextColor(192, 57, 43);
-        doc.text(`OUTSTANDING BALANCE: GH₵ ${totalLeft.toFixed(2)}`, 110, rowY);
+        doc.text(`OUTSTANDING BALANCE: GH ${totalLeft.toFixed(2)}`, 110, rowY);
 
         // === Expected Fees Section ===
         if (expectedFeeLines.length > 0) {
@@ -151,8 +154,7 @@
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         doc.setTextColor(100);
-        doc.text(schoolName, 105, 280, { align: 'center' });
-        doc.text("Contact: +233 24 045 0421 / +233 20 642 9971", 105, 285, { align: 'center' });
+        doc.text(schoolName, 105, 280, { align: 'center' });     
 
     });
 

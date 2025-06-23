@@ -1,5 +1,7 @@
 ﻿@page "/landingpage"
 @using CORE.MODEL
+@using CORE.MODEL.DASHBOARD_AMOUNT_SUM
+@using CORE.MODEL.Term
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
@@ -76,6 +78,32 @@
             color: #333;
         }
 
+    .term-summary-container, .class-summary-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 15px;
+    }
+
+    .small-card {
+        width: 320px;
+        min-height: 240px;
+    }
+
+    .chart-container h2 {
+        margin-top: 0;
+        color: #2f3542;
+        text-align: center;
+        font-size: 1.6rem;
+        font-weight: bold;
+    }
+
+    .dashboard-card p {
+        font-size: 1.1rem;
+        margin: 4px 0;
+    }
+
 </style>
 
 @if (!isLoading)
@@ -124,19 +152,60 @@
         </div>
 
         <!-- Charts Section -->
+        <!-- Term Summary Section -->
         <div class="chart-container">
-            <h2>Financial & Academic Summary</h2>
+            <h2>Term-Wise Financial Summary</h2>
+            <div class="term-summary-container">
+                @foreach (var termSummary in termSummaries)
+                {
+                    <div class="dashboard-card small-card" style="background: linear-gradient(135deg, #1f4037, #99f2c8);">
+                        <i class="fas fa-coins"></i>
+                        <h1>@terms.FirstOrDefault(t => t.TermID == termSummary.TermID)?.Term</h1>
+                        <h2>Expected: GH¢ @termSummary.ExpectedTotal.ToString("F2")</h2>
+                        <p>Received: GH¢ @termSummary.ActualTotal.ToString("F2")</p>
+                        <p>Outstanding: GH¢ @termSummary.Outstanding.ToString("F2")</p>
+                    </div>
+                }
+            </div>
 
-            <RadzenChart Style="height: 350px;">
-                <RadzenPieSeries Data="@chartData" CategoryProperty="Category" ValueProperty="Value" />
+            <RadzenChart Style="height: 300px;" Class="mt-4">
+                <RadzenColumnSeries Data="@termSummaries" CategoryProperty="TermID" ValueProperty="ExpectedTotal" Title="Expected" />
+                <RadzenColumnSeries Data="@termSummaries" CategoryProperty="TermID" ValueProperty="ActualTotal" Title="Received" />
             </RadzenChart>
-
-           @*  <RadzenChart Style="height: 300px;" Class="mt-4">
-                <RadzenLineSeries Data="@lineChartData" CategoryProperty="Category" ValueProperty="Value" />
-                <RadzenCategoryAxis />
-                <RadzenValueAxis />
-            </RadzenChart> *@
         </div>
+
+        <!-- Term Selector -->
+        <div class="chart-container">
+            <h2>Select Term to View Class Financials</h2>
+            <RadzenDropDown Data="@terms"
+                            TextProperty="Term"
+                            ValueProperty="TermID"
+                            @bind-Value="selectedTermId"
+                            Placeholder="Select Term"
+                            Change="@(async args => await LoadClassTermSummariesAsync())"
+                            Style="width: 300px; margin: 0 auto 30px auto;" />
+        </div>
+
+        <!-- Class Summary Section -->
+        @if (classTermSummaries.Any())
+        {
+            <div class="chart-container">
+                <h2>Class-Wise Breakdown For Term @terms.FirstOrDefault(t => t.TermID == selectedTermId)?.Term</h2>
+                <div class="class-summary-container">
+                    @foreach (var item in classTermSummaries)
+                    {
+                        <div class="dashboard-card small-card" style="background: linear-gradient(135deg, #1e3c72, #2a5298);">
+                            <i class="fas fa-school"></i>
+                            <h1>Class @item.ClassID</h1>
+                            <p>Students: @item.TotalStudents | Fee Types: @item.FeeTypesCount</p>
+                            <p>Expected: GH¢ @item.ExpectedTotal.ToString("F2")</p>
+                            <p>Received: GH¢ @item.ActualTotal.ToString("F2")</p>
+                            <p>Outstanding: GH¢ @item.Outstanding.ToString("F2")</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
     </div>
 }
 else
@@ -155,10 +224,12 @@ else
     private int userId;
     private List<ChartData> chartData = new();
     private List<ChartData> lineChartData = new();
-
+    private List<TermFeeSummary> termSummaries = new();
     private int totalOwingStudentsCount;
     private decimal totalOwingAmount;
-
+    private List<ClassTermFeeSummary> classTermSummaries = new();
+    private List<SchoolTerm> terms = new();
+    private int selectedTermId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -191,8 +262,14 @@ else
             (var studentsOwingCount, var amountOwing) = await authService.GetStudentsOwingSummaryAsync();
             totalOwingStudentsCount = studentsOwingCount;
             totalOwingAmount = amountOwing;
+            termSummaries = await authService.GetTermFeeSummariesAsync();
+            terms = await authService.GetAllSchoolTermsAsync();
 
-
+            if (terms.Any())
+            {
+                selectedTermId = terms.First().TermID; // auto-select first term
+                await LoadClassTermSummariesAsync();   // load summary for first term
+            }
             var transactions = await PaymentService.GetAllSuccessfulPaymentsAsync();
             totalTransactionAmount = transactions.Sum(x => x.Amount) / 100.0m;
 
@@ -223,6 +300,14 @@ else
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task LoadClassTermSummariesAsync()
+    {
+        if (selectedTermId > 0)
+        {
+            classTermSummaries = await authService.GetClassTermFeeSummariesAsync(selectedTermId);
         }
     }
 

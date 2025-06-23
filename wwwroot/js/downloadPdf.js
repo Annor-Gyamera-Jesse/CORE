@@ -8,7 +8,7 @@
     // Extract expected fee lines from the bottom
     const expectedStartIndex = lines.findIndex(line => line.trim() === "Expected Fee Amounts:");
     const expectedFeeLines = expectedStartIndex !== -1 ? lines.slice(expectedStartIndex + 1) : [];
-    const dataLines = expectedStartIndex !== -1 ? lines.slice(2, expectedStartIndex - 1) : lines.slice(2);
+    const dataLines = expectedStartIndex !== -1 ? lines.slice(0, expectedStartIndex) : lines;
 
     const tableData = dataLines
         .filter(line => line.trim() !== '')
@@ -26,15 +26,18 @@
         yOffset += 35;
     }
 
-    // === Company Header ===
+    // === Company Header with Contact Info ===
     doc.setFillColor(41, 128, 185);
-    doc.rect(20, yOffset, 170, 12, 'F');
-    doc.setFontSize(16);
+    doc.rect(20, yOffset, 170, 20, 'F'); // taller for contact line
+    doc.setFontSize(14);
     doc.setTextColor(255);
     doc.setFont('helvetica', 'bold');
-    doc.text(companyName.toUpperCase(), 105, yOffset + 8, { align: 'center' });
+    doc.text(companyName.toUpperCase(), 105, yOffset + 7, { align: 'center' });
 
-    yOffset += 18;
+    doc.setFontSize(10);
+    doc.text("Contact: +233 24 045 0421 / +233 20 642 9971", 105, yOffset + 14.5, { align: 'center' });
+
+    yOffset += 26;
 
     // === Report Metadata ===
     doc.setTextColor(0);
@@ -95,10 +98,10 @@
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(34, 153, 84);
-    doc.text(`Total Paid: GH₵ ${totalPaid.toFixed(2)}`, 25, rowY);
+    doc.text(`Total Paid: GH ${totalPaid.toFixed(2)}`, 25, rowY);
 
     doc.setTextColor(192, 57, 43);
-    doc.text(`Outstanding Balance: GH₵ ${totalLeft.toFixed(2)}`, 120, rowY);
+    doc.text(`Outstanding Balance: GH ${totalLeft.toFixed(2)}`, 120, rowY);
 
     // === Expected Fee Section ===
     if (expectedFeeLines.length > 0) {
@@ -129,7 +132,7 @@
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`${schoolName} | Contact: +233 24 045 0421, +233 20 642 9971`, 105, 290, { align: 'center' });
+    doc.text(schoolName, 105, 290, { align: 'center' });
 
     doc.save(fileName);
 }
