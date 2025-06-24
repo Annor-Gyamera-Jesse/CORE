@@ -504,6 +504,10 @@
 
                 // Log the transaction
                 await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
+
+                // ✅ Refresh outstanding balance
+                OutstandingBalance = await StudentService.GetOutstandingBalanceAsync(SelectedStudentID, SelectedFeeTypeID, SelectedTermID);
+
                 NotificationService.ShowNotification("Success", "Payment saved successfully and logged.", NotificationSeverity.Success);
                 // ✅ Reset form fields
                 ResetPaymentForm();
