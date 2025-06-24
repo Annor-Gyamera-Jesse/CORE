@@ -53,4 +53,12 @@
         public string Name { get; set; }
     }
 
+    public class FeeTypeSummary
+    {
+        public string FeeTypeName { get; set; }
+        public decimal TotalExpected { get; set; }
+        public decimal TotalPaid { get; set; }
+        public decimal TotalOwing { get; set; }
+    }
+
 }

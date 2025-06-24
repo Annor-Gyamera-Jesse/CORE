@@ -3241,34 +3241,68 @@ namespace CORE.SERVICE
 
         public async Task<List<StudentOwingRecord>> GetAllStudentsWhoOweFeesAsync()
         {
-            return await _cacheService.GetOrSetAsync("AllOwingStudents", async () =>
+            using (var connection = new SqlConnection(connectionString))
             {
-                using (var connection = new SqlConnection(connectionString))
-                {
-                    var query = @"
-                        SELECT 
-                            s.StudentID,
-                            (s.StudentFirstName + ' ' + s.StudentLastName) AS FullName,
-                            t.Term,
-                            ft.FeeTypeName,
-                            ft.Amount AS TotalFeeAmount,
-                            ISNULL(SUM(f.AmountPaid), 0) AS TotalPaid,
-                            ft.Amount - ISNULL(SUM(f.AmountPaid), 0) AS AmountOwing
-                        FROM SchoolManagement.Students s
-                        JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
-                        LEFT JOIN SchoolManagement.StudentFees f 
-                            ON s.StudentID = f.StudentID AND ft.FeeTypeID = f.FeeTypeID
-                        LEFT JOIN SchoolManagement.SchoolTerm t ON f.TermID = t.TermID
-                        GROUP BY 
-                            s.StudentID, s.StudentFirstName, s.StudentLastName,
-                            ft.FeeTypeName, ft.Amount, t.Term
-                        HAVING ft.Amount - ISNULL(SUM(f.AmountPaid), 0) > 0
-                        ORDER BY FullName";
+                var query = @"
+            SELECT 
+                s.StudentID,
+                (s.StudentFirstName + ' ' + s.StudentLastName) AS FullName,
+                t.Term,
+                ft.FeeTypeName,
+                ft.Amount AS TotalFeeAmount,
+                ISNULL(SUM(f.AmountPaid), 0) AS TotalPaid,
+                ft.Amount - ISNULL(SUM(f.AmountPaid), 0) AS AmountOwing
+            FROM SchoolManagement.Students s
+            JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
+            LEFT JOIN SchoolManagement.StudentFees f 
+                ON s.StudentID = f.StudentID AND ft.FeeTypeID = f.FeeTypeID
+            LEFT JOIN SchoolManagement.SchoolTerm t ON f.TermID = t.TermID
+            GROUP BY 
+                s.StudentID, s.StudentFirstName, s.StudentLastName,
+                ft.FeeTypeName, ft.Amount, t.Term
+            HAVING ft.Amount - ISNULL(SUM(f.AmountPaid), 0) > 0
+            ORDER BY FullName";
 
-                    var results = await connection.QueryAsync<StudentOwingRecord>(query);
-                    return results.ToList();
-                }
-            }, minutes: 10); // Cache for 10 minutes (adjust if needed)
+                var results = await connection.QueryAsync<StudentOwingRecord>(query);
+                return results.ToList();
+            }
+        }
+
+        public async Task<List<FeeTypeSummary>> GetFeeTypeSummariesAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+            SELECT 
+                ft.FeeTypeName,
+                SUM(ft.Amount) AS TotalExpected,
+                SUM(ISNULL(f.AmountPaid, 0)) AS TotalPaid,
+                SUM(ft.Amount - ISNULL(f.AmountPaid, 0)) AS TotalOwing
+            FROM SchoolManagement.Students s
+            JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
+            LEFT JOIN SchoolManagement.StudentFees f 
+                ON s.StudentID = f.StudentID AND ft.FeeTypeID = f.FeeTypeID
+            GROUP BY ft.FeeTypeName";
+
+                var results = await connection.QueryAsync<FeeTypeSummary>(query);
+                return results.ToList();
+            }
+        }
+
+        public async Task<List<FeeTypeSummary>> GetFeeTypeSummaryByClassAndTerm(string classId, int termId)
+        {
+            var query = @"
+        SELECT 
+            FeeTypeName,
+            SUM(AmountPaid) AS TotalPaid,
+            SUM(AmountLeft) AS TotalOwing
+        FROM SchoolManagement.StudentFees
+        WHERE ClassID = @ClassID AND TermID = @TermID AND AmountPaid > 0
+        GROUP BY FeeTypeName";
+
+            using var connection = new SqlConnection(connectionString);
+            var result = await connection.QueryAsync<FeeTypeSummary>(query, new { ClassID = classId, TermID = termId });
+            return result.ToList();
         }
 
 
