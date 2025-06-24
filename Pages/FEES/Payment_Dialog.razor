@@ -140,7 +140,24 @@
             var (companyName, schoolName, logoBase64) = await authService.GetPdfLoginScreenDetailsAsync();
             var fileName = $"Student_Fees_{selectedStudentId}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
 
-            await JSRuntime.InvokeVoidAsync("downloadPdf", fileName, base64Csv, companyName, schoolName, logoBase64);
+            var report = new
+            {
+                feeDataCsv = base64Csv,
+                studentName = studentFeeData.First().StudentName,
+                termId = studentFeeData.First().TermID.ToString()
+            };
+
+            var reports = new[] { report };
+
+            await JSRuntime.InvokeVoidAsync(
+                "downloadPdfFeesForMultipleStudents",
+                fileName,
+                reports,
+                companyName,
+                schoolName,
+                logoBase64,
+                DateTime.Now.ToString("dd MMM yyyy")
+            );
 
             Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
         }
