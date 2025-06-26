@@ -118,21 +118,40 @@
             var expectedFees = (await authService.GetFeeAmountsByClassIDAsync(classId)).ToList();
             var expectedTotal = expectedFees.Sum(x => x.Amount);
 
-            // === Build CSV rows for all payment records ===
+            // === Build full CSV for display ===
             var csvBuilder = new StringBuilder();
-
             foreach (var record in studentFeeData)
             {
                 csvBuilder.AppendLine($"{record.StudentName}, {record.FeeTypeName}, {record.ClassID}, {record.AmountPaid:F2}, {record.AmountLeft:F2}, {record.TermID}");
             }
 
-            // === Append Expected Fees at bottom ===
+            // === Calculate total paid and balance from latest fee status per fee type ===
+            var feeTypeSummaries = studentFeeData
+                .GroupBy(f => f.FeeTypeID)
+                .Select(g =>
+                {
+                    var latest = g.OrderBy(f => f.AmountLeft).First(); // smallest balance is most recent
+                    return new
+                    {
+                        Paid = g.Sum(x => x.AmountPaid),         // Total paid over time
+                        Left = latest.AmountLeft                 // Final status
+                    };
+                })
+                .ToList();
+
+            var totalPaid = feeTypeSummaries.Sum(x => x.Paid);
+            var totalLeft = feeTypeSummaries.Sum(x => x.Left);
+
+            // === Append Expected Fees ===
             csvBuilder.AppendLine("Expected Fee Amounts:");
             foreach (var item in expectedFees)
             {
                 csvBuilder.AppendLine($"{item.FeeTypeName.ToUpper()}: GH {item.Amount:F2}");
             }
+
             csvBuilder.AppendLine($"TOTAL EXPECTED FEES: GH {expectedTotal:F2}");
+            csvBuilder.AppendLine($"TOTAL PAID: GH {totalPaid:F2}");
+            csvBuilder.AppendLine($"OUTSTANDING BALANCE: GH {totalLeft:F2}");
 
             var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
             var base64Csv = Convert.ToBase64String(csvData);
@@ -170,7 +189,6 @@
             isLoading = false;
         }
     }
-
 
 
 }

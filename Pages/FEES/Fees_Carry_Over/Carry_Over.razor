@@ -1,0 +1,49 @@
+﻿@page "/schoolfees/carryover"
+@using CORE.MODEL.Term
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService StudentService
+@inject NotificationMessageService NotificationService
+
+<RadzenNotification />
+
+<RadzenCard Style="padding: 20px; max-width: 500px;">
+    <RadzenLabel Text="Select Term to Carry Over Into:" />
+    <RadzenDropDown @bind-Value="SelectedTermID"
+                    Data="@Terms"
+                    TextProperty="Term"
+                    ValueProperty="TermID"
+                    Style="width: 100%; margin-bottom: 20px;"
+                    Placeholder="Select Term" />
+
+    <RadzenButton Text="Run Carry Over" Click="RunCarryOver" Style="width: 100%;" />
+</RadzenCard>
+
+@code {
+    private int SelectedTermID;
+    private List<SchoolTerm> Terms = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Terms = await StudentService.GetAllSchoolTermsAsync();
+    }
+
+    private async Task RunCarryOver()
+    {
+        if (SelectedTermID == 0)
+        {
+            NotificationService.ShowNotification("Validation", "Please select a term.", NotificationSeverity.Warning);
+            return;
+        }
+
+        try
+        {
+            await StudentService.CarryOverUnpaidFeesToTermAsync(SelectedTermID);
+            NotificationService.ShowNotification("Success", $"Unpaid fees rolled into Term {SelectedTermID}.", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Carry over failed: {ex.Message}", NotificationSeverity.Error);
+        }
+    }
+}

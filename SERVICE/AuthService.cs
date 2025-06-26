@@ -3305,7 +3305,15 @@ namespace CORE.SERVICE
             return result.ToList();
         }
 
+        public async Task<bool> CarryOverUnpaidFeesToTermAsync(int newTermId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var parameters = new DynamicParameters();
+            parameters.Add("@NewTermID", newTermId);
 
+            await connection.ExecuteAsync("SchoolManagement.sp_CarryOverUnpaidFees", parameters, commandType: CommandType.StoredProcedure);
+            return true;
+        }
 
         public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId, int termId)
         {
