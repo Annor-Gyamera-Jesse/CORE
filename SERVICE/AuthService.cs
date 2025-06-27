@@ -3351,7 +3351,7 @@ namespace CORE.SERVICE
             return true;
         }
 
-        public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId, int termId)
+        public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId)
         {
             using (var connection = new SqlConnection(connectionString))
             {
@@ -3370,17 +3370,16 @@ namespace CORE.SERVICE
               WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID",
                     new { FeeTypeID = feeTypeId, ClassID = classId });
 
-                // Get how much the student has paid for this fee type and term
-                var amountPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
+                // Sum ALL payments for the student and fee type (NO TERM FILTER!)
+                var totalPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
                     @"SELECT ISNULL(SUM(AmountPaid), 0) 
               FROM SchoolManagement.StudentFees 
-              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
-                    new { StudentID = studentId, FeeTypeID = feeTypeId, TermID = termId });
+              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID",
+                    new { StudentID = studentId, FeeTypeID = feeTypeId });
 
-                return feeAmount - amountPaid;
+                return feeAmount - totalPaid;
             }
         }
-
         public async Task<int> GetBankIDAsync(string paymentMethod)
         {
             string cacheKey = $"BankID_{paymentMethod}";
