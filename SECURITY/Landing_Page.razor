@@ -108,6 +108,32 @@
 
 @if (!isLoading)
 {
+    <RadzenFieldset Text="SELECT CURRENT TERM AND DATE THE TERM ENDS">
+
+        <RadzenDropDown @bind-Value="currentTermId"
+                        Data="@terms"
+                        TextProperty="Term"
+                        ValueProperty="TermID"
+                        Placeholder="Select Current Term"
+                        Disabled="@isCurrentTermLocked"
+                        Style="width: 300px;" />
+
+        <RadzenDatePicker @bind-Value="currentTermEndDate"
+                          DateFormat="yyyy-MM-dd"
+                          Disabled="@isCurrentTermLocked"
+                          Style="margin-left: 20px;" />
+
+        @if (!isCurrentTermLocked)
+        {
+            <RadzenButton Text="OK" Click="@SetCurrentTermAsync" Style="margin-left: 20px;" />
+        }
+        else
+        {
+            <p style="margin-left: 20px; font-weight: bold;">This term ends on: @currentTermEndDate?.ToString("yyyy-MM-dd")</p>
+        }
+
+    </RadzenFieldset>
+
     <div class="dashboard-container">
         <!-- Summary Cards -->
         <div class="card-container">
@@ -230,6 +256,9 @@ else
     private List<ClassTermFeeSummary> classTermSummaries = new();
     private List<SchoolTerm> terms = new();
     private int selectedTermId;
+    private int currentTermId;
+    private DateTime? currentTermEndDate;
+    private bool isCurrentTermLocked;
 
     protected override async Task OnInitializedAsync()
     {
@@ -264,6 +293,8 @@ else
             totalOwingAmount = amountOwing;
             termSummaries = await authService.GetTermFeeSummariesAsync();
             terms = await authService.GetAllSchoolTermsAsync();
+            await LoadCurrentTermAsync();
+
 
             if (terms.Any())
             {
@@ -315,5 +346,29 @@ else
     {
         public string Category { get; set; }
         public int Value { get; set; }
+    }
+
+    private async Task SetCurrentTermAsync()
+    {
+        if (currentTermId <= 0 || currentTermEndDate == null)
+        {
+            Notify.ShowNotification("Invalid", "Please select a term and its end date.", NotificationSeverity.Warning);
+            return;
+        }
+
+        await authService.SetCurrentTermAsync(currentTermId, currentTermEndDate.Value, userId);
+        Notify.ShowNotification("Success", "Current term updated.", NotificationSeverity.Success);
+        await LoadCurrentTermAsync();
+    }
+
+    private async Task LoadCurrentTermAsync()
+    {
+        var currentTerm = await authService.GetCurrentTermAsync();
+        if (currentTerm != null)
+        {
+            currentTermId = currentTerm.TermID;
+            currentTermEndDate = currentTerm.TermEndDate;
+            isCurrentTermLocked = currentTerm.TermEndDate > DateTime.Today;
+        }
     }
 }

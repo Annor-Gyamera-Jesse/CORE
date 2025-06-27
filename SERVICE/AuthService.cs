@@ -2135,6 +2135,42 @@ namespace CORE.SERVICE
             }, minutes: 10); // Cache for 10 minutes (adjust as needed)
         }
 
+        public async Task SetCurrentTermAsync(int termId, DateTime endDate, int userId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync(); // Open the connection before starting transaction
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Reset current term
+                await connection.ExecuteAsync(
+                    "UPDATE SchoolManagement.SchoolTerm SET IsCurrentTerm = 0",
+                    transaction: transaction);
+
+                // Set new current term
+                await connection.ExecuteAsync(@"
+            UPDATE SchoolManagement.SchoolTerm
+            SET IsCurrentTerm = 1, TermEndDate = @EndDate
+            WHERE TermID = @TermID",
+                    new { TermID = termId, EndDate = endDate },
+                    transaction: transaction);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        public async Task<SchoolTerm> GetCurrentTermAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            return await connection.QueryFirstOrDefaultAsync<SchoolTerm>(
+                "SELECT * FROM SchoolManagement.SchoolTerm WHERE IsCurrentTerm = 1");
+        }
 
         public async Task<int> GetTotalTeachersCount()
         {
