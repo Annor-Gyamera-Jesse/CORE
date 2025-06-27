@@ -69,7 +69,7 @@
 
     <RadzenHeader title="School Fees Payment" class="header-container compact-header">
         <RadzenFieldset Text="EXPORT STUDENT REPORT" class="right-align">
-            <FeesToolPanelComponent OnFeesDialog="FeesDialog" OnFeesPerDateDialog="FeesPerDate" OnTransferOfFundsDialog="TransferOfFunds" OnCashInHandsDialog="CashInHandsDialog" Oncarryover="Carryover" />
+            <FeesToolPanelComponent OnFeesDialog="FeesDialog" OnFeesPerDateDialog="FeesPerDate" OnTransferOfFundsDialog="TransferOfFunds" OnCashInHandsDialog="CashInHandsDialog" />@* Oncarryover="Carryover" *@
         </RadzenFieldset>
     </RadzenHeader>
     <br />
@@ -494,22 +494,21 @@
             var success = await StudentService.SaveStudentFeeAsync(payment);
             if (success)
             {
-                // Retrieve the BankID based on the selected payment method
-                int bankId = await StudentService.GetBankIDAsync(PaymentMethod);
-                if (bankId == 0) // Check if BankID is valid
+                if (!IsCashInHand)
                 {
-                    NotificationService.ShowNotification("Error", "Invalid payment method selected.", NotificationSeverity.Error);
-                    return;
+                    int bankId = await StudentService.GetBankIDAsync(PaymentMethod);
+                    if (bankId == 0)
+                    {
+                        NotificationService.ShowNotification("Error", "Invalid payment method selected.", NotificationSeverity.Error);
+                        return;
+                    }
+
+                    await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
                 }
 
-                // Log the transaction
-                await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
-
-                // ✅ Refresh outstanding balance
                 OutstandingBalance = await StudentService.GetOutstandingBalanceAsync(SelectedStudentID, SelectedFeeTypeID, SelectedTermID);
 
                 NotificationService.ShowNotification("Success", "Payment saved successfully and logged.", NotificationSeverity.Success);
-                // ✅ Reset form fields
                 ResetPaymentForm();
             }
             else

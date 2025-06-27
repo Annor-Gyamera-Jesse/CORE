@@ -3392,7 +3392,7 @@ namespace CORE.SERVICE
                 var bankId = await connection.ExecuteScalarAsync<int?>(query, new { PaymentMethod = paymentMethod });
 
                 return bankId ?? 0; // Return 0 if not found
-            }, minutes: 60); // Cache for 1 hour (can be more, unless banks change often)
+            }, minutes: 1); // Cache for 1 MINT. (can be more, unless banks change often)
         }
 
         public async Task LogsBankTransactionAsync(int? bankId, string transactionType, decimal amount, string status, string errorMessage)
