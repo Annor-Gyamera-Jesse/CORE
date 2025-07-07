@@ -111,12 +111,9 @@
             <div class="row input-group">
                 <div class="col-md-5">
                     <RadzenLabel Text="School Term" />
-                    <RadzenDropDown @bind-Value="SelectedTermID"
-                                    Data="@Terms"
-                                    TextProperty="Term"
-                                    ValueProperty="TermID"
-                                    Style="width: 100%;"
-                                    Placeholder="Select Term" AllowClear="true" />
+                    <RadzenTextBox Value="@currentTermName"
+                                   Disabled="true"
+                                   Style="width: 100%;" />
                 </div>
                 <div class="col-md-6">
                     <RadzenLabel Text="Payment Date" />
@@ -261,6 +258,7 @@
     // private bool IsCashInHand = false;
     private bool _isCashInHand;
     private List<StudentFee> UnpaidPreviousClassFees = new List<StudentFee>();
+    private string currentTermName;
 
 
     private bool IsCashInHand
@@ -299,7 +297,13 @@
 
             userId = user.UserID;
 
-            Terms = await StudentService.GetAllSchoolTermsAsync();
+            // Fetch the current term
+            var currentTerm = await StudentService.GetCurrentSchoolTermAsync();
+            if (currentTerm != null)
+            {
+                SelectedTermID = currentTerm.TermID;
+                currentTermName = currentTerm.Term;
+            }
             // Fetch classes
             Classes = await StudentService.GetsAllClassesAsync();
 
@@ -402,7 +406,7 @@
     private void ResetPaymentForm()
     {
         PaymentDate = DateTime.Now;
-        SelectedTermID = 0;
+        // SelectedTermID = 0;
         SelectedFeeTypeID = 0;
         AmountPaid = 0;
         Note = string.Empty;

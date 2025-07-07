@@ -3472,6 +3472,19 @@ namespace CORE.SERVICE
             }, minutes: 60); // Cache for 1 hour or more
         }
 
+        public async Task<SchoolTerm> GetCurrentSchoolTermAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        SELECT TOP 1 TermID, Term 
+        FROM SchoolManagement.SchoolTerm 
+        WHERE IsCurrentTerm = 1";
+
+            var term = await connection.QueryFirstOrDefaultAsync<SchoolTerm>(query);
+            return term;
+        }
+
+
         /**/
         public async Task<IEnumerable<Student>> SearchStudentsAsync(string searchText)
         {
