@@ -29,6 +29,7 @@ using Microsoft.Extensions.Configuration;
 using CORE.Pages.LOGIN_SCREEN;
 using CORE.SERVICE.Caching;
 using CORE.MODEL.DASHBOARD_AMOUNT_SUM;
+using CORE.MODEL.Fees_Statement_Summary;
 
 namespace CORE.SERVICE
 {
@@ -3489,6 +3490,22 @@ namespace CORE.SERVICE
                 return classes.AsList();
             }, minutes: 60); // Cache for 1 hour or more
         }
+
+        public async Task<List<DetailedStudentFeeSummary>> GetDetailedStudentFeeSummaryAsync(bool allTerms, int termId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var parameters = new DynamicParameters();
+            parameters.Add("@AllTerms", allTerms ? 1 : 0);
+            parameters.Add("@TermID", termId);
+
+            var results = await connection.QueryAsync<DetailedStudentFeeSummary>(
+                "SchoolManagement.GetStudentFeeSummaryReport",
+                parameters,
+                commandType: CommandType.StoredProcedure);
+
+            return results.ToList();
+        }
+
 
         public async Task<List<SchoolTerm>> GetAllSchoolTermsAsync()
         {

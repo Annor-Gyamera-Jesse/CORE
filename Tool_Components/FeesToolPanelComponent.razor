@@ -11,7 +11,8 @@
 </style>
 
   <div class="toolset-container mt-2">
-        <RadzenButton Text="FEES STATEMENTS" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OnFeesDialog />
+        <RadzenButton Text="FEES PDF PER STUDENT" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OnFeesDialog />
+    <RadzenButton Text="FEES STATEMENTS" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Success" Click=@OnFeesStatementDialog />
    @*  <RadzenButton Text="CARRY OVER" Icon="sync" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Success" Click=@Oncarryover /> *@
         <RadzenButton Text="Export Fees Per Date" Icon="list" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Warning" Click=@OnFeesPerDateDialog />
     <RadzenButton Text="TRANFERS OF FUNDS" Icon="cached" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnTransferOfFundsDialog />
@@ -25,4 +26,5 @@
     [Parameter] public Action OnCashInHandsDialog { get; set; }
     [Parameter] public Action OnFeesPerDateDialog { get; set; }
     [Parameter] public Action Oncarryover { get; set; }
+    [Parameter] public Action OnFeesStatementDialog { get; set; }
 }
