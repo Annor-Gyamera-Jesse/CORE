@@ -426,7 +426,7 @@
             SelectedFeeTypeID = Convert.ToInt32(value);
             if (SelectedStudentID > 0 && SelectedFeeTypeID > 0)
             {
-              OutstandingBalance = await StudentService.GetOutstandingBalanceAsync(SelectedStudentID, SelectedFeeTypeID);
+                OutstandingBalance = await StudentService.GetTermOutstandingAsync(SelectedStudentID, SelectedFeeTypeID);
             }
 
             // Fetch fee details for the selected fee type
@@ -510,7 +510,7 @@
                     await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
                 }
 
-                OutstandingBalance = await StudentService.GetOutstandingBalanceAsync(SelectedStudentID, SelectedFeeTypeID);
+                OutstandingBalance = await StudentService.GetTermOutstandingAsync(SelectedStudentID, SelectedFeeTypeID);
 
                 NotificationService.ShowNotification("Success", "Payment saved successfully and logged.", NotificationSeverity.Success);
                 ResetPaymentForm();

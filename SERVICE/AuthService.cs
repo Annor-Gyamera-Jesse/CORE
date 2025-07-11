@@ -3351,35 +3351,66 @@ namespace CORE.SERVICE
             return true;
         }
 
-        public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId)
+        //public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId)
+        //{
+        //    using (var connection = new SqlConnection(connectionString))
+        //    {
+        //        // Get student class
+        //        var classId = await connection.QuerySingleOrDefaultAsync<string>(
+        //            "SELECT ClassID FROM SchoolManagement.Students WHERE StudentID = @StudentID",
+        //            new { StudentID = studentId });
+
+        //        if (string.IsNullOrEmpty(classId))
+        //            return 0;
+
+        //        // Get expected fee amount for this class and fee type
+        //        var feeAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
+        //            @"SELECT Amount 
+        //      FROM SchoolManagement.FeeTypes 
+        //      WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID",
+        //            new { FeeTypeID = feeTypeId, ClassID = classId });
+
+        //        // Sum ALL payments for the student and fee type (NO TERM FILTER!)
+        //        var totalPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
+        //            @"SELECT ISNULL(SUM(AmountPaid), 0) 
+        //      FROM SchoolManagement.StudentFees 
+        //      WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID",
+        //            new { StudentID = studentId, FeeTypeID = feeTypeId });
+
+        //        return feeAmount - totalPaid;
+        //    }
+        //}
+
+
+
+        // 1 Balance that’s still left in THIS term only
+        public async Task<decimal> GetTermOutstandingAsync(int studentId, int termId)
         {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                // Get student class
-                var classId = await connection.QuerySingleOrDefaultAsync<string>(
-                    "SELECT ClassID FROM SchoolManagement.Students WHERE StudentID = @StudentID",
-                    new { StudentID = studentId });
-
-                if (string.IsNullOrEmpty(classId))
-                    return 0;
-
-                // Get expected fee amount for this class and fee type
-                var feeAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
-                    @"SELECT Amount 
-              FROM SchoolManagement.FeeTypes 
-              WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID",
-                    new { FeeTypeID = feeTypeId, ClassID = classId });
-
-                // Sum ALL payments for the student and fee type (NO TERM FILTER!)
-                var totalPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
-                    @"SELECT ISNULL(SUM(AmountPaid), 0) 
-              FROM SchoolManagement.StudentFees 
-              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID",
-                    new { StudentID = studentId, FeeTypeID = feeTypeId });
-
-                return feeAmount - totalPaid;
-            }
+            const string sql = @"
+        SELECT ISNULL(SUM(AmountLeft),0)
+        FROM   SchoolManagement.StudentFees
+        WHERE  StudentID = @StudentID
+          AND  TermID    = @TermID       -- current term only
+          AND  AmountLeft > 0";
+            using var db = new SqlConnection(connectionString);
+            return await db.QuerySingleAsync<decimal>(sql, new { studentId, termId });
         }
+
+        // 2 List every unpaid row BEFORE this term (for the breakdown card)
+        public async Task<IEnumerable<StudentFee>> GetOutstandingBeforeTermAsync(int studentId, int termId)
+        {
+            const string sql = @"
+        SELECT *
+        FROM   SchoolManagement.StudentFees
+        WHERE  StudentID = @StudentID
+          AND  TermID    < @TermID       -- any earlier term
+          AND  AmountLeft > 0
+        ORDER BY TermID DESC, FeeTypeName";
+            using var db = new SqlConnection(connectionString);
+            return await db.QueryAsync<StudentFee>(sql, new { studentId, termId });
+        }
+
+
         public async Task<int> GetBankIDAsync(string paymentMethod)
         {
             string cacheKey = $"BankID_{paymentMethod}";
