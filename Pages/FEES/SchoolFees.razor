@@ -69,7 +69,7 @@
 
     <RadzenHeader title="School Fees Payment" class="header-container compact-header">
         <RadzenFieldset Text="EXPORT STUDENT REPORT" class="right-align">
-            <FeesToolPanelComponent OnFeesDialog="FeesDialog" OnFeesPerDateDialog="FeesPerDate" OnTransferOfFundsDialog="TransferOfFunds" OnCashInHandsDialog="CashInHandsDialog" />
+            <FeesToolPanelComponent OnFeesDialog="FeesDialog" OnFeesPerDateDialog="FeesPerDate" OnTransferOfFundsDialog="TransferOfFunds" OnCashInHandsDialog="CashInHandsDialog" />@* Oncarryover="Carryover" *@
         </RadzenFieldset>
     </RadzenHeader>
     <br />
@@ -111,12 +111,9 @@
             <div class="row input-group">
                 <div class="col-md-5">
                     <RadzenLabel Text="School Term" />
-                    <RadzenDropDown @bind-Value="SelectedTermID"
-                                    Data="@Terms"
-                                    TextProperty="Term"
-                                    ValueProperty="TermID"
-                                    Style="width: 100%;"
-                                    Placeholder="Select Term" AllowClear="true" />
+                    <RadzenTextBox Value="@currentTermName"
+                                   Disabled="true"
+                                   Style="width: 100%;" />
                 </div>
                 <div class="col-md-6">
                     <RadzenLabel Text="Payment Date" />
@@ -136,7 +133,7 @@
                     </RadzenCard>
 
                     <RadzenCard Style="background-color: #fef3c7; padding: 16px; margin-top: 20px; border-left: 6px solid orange;">
-                        <h3 style="color: #b45309;">Unpaid Previous Balances</h3>
+                        <h3 style="color: #b45309;">Previous Balances</h3>
                         <ul>
                             @foreach (var fee in UnpaidPreviousClassFees)
                             {
@@ -261,6 +258,7 @@
     // private bool IsCashInHand = false;
     private bool _isCashInHand;
     private List<StudentFee> UnpaidPreviousClassFees = new List<StudentFee>();
+    private string currentTermName;
 
 
     private bool IsCashInHand
@@ -299,7 +297,13 @@
 
             userId = user.UserID;
 
-            Terms = await StudentService.GetAllSchoolTermsAsync();
+            // Fetch the current term
+            var currentTerm = await StudentService.GetCurrentSchoolTermAsync();
+            if (currentTerm != null)
+            {
+                SelectedTermID = currentTerm.TermID;
+                currentTermName = currentTerm.Term;
+            }
             // Fetch classes
             Classes = await StudentService.GetsAllClassesAsync();
 
@@ -402,7 +406,7 @@
     private void ResetPaymentForm()
     {
         PaymentDate = DateTime.Now;
-        SelectedTermID = 0;
+        // SelectedTermID = 0;
         SelectedFeeTypeID = 0;
         AmountPaid = 0;
         Note = string.Empty;
@@ -422,7 +426,7 @@
             SelectedFeeTypeID = Convert.ToInt32(value);
             if (SelectedStudentID > 0 && SelectedFeeTypeID > 0)
             {
-               OutstandingBalance = await StudentService.GetOutstandingBalanceAsync(SelectedStudentID, SelectedFeeTypeID, SelectedTermID);
+                OutstandingBalance = await StudentService.GetTermOutstandingAsync(SelectedStudentID, SelectedFeeTypeID);
             }
 
             // Fetch fee details for the selected fee type
@@ -433,11 +437,11 @@
                 TotalAmountLeft = feeType.Amount;
 
                 // Update OutstandingBalance accordingly
-                if (SelectedStudentID > 0)
-                {
-                    var studentFee = await StudentService.GetStudentFeeAsync(SelectedStudentID, SelectedFeeTypeID);
-                    OutstandingBalance = studentFee?.AmountLeft ?? TotalAmountLeft;
-                }
+                // if (SelectedStudentID > 0)
+                // {
+                //     var studentFee = await StudentService.GetStudentFeeAsync(SelectedStudentID, SelectedFeeTypeID);
+                //     OutstandingBalance = studentFee?.AmountLeft ?? TotalAmountLeft;
+                // }
             }
         }
         catch (Exception ex)
@@ -494,18 +498,21 @@
             var success = await StudentService.SaveStudentFeeAsync(payment);
             if (success)
             {
-                // Retrieve the BankID based on the selected payment method
-                int bankId = await StudentService.GetBankIDAsync(PaymentMethod);
-                if (bankId == 0) // Check if BankID is valid
+                if (!IsCashInHand)
                 {
-                    NotificationService.ShowNotification("Error", "Invalid payment method selected.", NotificationSeverity.Error);
-                    return;
+                    int bankId = await StudentService.GetBankIDAsync(PaymentMethod);
+                    if (bankId == 0)
+                    {
+                        NotificationService.ShowNotification("Error", "Invalid payment method selected.", NotificationSeverity.Error);
+                        return;
+                    }
+
+                    await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
                 }
 
-                // Log the transaction
-                await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
+                OutstandingBalance = await StudentService.GetTermOutstandingAsync(SelectedStudentID, SelectedFeeTypeID);
+
                 NotificationService.ShowNotification("Success", "Payment saved successfully and logged.", NotificationSeverity.Success);
-                // ✅ Reset form fields
                 ResetPaymentForm();
             }
             else
@@ -551,4 +558,6 @@
     async void TransferOfFunds() => await OpenTransferOfFundsDialog();
     
     async void CashInHandsDialog() => await OpenCashInHandsDialog();
+
+    async void Carryover() => await OpenCarryOverDialog();
 }

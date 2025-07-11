@@ -2135,6 +2135,42 @@ namespace CORE.SERVICE
             }, minutes: 10); // Cache for 10 minutes (adjust as needed)
         }
 
+        public async Task SetCurrentTermAsync(int termId, DateTime endDate, int userId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync(); // Open the connection before starting transaction
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Reset current term
+                await connection.ExecuteAsync(
+                    "UPDATE SchoolManagement.SchoolTerm SET IsCurrentTerm = 0",
+                    transaction: transaction);
+
+                // Set new current term
+                await connection.ExecuteAsync(@"
+            UPDATE SchoolManagement.SchoolTerm
+            SET IsCurrentTerm = 1, TermEndDate = @EndDate
+            WHERE TermID = @TermID",
+                    new { TermID = termId, EndDate = endDate },
+                    transaction: transaction);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        public async Task<SchoolTerm> GetCurrentTermAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            return await connection.QueryFirstOrDefaultAsync<SchoolTerm>(
+                "SELECT * FROM SchoolManagement.SchoolTerm WHERE IsCurrentTerm = 1");
+        }
 
         public async Task<int> GetTotalTeachersCount()
         {
@@ -3241,67 +3277,139 @@ namespace CORE.SERVICE
 
         public async Task<List<StudentOwingRecord>> GetAllStudentsWhoOweFeesAsync()
         {
-            return await _cacheService.GetOrSetAsync("AllOwingStudents", async () =>
+            using (var connection = new SqlConnection(connectionString))
             {
-                using (var connection = new SqlConnection(connectionString))
-                {
-                    var query = @"
-                        SELECT 
-                            s.StudentID,
-                            (s.StudentFirstName + ' ' + s.StudentLastName) AS FullName,
-                            t.Term,
-                            ft.FeeTypeName,
-                            ft.Amount AS TotalFeeAmount,
-                            ISNULL(SUM(f.AmountPaid), 0) AS TotalPaid,
-                            ft.Amount - ISNULL(SUM(f.AmountPaid), 0) AS AmountOwing
-                        FROM SchoolManagement.Students s
-                        JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
-                        LEFT JOIN SchoolManagement.StudentFees f 
-                            ON s.StudentID = f.StudentID AND ft.FeeTypeID = f.FeeTypeID
-                        LEFT JOIN SchoolManagement.SchoolTerm t ON f.TermID = t.TermID
-                        GROUP BY 
-                            s.StudentID, s.StudentFirstName, s.StudentLastName,
-                            ft.FeeTypeName, ft.Amount, t.Term
-                        HAVING ft.Amount - ISNULL(SUM(f.AmountPaid), 0) > 0
-                        ORDER BY FullName";
+                var query = @"
+            SELECT 
+                s.StudentID,
+                (s.StudentFirstName + ' ' + s.StudentLastName) AS FullName,
+                t.Term,
+                ft.FeeTypeName,
+                ft.Amount AS TotalFeeAmount,
+                ISNULL(SUM(f.AmountPaid), 0) AS TotalPaid,
+                ft.Amount - ISNULL(SUM(f.AmountPaid), 0) AS AmountOwing
+            FROM SchoolManagement.Students s
+            JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
+            LEFT JOIN SchoolManagement.StudentFees f 
+                ON s.StudentID = f.StudentID AND ft.FeeTypeID = f.FeeTypeID
+            LEFT JOIN SchoolManagement.SchoolTerm t ON f.TermID = t.TermID
+            GROUP BY 
+                s.StudentID, s.StudentFirstName, s.StudentLastName,
+                ft.FeeTypeName, ft.Amount, t.Term
+            HAVING ft.Amount - ISNULL(SUM(f.AmountPaid), 0) > 0
+            ORDER BY FullName";
 
-                    var results = await connection.QueryAsync<StudentOwingRecord>(query);
-                    return results.ToList();
-                }
-            }, minutes: 10); // Cache for 10 minutes (adjust if needed)
+                var results = await connection.QueryAsync<StudentOwingRecord>(query);
+                return results.ToList();
+            }
         }
 
-
-
-        public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId, int termId)
+        public async Task<List<FeeTypeSummary>> GetFeeTypeSummariesAsync()
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                // Get student class
-                var classId = await connection.QuerySingleOrDefaultAsync<string>(
-                    "SELECT ClassID FROM SchoolManagement.Students WHERE StudentID = @StudentID",
-                    new { StudentID = studentId });
+                var query = @"
+            SELECT 
+                ft.FeeTypeName,
+                SUM(ft.Amount) AS TotalExpected,
+                SUM(ISNULL(f.AmountPaid, 0)) AS TotalPaid,
+                SUM(ft.Amount - ISNULL(f.AmountPaid, 0)) AS TotalOwing
+            FROM SchoolManagement.Students s
+            JOIN SchoolManagement.FeeTypes ft ON s.ClassID = ft.ClassID
+            LEFT JOIN SchoolManagement.StudentFees f 
+                ON s.StudentID = f.StudentID AND ft.FeeTypeID = f.FeeTypeID
+            GROUP BY ft.FeeTypeName";
 
-                if (string.IsNullOrEmpty(classId))
-                    return 0;
-
-                // Get expected fee amount for this class and fee type
-                var feeAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
-                    @"SELECT Amount 
-              FROM SchoolManagement.FeeTypes 
-              WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID",
-                    new { FeeTypeID = feeTypeId, ClassID = classId });
-
-                // Get how much the student has paid for this fee type and term
-                var amountPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
-                    @"SELECT ISNULL(SUM(AmountPaid), 0) 
-              FROM SchoolManagement.StudentFees 
-              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
-                    new { StudentID = studentId, FeeTypeID = feeTypeId, TermID = termId });
-
-                return feeAmount - amountPaid;
+                var results = await connection.QueryAsync<FeeTypeSummary>(query);
+                return results.ToList();
             }
         }
+
+        public async Task<List<FeeTypeSummary>> GetFeeTypeSummaryByClassAndTerm(string classId, int termId)
+        {
+            var query = @"
+        SELECT 
+            FeeTypeName,
+            SUM(AmountPaid) AS TotalPaid,
+            SUM(AmountLeft) AS TotalOwing
+        FROM SchoolManagement.StudentFees
+        WHERE ClassID = @ClassID AND TermID = @TermID AND AmountPaid > 0
+        GROUP BY FeeTypeName";
+
+            using var connection = new SqlConnection(connectionString);
+            var result = await connection.QueryAsync<FeeTypeSummary>(query, new { ClassID = classId, TermID = termId });
+            return result.ToList();
+        }
+
+        public async Task<bool> CarryOverUnpaidFeesToTermAsync(int newTermId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var parameters = new DynamicParameters();
+            parameters.Add("@NewTermID", newTermId);
+
+            await connection.ExecuteAsync("SchoolManagement.sp_CarryOverUnpaidFees", parameters, commandType: CommandType.StoredProcedure);
+            return true;
+        }
+
+        //public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId)
+        //{
+        //    using (var connection = new SqlConnection(connectionString))
+        //    {
+        //        // Get student class
+        //        var classId = await connection.QuerySingleOrDefaultAsync<string>(
+        //            "SELECT ClassID FROM SchoolManagement.Students WHERE StudentID = @StudentID",
+        //            new { StudentID = studentId });
+
+        //        if (string.IsNullOrEmpty(classId))
+        //            return 0;
+
+        //        // Get expected fee amount for this class and fee type
+        //        var feeAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
+        //            @"SELECT Amount 
+        //      FROM SchoolManagement.FeeTypes 
+        //      WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID",
+        //            new { FeeTypeID = feeTypeId, ClassID = classId });
+
+        //        // Sum ALL payments for the student and fee type (NO TERM FILTER!)
+        //        var totalPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
+        //            @"SELECT ISNULL(SUM(AmountPaid), 0) 
+        //      FROM SchoolManagement.StudentFees 
+        //      WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID",
+        //            new { StudentID = studentId, FeeTypeID = feeTypeId });
+
+        //        return feeAmount - totalPaid;
+        //    }
+        //}
+
+
+
+        // 1 Balance that’s still left in THIS term only
+        public async Task<decimal> GetTermOutstandingAsync(int studentId, int termId)
+        {
+            const string sql = @"
+        SELECT ISNULL(SUM(AmountLeft),0)
+        FROM   SchoolManagement.StudentFees
+        WHERE  StudentID = @StudentID
+          AND  TermID    = @TermID       -- current term only
+          AND  AmountLeft > 0";
+            using var db = new SqlConnection(connectionString);
+            return await db.QuerySingleAsync<decimal>(sql, new { studentId, termId });
+        }
+
+        // 2 List every unpaid row BEFORE this term (for the breakdown card)
+        public async Task<IEnumerable<StudentFee>> GetOutstandingBeforeTermAsync(int studentId, int termId)
+        {
+            const string sql = @"
+        SELECT *
+        FROM   SchoolManagement.StudentFees
+        WHERE  StudentID = @StudentID
+          AND  TermID    < @TermID       -- any earlier term
+          AND  AmountLeft > 0
+        ORDER BY TermID DESC, FeeTypeName";
+            using var db = new SqlConnection(connectionString);
+            return await db.QueryAsync<StudentFee>(sql, new { studentId, termId });
+        }
+
 
         public async Task<int> GetBankIDAsync(string paymentMethod)
         {
@@ -3314,7 +3422,7 @@ namespace CORE.SERVICE
                 var bankId = await connection.ExecuteScalarAsync<int?>(query, new { PaymentMethod = paymentMethod });
 
                 return bankId ?? 0; // Return 0 if not found
-            }, minutes: 60); // Cache for 1 hour (can be more, unless banks change often)
+            }, minutes: 1); // Cache for 1 MINT. (can be more, unless banks change often)
         }
 
         public async Task LogsBankTransactionAsync(int? bankId, string transactionType, decimal amount, string status, string errorMessage)
@@ -3394,6 +3502,19 @@ namespace CORE.SERVICE
                 return terms.AsList();
             }, minutes: 60); // Cache for 1 hour or more
         }
+
+        public async Task<SchoolTerm> GetCurrentSchoolTermAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        SELECT TOP 1 TermID, Term 
+        FROM SchoolManagement.SchoolTerm 
+        WHERE IsCurrentTerm = 1";
+
+            var term = await connection.QueryFirstOrDefaultAsync<SchoolTerm>(query);
+            return term;
+        }
+
 
         /**/
         public async Task<IEnumerable<Student>> SearchStudentsAsync(string searchText)

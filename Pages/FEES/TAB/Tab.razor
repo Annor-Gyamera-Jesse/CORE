@@ -24,16 +24,16 @@
     <div class="col-md-10">
         <RadzenTabs SelectedIndex="@SelectedTabPage" Change="@OnTabChange">
             <Tabs>
-                <RadzenTabsItem Text="FEES RECONCILIATION" Icon="person" >
+                <RadzenTabsItem Text="STUDENTS LEDGER" Icon="person" >
                     <Account_Reconciliation_Page />
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="MY VAULT" Icon="account_balance">
                     <Bank_Transfer />
                 </RadzenTabsItem> 
-                <RadzenTabsItem Text="TRANSACTION VIEW" Icon="bank">
+              @*   <RadzenTabsItem Text="TRANSACTION VIEW" Icon="bank">
                     <BankTransactionView />
-                </RadzenTabsItem>
+                </RadzenTabsItem> *@
 
             </Tabs>
         </RadzenTabs>

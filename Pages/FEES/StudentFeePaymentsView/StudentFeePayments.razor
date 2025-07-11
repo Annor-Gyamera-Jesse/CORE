@@ -29,6 +29,20 @@
         Style="width: 200px;" />
 
         <RadzenButton Text="Filter" Click="LoadStudentFees" Icon="search" Style="margin-left: 20px;" />
+
+            @if (feeTypeSummaries?.Any() == true)
+            {
+                <RadzenFieldset Text="FEE TYPE TOTAL SUMMARY">
+                    <RadzenDataGrid TItem="FeeTypeSummary" Data="@feeTypeSummaries" ShowPagingSummary="false" AllowPaging="false">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="FeeTypeSummary" Property="FeeTypeName" Title="Fee Type" />
+                            <RadzenDataGridColumn TItem="FeeTypeSummary" Property="TotalPaid" Title="Total Paid (GHS)" />
+                            <RadzenDataGridColumn TItem="FeeTypeSummary" Property="TotalOwing" Title="Total Owing (GHS)" />
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenFieldset>
+            }
+
     </div>
     </RadzenFieldset>
 
@@ -53,7 +67,7 @@
     public bool isLoading = false;
     string selectedClassId;
     int selectedTermId;
-
+    List<FeeTypeSummary> feeTypeSummaries = new();
     protected override async Task OnInitializedAsync()
     {
         try
@@ -80,6 +94,7 @@
             if (!string.IsNullOrEmpty(selectedClassId) && selectedTermId > 0)
             {
                 studentFees = await authService.GetStudentFeesByClassAndTerm(selectedClassId, selectedTermId);
+                feeTypeSummaries = await authService.GetFeeTypeSummaryByClassAndTerm(selectedClassId, selectedTermId);
             }
         }
         catch (Exception ex)

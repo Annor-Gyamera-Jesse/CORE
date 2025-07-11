@@ -10,6 +10,22 @@
 
 @if (!isLoading)
 {
+
+    <RadzenFieldset Text="AMOUNT SUMMRY" >
+        @if (!isLoading && FeeTypeSummaries?.Any() == true)
+        {
+            <h4>Fee Type Summary</h4>
+            <RadzenDataGrid Data="@FeeTypeSummaries" TItem="FeeTypeSummary" ShowPagingSummary="false" AllowPaging="false">
+                <Columns>
+                    <RadzenDataGridColumn TItem="FeeTypeSummary" Property="FeeTypeName" Title="Fee Type" />
+                 @*    <RadzenDataGridColumn TItem="FeeTypeSummary" Property="TotalExpected" Title="Total Expected" /> *@
+                    <RadzenDataGridColumn TItem="FeeTypeSummary" Property="TotalPaid" Title="Total Paid" />
+                    <RadzenDataGridColumn TItem="FeeTypeSummary" Property="TotalOwing" Title="Total Owing" />
+                </Columns>
+            </RadzenDataGrid>
+        }
+    </RadzenFieldset>
+
     @if (OwingRecords?.Any() == true)
     {
         <RadzenDataGrid Data="@OwingRecords" TItem="StudentOwingRecord" ShowPagingSummary="true" AllowPaging="true" PageSize="10">
@@ -30,6 +46,7 @@
 }
 @code {
     private List<StudentOwingRecord> OwingRecords = new();
+    private List<FeeTypeSummary> FeeTypeSummaries = new();
     public bool isLoading = false;
     protected override async Task OnInitializedAsync()
     {
@@ -37,6 +54,7 @@
         {
             isLoading = true;
             OwingRecords = await StudentService.GetAllStudentsWhoOweFeesAsync();
+            FeeTypeSummaries = await StudentService.GetFeeTypeSummariesAsync();
         }
         catch(Exception ex)
         {
