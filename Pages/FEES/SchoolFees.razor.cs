@@ -54,7 +54,7 @@ namespace CORE.Pages.FEES
 
         public async Task OpenFeesSummaryDialog()
         {
-            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "450px", Resizable = false, Height = "265px" };
+            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "450px", Resizable = false, Height = "273px" };
             var dialogTitle = $"FEES STATEMENT";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<Fees_Statement_Summary>(dialogTitle, null, dialogOptions);
