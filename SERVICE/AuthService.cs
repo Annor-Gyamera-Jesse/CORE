@@ -3257,15 +3257,30 @@ namespace CORE.SERVICE
             try
             {
                 using var connection = new SqlConnection(connectionString);
-                Console.WriteLine("Executing query...");
-                const string query = @"
-        INSERT INTO SchoolManagement.StudentFees 
-        (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod, TermID)
-        VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod, @TermID)";
 
-                Console.WriteLine($"Query: {query}");
+                // 1. Get total paid so far by this student for this fee type and term
+                var totalPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
+                        @"SELECT ISNULL(SUM(AmountPaid), 0)
+                  FROM SchoolManagement.StudentFees
+                  WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
+                new { studentFee.StudentID, studentFee.FeeTypeID, studentFee.TermID });
+
+                // 2. Get total expected fee amount for this fee type (from FeeTypes table)
+                var feeAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
+                    @"SELECT Amount FROM SchoolManagement.FeeTypes WHERE FeeTypeID = @FeeTypeID",
+                new { studentFee.FeeTypeID });
+
+                // 3. Calculate the real amount left
+                studentFee.AmountLeft = feeAmount - (totalPaid + studentFee.AmountPaid);
+                if (studentFee.AmountLeft < 0) studentFee.AmountLeft = 0; // Optional: prevent negative
+
+                // 4. Insert the new payment
+                const string query = @"
+                INSERT INTO SchoolManagement.StudentFees 
+                (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod, TermID)
+                VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod, @TermID)";
+
                 var result = await connection.ExecuteAsync(query, studentFee);
-                Console.WriteLine($"Rows affected: {result}");
                 return result > 0;
             }
             catch (SqlException ex)
@@ -3273,8 +3288,8 @@ namespace CORE.SERVICE
                 Console.WriteLine($"SQL Error: {ex.Message}");
                 throw new ApplicationException("An error occurred while saving the student fee.", ex);
             }
-
         }
+
 
         public async Task<List<StudentOwingRecord>> GetAllStudentsWhoOweFeesAsync()
         {
@@ -3355,21 +3370,23 @@ namespace CORE.SERVICE
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                // Get expected fee amount *for this student, this term*
-                var expectedTermFee = await connection.QuerySingleOrDefaultAsync<decimal>(
-                    @"SELECT ISNULL(SUM(AmountLeft + AmountPaid), 0) 
-              FROM SchoolManagement.StudentFees 
-              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
-                    new { StudentID = studentId, FeeTypeID = feeTypeId, TermID = termId });
+                var query = @"
+            SELECT 
+                ISNULL(SUM(CASE WHEN PaymentMethod = 'AutoAssign' THEN ISNULL(AmountLeft, 0) ELSE 0 END), 0) AS TotalAssigned,
+                ISNULL(SUM(CASE WHEN PaymentMethod != 'AutoAssign' THEN ISNULL(AmountPaid, 0) ELSE 0 END), 0) AS TotalPaid
+            FROM SchoolManagement.StudentFees
+            WHERE StudentID = @StudentID
+              AND FeeTypeID = @FeeTypeID
+              AND TermID = @TermID";
 
-                // Get total paid for this term
-                var paidThisTerm = await connection.QuerySingleOrDefaultAsync<decimal>(
-                    @"SELECT ISNULL(SUM(AmountPaid), 0) 
-              FROM SchoolManagement.StudentFees 
-              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
-                    new { StudentID = studentId, FeeTypeID = feeTypeId, TermID = termId });
+                var result = await connection.QueryFirstOrDefaultAsync<(decimal TotalAssigned, decimal TotalPaid)>(query, new
+                {
+                    StudentID = studentId,
+                    FeeTypeID = feeTypeId,
+                    TermID = termId
+                });
 
-                return expectedTermFee - paidThisTerm;
+                return result.TotalAssigned - result.TotalPaid;
             }
         }
 
