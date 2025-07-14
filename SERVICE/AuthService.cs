@@ -3373,6 +3373,26 @@ namespace CORE.SERVICE
             }
         }
 
+        public async Task<List<StudentFee>> GetPreviousBalancesBreakdownAsync(int studentId, int termId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+            SELECT FeeTypeName, ClassID, AmountLeft, Note
+            FROM SchoolManagement.StudentFees
+            WHERE StudentID = @StudentID AND TermID = @TermID
+            AND Note LIKE '%carried over%'";
+
+                var result = await connection.QueryAsync<StudentFee>(query, new
+                {
+                    StudentID = studentId,
+                    TermID = termId
+                });
+
+                return result.ToList();
+            }
+        }
+
 
         // 1 Balance that’s still left in THIS term only
         //public async Task<decimal> GetTermOutstandingAsync(int studentId, int termId)
