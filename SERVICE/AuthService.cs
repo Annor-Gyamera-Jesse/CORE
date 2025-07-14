@@ -3351,37 +3351,27 @@ namespace CORE.SERVICE
             await connection.ExecuteAsync("SchoolManagement.sp_CarryOverUnpaidFees", parameters, commandType: CommandType.StoredProcedure);
             return true;
         }
-
-        public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId)
+        public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId, int termId)
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                // Get student class
-                var classId = await connection.QuerySingleOrDefaultAsync<string>(
-                    "SELECT ClassID FROM SchoolManagement.Students WHERE StudentID = @StudentID",
-                    new { StudentID = studentId });
+                // Get expected fee amount *for this student, this term*
+                var expectedTermFee = await connection.QuerySingleOrDefaultAsync<decimal>(
+                    @"SELECT ISNULL(SUM(AmountLeft + AmountPaid), 0) 
+              FROM SchoolManagement.StudentFees 
+              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
+                    new { StudentID = studentId, FeeTypeID = feeTypeId, TermID = termId });
 
-                if (string.IsNullOrEmpty(classId))
-                    return 0;
-
-                // Get expected fee amount for this class and fee type
-                var feeAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
-                    @"SELECT Amount 
-              FROM SchoolManagement.FeeTypes 
-              WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID",
-                    new { FeeTypeID = feeTypeId, ClassID = classId });
-
-                // Sum ALL payments for the student and fee type (NO TERM FILTER!)
-                var totalPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
+                // Get total paid for this term
+                var paidThisTerm = await connection.QuerySingleOrDefaultAsync<decimal>(
                     @"SELECT ISNULL(SUM(AmountPaid), 0) 
               FROM SchoolManagement.StudentFees 
-              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID",
-                    new { StudentID = studentId, FeeTypeID = feeTypeId });
+              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
+                    new { StudentID = studentId, FeeTypeID = feeTypeId, TermID = termId });
 
-                return feeAmount - totalPaid;
+                return expectedTermFee - paidThisTerm;
             }
         }
-
 
 
         // 1 Balance that’s still left in THIS term only
