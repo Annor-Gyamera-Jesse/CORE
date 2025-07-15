@@ -131,18 +131,17 @@
                             @((OutstandingBalance > 0) ? $"- ₵{OutstandingBalance:F2}" : "No balance owed")
                         </p>
                     </RadzenCard>
-               
-                    <RadzenCard Style="background-color: #fef3c7; padding: 16px; margin-top: 20px; border-left: 6px solid orange;">
+
+                    <RadzenCard Style="background-color: #fef3c7; padding: 16px; margin-top: 20px; border-left: 6px solid orange; max-height: 250px; overflow-y: auto; margin-left: 20px; width: 350px;">
                         <h3 style="color: #b45309;">Previous Balances</h3>
 
                         @if (PreviousBalancesBreakdown != null && PreviousBalancesBreakdown.Any())
                         {
-                            <ul style="line-height: 1.6;">
+                            <ul style="line-height: 1.6; padding-left: 18px;">
                                 @foreach (var fee in PreviousBalancesBreakdown)
                                 {
-                                    <li>
-                                        <strong>@fee.FeeTypeName (@fee.ClassID)</strong>:
-                                        ₵@fee.AmountLeft
+                                    <li style="margin-bottom: 8px;">
+                                        <strong>@fee.FeeTypeName (@fee.ClassID)</strong>: ₵@fee.AmountLeft
                                         <br />
                                         <small style="color: #555;">@fee.Note</small>
                                     </li>
