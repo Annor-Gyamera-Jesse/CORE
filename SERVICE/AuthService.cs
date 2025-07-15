@@ -3257,31 +3257,32 @@ namespace CORE.SERVICE
             try
             {
                 using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
 
-                // 1. Get total paid so far by this student for this fee type and term
-                var totalPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
-                        @"SELECT ISNULL(SUM(AmountPaid), 0)
-                  FROM SchoolManagement.StudentFees
-                  WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
-                new { studentFee.StudentID, studentFee.FeeTypeID, studentFee.TermID });
+                using var transaction = connection.BeginTransaction();
 
-                // 2. Get total expected fee amount for this fee type (from FeeTypes table)
-                var feeAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
-                    @"SELECT Amount FROM SchoolManagement.FeeTypes WHERE FeeTypeID = @FeeTypeID",
-                new { studentFee.FeeTypeID });
+                // Step 1: Insert the student fee payment
+                const string insertQuery = @"
+        INSERT INTO SchoolManagement.StudentFees 
+        (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod, TermID)
+        VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod, @TermID)";
 
-                // 3. Calculate the real amount left
-                studentFee.AmountLeft = feeAmount - (totalPaid + studentFee.AmountPaid);
-                if (studentFee.AmountLeft < 0) studentFee.AmountLeft = 0; // Optional: prevent negative
+                var result = await connection.ExecuteAsync(insertQuery, studentFee, transaction: transaction);
 
-                // 4. Insert the new payment
-                const string query = @"
-                INSERT INTO SchoolManagement.StudentFees 
-                (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod, TermID)
-                VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod, @TermID)";
+                if (result > 0)
+                {
+                    // Step 2: Run the stored procedure to recalculate AmountLeft
+                    await connection.ExecuteAsync("EXEC SchoolManagement.FixStudentFeeAmounts", transaction: transaction);
 
-                var result = await connection.ExecuteAsync(query, studentFee);
-                return result > 0;
+                    // Step 3: Commit
+                    transaction.Commit();
+                    return true;
+                }
+                else
+                {
+                    transaction.Rollback();
+                    return false;
+                }
             }
             catch (SqlException ex)
             {
@@ -3289,6 +3290,7 @@ namespace CORE.SERVICE
                 throw new ApplicationException("An error occurred while saving the student fee.", ex);
             }
         }
+
 
 
         public async Task<List<StudentOwingRecord>> GetAllStudentsWhoOweFeesAsync()
