@@ -1,0 +1,115 @@
+﻿@inject AuthService authService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+
+@using CORE.MODEL.Term
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using System.Text
+
+<RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <div class="card" style="padding: 20px; max-width: 700px; margin: auto;">
+        <div class="mb-3">
+            <RadzenLabel Text="Generate For All Terms?" />
+            <RadzenSwitch @bind-Value="generateAllTerms" TValue="bool" Style="margin-left: 10px;" />
+        </div>
+
+        <RadzenDropDown Data="@terms"
+                        TextProperty="Term"
+                        ValueProperty="TermID"
+                        @bind-Value="selectedTermId"
+                        Placeholder="Select Term"
+                        Style="width: 100%; margin-bottom: 20px;"
+                        Disabled="@generateAllTerms" />
+
+        <RadzenButton Text="@((generateAllTerms ? "Generate All-Term Report" : "Generate Term Report"))"
+                      Icon="picture_as_pdf"
+                      Click="GenerateDetailedStudentFeeReport"
+                      Disabled="@isLoading"
+                      Style="width: 100%;" />
+    </div>
+}
+
+@code {
+    private List<SchoolTerm> terms = new();
+    private int selectedTermId;
+    private bool generateAllTerms = false;
+    private bool isLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        try
+        {
+            terms = await authService.GetAllSchoolTermsAsync();
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error loading terms: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task GenerateDetailedStudentFeeReport()
+    {
+        if (!generateAllTerms && selectedTermId == 0)
+        {
+            Notify.ShowNotification("Please select a term to generate the report.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+
+            var data = await authService.GetDetailedStudentFeeSummaryAsync(generateAllTerms, selectedTermId);
+            if (data is null || !data.Any())
+            {
+                Notify.ShowNotification("No data found.", "", NotificationSeverity.Warning);
+                return;
+            }
+
+            // Build CSV for each student entry
+            var csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine("Student Name, Current Class, Term, Current Fee Type, Current Amount, Current Paid, Current Left, Previous Class, Previous Fee Type, Previous Amount, Previous Paid, Previous Left, Reason");
+
+            foreach (var item in data)
+            {
+                csvBuilder.AppendLine($"\"{item.StudentName}\", \"{item.CurrentClass}\", \"{item.CurrentTerm}\", \"{item.CurrentFeeType}\", {item.CurrentAmount:F2}, {item.CurrentPaid:F2}, {item.CurrentLeft:F2}, \"{item.PreviousClass}\", \"{item.PreviousFeeType}\", {item.PreviousAmount:F2}, {item.PreviousPaid:F2}, {item.PreviousLeft:F2}, \"{item.Reason}\"");
+            }
+
+            var csvBytes = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+            var base64Csv = Convert.ToBase64String(csvBytes);
+
+            var (companyName, schoolName, logoBase64) = await authService.GetPdfLoginScreenDetailsAsync();
+            var fileName = $"Detailed_Student_Fee_Report_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+
+            await JSRuntime.InvokeVoidAsync("downloadDetailedStudentFeePdf",
+                fileName,
+                base64Csv,
+                companyName,
+                schoolName,
+                logoBase64,
+                DateTime.Now.ToString("dd MMM yyyy"));
+
+            Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error generating report: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

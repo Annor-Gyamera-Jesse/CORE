@@ -29,6 +29,7 @@ using Microsoft.Extensions.Configuration;
 using CORE.Pages.LOGIN_SCREEN;
 using CORE.SERVICE.Caching;
 using CORE.MODEL.DASHBOARD_AMOUNT_SUM;
+using CORE.MODEL.Fees_Statement_Summary;
 
 namespace CORE.SERVICE
 {
@@ -3256,24 +3257,41 @@ namespace CORE.SERVICE
             try
             {
                 using var connection = new SqlConnection(connectionString);
-                Console.WriteLine("Executing query...");
-                const string query = @"
+                await connection.OpenAsync();
+
+                using var transaction = connection.BeginTransaction();
+
+                // Step 1: Insert the student fee payment
+                const string insertQuery = @"
         INSERT INTO SchoolManagement.StudentFees 
         (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod, TermID)
         VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod, @TermID)";
 
-                Console.WriteLine($"Query: {query}");
-                var result = await connection.ExecuteAsync(query, studentFee);
-                Console.WriteLine($"Rows affected: {result}");
-                return result > 0;
+                var result = await connection.ExecuteAsync(insertQuery, studentFee, transaction: transaction);
+
+                if (result > 0)
+                {
+                    // Step 2: Run the stored procedure to recalculate AmountLeft
+                    await connection.ExecuteAsync("EXEC SchoolManagement.FixStudentFeeAmounts", transaction: transaction);
+
+                    // Step 3: Commit
+                    transaction.Commit();
+                    return true;
+                }
+                else
+                {
+                    transaction.Rollback();
+                    return false;
+                }
             }
             catch (SqlException ex)
             {
                 Console.WriteLine($"SQL Error: {ex.Message}");
                 throw new ApplicationException("An error occurred while saving the student fee.", ex);
             }
-
         }
+
+
 
         public async Task<List<StudentOwingRecord>> GetAllStudentsWhoOweFeesAsync()
         {
@@ -3350,37 +3368,49 @@ namespace CORE.SERVICE
             await connection.ExecuteAsync("SchoolManagement.sp_CarryOverUnpaidFees", parameters, commandType: CommandType.StoredProcedure);
             return true;
         }
-
-        public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId)
+        public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId, int termId)
         {
             using (var connection = new SqlConnection(connectionString))
             {
-                // Get student class
-                var classId = await connection.QuerySingleOrDefaultAsync<string>(
-                    "SELECT ClassID FROM SchoolManagement.Students WHERE StudentID = @StudentID",
-                    new { StudentID = studentId });
+                var query = @"
+            SELECT 
+                ISNULL(SUM(CASE WHEN PaymentMethod = 'AutoAssign' THEN ISNULL(AmountLeft, 0) ELSE 0 END), 0) AS TotalAssigned,
+                ISNULL(SUM(CASE WHEN PaymentMethod != 'AutoAssign' THEN ISNULL(AmountPaid, 0) ELSE 0 END), 0) AS TotalPaid
+            FROM SchoolManagement.StudentFees
+            WHERE StudentID = @StudentID
+              AND FeeTypeID = @FeeTypeID
+              AND TermID = @TermID";
 
-                if (string.IsNullOrEmpty(classId))
-                    return 0;
+                var result = await connection.QueryFirstOrDefaultAsync<(decimal TotalAssigned, decimal TotalPaid)>(query, new
+                {
+                    StudentID = studentId,
+                    FeeTypeID = feeTypeId,
+                    TermID = termId
+                });
 
-                // Get expected fee amount for this class and fee type
-                var feeAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
-                    @"SELECT Amount 
-              FROM SchoolManagement.FeeTypes 
-              WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID",
-                    new { FeeTypeID = feeTypeId, ClassID = classId });
-
-                // Sum ALL payments for the student and fee type (NO TERM FILTER!)
-                var totalPaid = await connection.QuerySingleOrDefaultAsync<decimal>(
-                    @"SELECT ISNULL(SUM(AmountPaid), 0) 
-              FROM SchoolManagement.StudentFees 
-              WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID",
-                    new { StudentID = studentId, FeeTypeID = feeTypeId });
-
-                return feeAmount - totalPaid;
+                return result.TotalAssigned - result.TotalPaid;
             }
         }
 
+        public async Task<List<StudentFee>> GetPreviousBalancesBreakdownAsync(int studentId, int termId)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var query = @"
+            SELECT FeeTypeName, ClassID, AmountLeft, Note
+            FROM SchoolManagement.StudentFees
+            WHERE StudentID = @StudentID AND TermID = @TermID
+            AND Note LIKE '%carried over%'";
+
+                var result = await connection.QueryAsync<StudentFee>(query, new
+                {
+                    StudentID = studentId,
+                    TermID = termId
+                });
+
+                return result.ToList();
+            }
+        }
 
 
         // 1 Balance that’s still left in THIS term only
@@ -3489,6 +3519,22 @@ namespace CORE.SERVICE
                 return classes.AsList();
             }, minutes: 60); // Cache for 1 hour or more
         }
+
+        public async Task<List<DetailedStudentFeeSummary>> GetDetailedStudentFeeSummaryAsync(bool allTerms, int termId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var parameters = new DynamicParameters();
+            parameters.Add("@AllTerms", allTerms ? 1 : 0);
+            parameters.Add("@TermID", termId);
+
+            var results = await connection.QueryAsync<DetailedStudentFeeSummary>(
+                "SchoolManagement.GetStudentFeeSummaryReport",
+                parameters,
+                commandType: CommandType.StoredProcedure);
+
+            return results.ToList();
+        }
+
 
         public async Task<List<SchoolTerm>> GetAllSchoolTermsAsync()
         {

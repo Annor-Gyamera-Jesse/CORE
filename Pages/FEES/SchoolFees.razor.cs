@@ -2,6 +2,7 @@
 
 using CORE.Pages.FEES.CASH_IN_HAND;
 using CORE.Pages.FEES.Fees_Carry_Over;
+using CORE.Pages.FEES.FEES_STATEMENT;
 using CORE.Pages.FEES.PDF_PER_DATE;
 using Microsoft.AspNetCore.Components;
 using Radzen;
@@ -49,6 +50,14 @@ namespace CORE.Pages.FEES
             var dialogTitle = $"Carry Over Unpaid Fees to a New Term";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<Carry_Over>(dialogTitle, null, dialogOptions);
+        }
+
+        public async Task OpenFeesSummaryDialog()
+        {
+            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "450px", Resizable = false, Height = "273px" };
+            var dialogTitle = $"FEES STATEMENT";
+            // Register dialog closed event with RadzenDialogService
+            await DialogService.OpenAsync<Fees_Statement_Summary>(dialogTitle, null, dialogOptions);
         }
 
     }
