@@ -3368,18 +3368,48 @@ namespace CORE.SERVICE
             await connection.ExecuteAsync("SchoolManagement.sp_CarryOverUnpaidFees", parameters, commandType: CommandType.StoredProcedure);
             return true;
         }
+
+
+        /*incase in the future something goes wrong with the current GetOutstandingBalanceAsync this is the original code i am getting back to publish it and fix the issue later*/
+
+        //public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId, int termId)
+        //{
+        //    using (var connection = new SqlConnection(connectionString))
+        //    {
+        //        // Get the standard fee for this fee type (not student-specific)
+        //        var expectedAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
+        //            @"SELECT ISNULL(Amount, 0)
+        //      FROM SchoolManagement.FeeTypes 
+        //      WHERE FeeTypeID = @FeeTypeID",
+        //            new { FeeTypeID = feeTypeId });
+
+        //        // Get how much the student has paid for this term and fee type
+        //        var paidAmount = await connection.QuerySingleOrDefaultAsync<decimal>(
+        //            @"SELECT ISNULL(SUM(AmountPaid), 0) 
+        //      FROM SchoolManagement.StudentFees 
+        //      WHERE StudentID = @StudentID AND FeeTypeID = @FeeTypeID AND TermID = @TermID",
+        //            new { StudentID = studentId, FeeTypeID = feeTypeId, TermID = termId });
+
+        //        var balance = expectedAmount - paidAmount;
+
+        //        // Avoid negative values
+        //        return balance < 0 ? 0 : balance;
+        //    }
+        //}
+
+
         public async Task<decimal> GetOutstandingBalanceAsync(int studentId, int feeTypeId, int termId)
         {
             using (var connection = new SqlConnection(connectionString))
             {
                 var query = @"
-            SELECT 
-                ISNULL(SUM(CASE WHEN PaymentMethod = 'AutoAssign' THEN ISNULL(AmountLeft, 0) ELSE 0 END), 0) AS TotalAssigned,
-                ISNULL(SUM(CASE WHEN PaymentMethod != 'AutoAssign' THEN ISNULL(AmountPaid, 0) ELSE 0 END), 0) AS TotalPaid
-            FROM SchoolManagement.StudentFees
-            WHERE StudentID = @StudentID
-              AND FeeTypeID = @FeeTypeID
-              AND TermID = @TermID";
+        SELECT 
+            ISNULL(SUM(CASE WHEN PaymentMethod = 'AutoAssign' THEN ISNULL(AmountLeft, 0) ELSE 0 END), 0) AS TotalAssigned,
+            ISNULL(SUM(CASE WHEN PaymentMethod != 'AutoAssign' THEN ISNULL(AmountPaid, 0) ELSE 0 END), 0) AS TotalPaid
+        FROM SchoolManagement.StudentFees
+        WHERE StudentID = @StudentID
+          AND FeeTypeID = @FeeTypeID
+          AND TermID = @TermID";
 
                 var result = await connection.QueryFirstOrDefaultAsync<(decimal TotalAssigned, decimal TotalPaid)>(query, new
                 {
@@ -3388,9 +3418,28 @@ namespace CORE.SERVICE
                     TermID = termId
                 });
 
-                return result.TotalAssigned - result.TotalPaid;
+                decimal amountExpected;
+
+                // If there's no AutoAssign yet, fallback to FeeTypes
+                if (result.TotalAssigned == 0)
+                {
+                    amountExpected = await connection.QuerySingleOrDefaultAsync<decimal>(
+                        @"SELECT ISNULL(Amount, 0)
+                  FROM SchoolManagement.FeeTypes
+                  WHERE FeeTypeID = @FeeTypeID",
+                        new { FeeTypeID = feeTypeId });
+                }
+                else
+                {
+                    amountExpected = result.TotalAssigned;
+                }
+
+                decimal balance = amountExpected - result.TotalPaid;
+
+                return balance < 0 ? 0 : balance;
             }
         }
+
 
         public async Task<List<StudentFee>> GetPreviousBalancesBreakdownAsync(int studentId, int termId)
         {
