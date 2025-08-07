@@ -33,6 +33,7 @@
         public string PaymentMethod { get; set; }
         public int TermID { get; set; }
        // public int BankID { get; set; }
+       public DateTime? RecDateCreated { get; set; }
     }
 
     public class FeePayment

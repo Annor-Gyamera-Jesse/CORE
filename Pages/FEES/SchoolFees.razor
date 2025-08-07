@@ -216,12 +216,20 @@
             <!-- Total Amount Details -->
             <div class="row input-group">
                 <div class="col-md-6">
-                    <RadzenLabel Text="Total Amount Paid" />
-                    <RadzenNumeric @bind-Value="AmountPaid"
-                    Style="width: 100%;"
-                    Min="0"
-                    Disabled="true"
-                    Max="@TotalAmountLeft" />
+                    @if (SelectedStudentID > 0)
+                    {
+                        var selectedStudent = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID);
+                        if (selectedStudent != null)
+                        {
+                            <RadzenCard Style="background-color: #e0f7fa; padding: 16px; margin-top: 20px; border-left: 6px solid #00796b;">
+                                <h3 style="color: #00796b;">Selected Student </h3>
+                                <p style="font-size: 1.2em;">
+                                    <strong>Name:</strong> @selectedStudent.FullName<br />
+                                    <strong>Class:</strong> @selectedStudent.ClassID
+                                </p>
+                            </RadzenCard>
+                        }
+                    }
                 </div>
               @*   <div class="col-md-6"> *@
                   @*   <RadzenLabel Text="Total Amount Left" />  *@
