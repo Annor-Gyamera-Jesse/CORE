@@ -3353,6 +3353,35 @@ namespace CORE.SERVICE
             }
         }
 
+        public async Task<List<Student>> GetStudentsWithSiblingsToDiscountAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = @"
+            SELECT s.StudentID, 
+                   (s.StudentFirstName + ' ' + s.StudentLastName) AS FullName,
+                   s.ClassID,
+                   s.GuardianFullName
+            FROM SchoolManagement.Students s
+            WHERE s.GuardianFullName IN (
+                SELECT GuardianFullName
+                FROM SchoolManagement.Students
+                GROUP BY GuardianFullName
+                HAVING COUNT(StudentID) > 1
+            )
+            AND s.StudentID NOT IN (
+                SELECT StudentID
+                FROM SchoolManagement.StudentDiscounts
+                WHERE IsActive = 1
+            )
+            ORDER BY s.GuardianFullName, FullName";
+
+                var students = await connection.QueryAsync<Student>(sql);
+                return students.ToList();
+            }
+        }
 
 
         public async Task<List<StudentOwingRecord>> GetAllStudentsWhoOweFeesAsync()
