@@ -96,12 +96,32 @@
 
             <!-- List of Students -->
             <RadzenListBox Data="@FilteredStudents"
-            TextProperty="FullName"
-            ValueProperty="StudentID"
-            @bind-Value="SelectedStudentID"
-            Change="OnStudentSelected"
-            Style="width: 100%; height: 600px;"
-            Placeholder="Select a Student" />
+                           ValueProperty="StudentID"
+                           @bind-Value="SelectedStudentID"
+                           Change="OnStudentSelected"
+                           Style="width: 100%; height: 600px;"
+                           Placeholder="Select a Student">
+                <Template Context="student">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>@student.FullName</span>
+
+                        @if (!string.IsNullOrEmpty(student.DiscountType))
+                        {
+                            <RadzenCard Style="padding: 4px 8px; background-color: #e0f2f1; border-radius: 6px; font-size: 0.8em;">
+                                @if (student.DiscountType == "Free")
+                                {
+                                    <span style="color: green;">Free</span>
+                                }
+                                else
+                                {
+                                    <span style="color: blue;">@student.DiscountValue% Off</span>
+                                }
+                            </RadzenCard>
+                        }
+                    </div>
+                </Template>
+            </RadzenListBox>
+
         </RadzenFieldset>
     </div>
 
@@ -216,12 +236,20 @@
             <!-- Total Amount Details -->
             <div class="row input-group">
                 <div class="col-md-6">
-                    <RadzenLabel Text="Total Amount Paid" />
-                    <RadzenNumeric @bind-Value="AmountPaid"
-                    Style="width: 100%;"
-                    Min="0"
-                    Disabled="true"
-                    Max="@TotalAmountLeft" />
+                    @if (SelectedStudentID > 0)
+                    {
+                        var selectedStudent = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID);
+                        if (selectedStudent != null)
+                        {
+                            <RadzenCard Style="background-color: #e0f7fa; padding: 16px; margin-top: 20px; border-left: 6px solid #00796b;">
+                                <h3 style="color: #00796b;">Selected Student </h3>
+                                <p style="font-size: 1.2em;">
+                                    <strong>Name:</strong> @selectedStudent.FullName<br />
+                                    <strong>Class:</strong> @selectedStudent.ClassID
+                                </p>
+                            </RadzenCard>
+                        }
+                    }
                 </div>
               @*   <div class="col-md-6"> *@
                   @*   <RadzenLabel Text="Total Amount Left" />  *@
@@ -487,7 +515,48 @@
             NotificationService.ShowNotification("Validation Error", "Please complete all required fields.", NotificationSeverity.Warning);
             return;
         }
+        if (PaymentDate == default(DateTime))
+        {
+            NotificationService.ShowNotification("Validation Error", "Please select a valid payment date.", NotificationSeverity.Warning);
+            return;
+        }
+        if (SelectedFeeTypeID <= 0)
+        {
+            NotificationService.ShowNotification("Validation Error", "Please select a valid fee type.", NotificationSeverity.Warning);
+            return;
+        }
+        if (AmountPaid > TotalAmountLeft)
+        {
+            NotificationService.ShowNotification("Validation Error", "Amount paid cannot exceed the total amount left.", NotificationSeverity.Warning);
+            return;
+        }
+        if (SelectedTermID <= 0)
+        {
+            NotificationService.ShowNotification("Validation Error", "Please select a valid term.", NotificationSeverity.Warning);
+            return;
+        }
+        if (string.IsNullOrEmpty(PaymentMethod) && !IsCashInHand)
+        {
+            NotificationService.ShowNotification("Validation Error", "Please select a payment method.", NotificationSeverity.Warning);
+            return;
+        }
+        if (SelectedStudentID <= 0)
+        {
+            NotificationService.ShowNotification("Validation Error", "Please select a student.", NotificationSeverity.Warning);
+            return;
+        }
+        if (SelectedFeeTypeID <= 0)
+        {
+            NotificationService.ShowNotification("Validation Error", "Please select a fee type.", NotificationSeverity.Warning);
+            return;
+        }
+        if (OutstandingBalance < 0)
+        {
+            NotificationService.ShowNotification("Validation Error", "Outstanding balance cannot be negative.", NotificationSeverity.Warning);
+            return;
+        }
 
+        // Set the payment method to "Cash In Hand" if the checkbox is checked
         if (IsCashInHand)
         {
             PaymentMethod = "Cash In Hand";

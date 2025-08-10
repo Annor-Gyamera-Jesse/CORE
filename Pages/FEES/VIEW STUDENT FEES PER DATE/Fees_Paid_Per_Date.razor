@@ -1,0 +1,80 @@
+﻿@page "/core/pages/fees/viewstudentfeesperdate"
+@using CORE.MODEL
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService authService
+@inject NotificationMessageService Notify
+<RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
+
+@if (!isLoading)
+{
+     <RadzenFieldset Text="SUMMRY" >
+        <div class="row">
+            <div class="col-md-4">
+                <RadzenLabel Text="Select Date" />
+                <RadzenDatePicker @bind-Value="selectedDate" Style="width: 100%;" Name="datePicker" />
+            </div>
+            <div class="col-md-4 mt-4">
+                <RadzenButton Text="Load Fees" Icon="search" Click="LoadStudentFees" Style="margin-top: 8px;" />
+            </div>
+        </div>
+     </RadzenFieldset>
+
+            @if (studentFees != null && studentFees.Any())
+            {
+                <RadzenGrid Data="@studentFees" TItem="StudentFee" ColumnWidth="200px" Class="mt-4" ShowPagingSummary="true" PageSize="10" AllowPaging="true">
+                    <Columns>
+                        <RadzenGridColumn TItem="StudentFee" Property="StudentName" Title="Student Name" />
+                        <RadzenGridColumn TItem="StudentFee" Property="FeeTypeName" Title="Fee Type" />
+                        <RadzenGridColumn TItem="StudentFee" Property="ClassID" Title="Class" />
+                        <RadzenGridColumn TItem="StudentFee" Property="AmountPaid" Title="Amount Paid" />
+                        <RadzenGridColumn TItem="StudentFee" Property="AmountLeft" Title="Amount Left" />
+                        @* <RadzenGridColumn TItem="StudentFee" Property="PaymentStatus" Title="Payment Status" /> *@
+                        <RadzenGridColumn TItem="StudentFee" Property="PaymentDate" Title="Payment Date" />
+                        <RadzenGridColumn TItem="StudentFee" Property="Note" Title="Note" />
+                    </Columns>
+                </RadzenGrid>
+            }
+        
+   
+}
+
+
+
+
+@code {
+    List<StudentFee> studentFees = new();
+    public bool isLoading { get; set; } = false;
+    public DateTime? selectedDate { get; set; } = DateTime.Today;
+
+    private async Task LoadStudentFees()
+    {
+        if (selectedDate == null)
+        {
+            Notify.ShowNotification("Missing Date", "Please select a date.", NotificationSeverity.Warning);
+            return;
+        }
+
+        isLoading = true;
+
+        try
+        {
+            studentFees = (await authService.GetsStudentFeesByDateAsync(selectedDate.Value)).ToList();
+            if (!studentFees.Any())
+            {
+                Notify.ShowNotification("No Data", "No student fees found on this date.", NotificationSeverity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", "Error loading student fees: " + ex.Message, NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
+

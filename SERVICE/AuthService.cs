@@ -2083,7 +2083,14 @@ namespace CORE.SERVICE
                     {
                         await connection.OpenAsync();
 
-                        var query = "SELECT * FROM SchoolManagement.Students";
+                        var query = @"
+                                      SELECT s.*,
+                               d.DiscountType,
+                               d.DiscountValue
+                        FROM SchoolManagement.Students s
+                        LEFT JOIN SchoolManagement.StudentDiscounts d 
+                            ON s.StudentID = d.StudentID AND d.IsActive = 1";
+            
                         var result = await connection.QueryAsync<Student>(query);
 
                         return result.AsList();
@@ -3252,45 +3259,154 @@ namespace CORE.SERVICE
 
 
         /*logic to save fees*/
+        //public async Task<bool> SaveStudentFeeAsync(StudentFee studentFee)
+        //{
+        //    try
+        //    {
+        //        using var connection = new SqlConnection(connectionString);
+        //        await connection.OpenAsync();
+
+        //        using var transaction = connection.BeginTransaction();
+
+        //        // Step 1: Insert the student fee payment
+        //        const string insertQuery = @"
+        //INSERT INTO SchoolManagement.StudentFees 
+        //(StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod, TermID)
+        //VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod, @TermID)";
+
+        //        var result = await connection.ExecuteAsync(insertQuery, studentFee, transaction: transaction);
+
+        //        if (result > 0)
+        //        {
+        //            // Step 2: Run the stored procedure to recalculate AmountLeft
+        //            await connection.ExecuteAsync("EXEC SchoolManagement.FixStudentFeeAmounts", transaction: transaction);
+
+        //            // Step 3: Commit
+        //            transaction.Commit();
+        //            return true;
+        //        }
+        //        else
+        //        {
+        //            transaction.Rollback();
+        //            return false;
+        //        }
+        //    }
+        //    catch (SqlException ex)
+        //    {
+        //        Console.WriteLine($"SQL Error: {ex.Message}");
+        //        throw new ApplicationException("An error occurred while saving the student fee.", ex);
+        //    }
+        //}
+
         public async Task<bool> SaveStudentFeeAsync(StudentFee studentFee)
         {
-            try
+            const int maxRetries = 3;
+            int retryCount = 0;
+
+            while (true)
             {
-                using var connection = new SqlConnection(connectionString);
-                await connection.OpenAsync();
-
-                using var transaction = connection.BeginTransaction();
-
-                // Step 1: Insert the student fee payment
-                const string insertQuery = @"
-        INSERT INTO SchoolManagement.StudentFees 
-        (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod, TermID)
-        VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod, @TermID)";
-
-                var result = await connection.ExecuteAsync(insertQuery, studentFee, transaction: transaction);
-
-                if (result > 0)
+                try
                 {
-                    // Step 2: Run the stored procedure to recalculate AmountLeft
-                    await connection.ExecuteAsync("EXEC SchoolManagement.FixStudentFeeAmounts", transaction: transaction);
-
-                    // Step 3: Commit
-                    transaction.Commit();
-                    return true;
+                    return await SaveStudentFeeInternalAsync(studentFee);
                 }
-                else
+                catch (SqlException ex) when (ex.Number == 1205) // 1205 = Deadlock
                 {
-                    transaction.Rollback();
-                    return false;
+                    retryCount++;
+                    Console.WriteLine($"Deadlock encountered. Retrying attempt {retryCount}...");
+
+                    if (retryCount >= maxRetries)
+                    {
+                        Console.WriteLine("Max retries reached. Aborting operation.");
+                        throw new ApplicationException("Deadlock could not be resolved after multiple attempts.", ex);
+                    }
+
+                    await Task.Delay(500); // Optional delay to give SQL Server time to resolve locks
                 }
-            }
-            catch (SqlException ex)
-            {
-                Console.WriteLine($"SQL Error: {ex.Message}");
-                throw new ApplicationException("An error occurred while saving the student fee.", ex);
+                catch (SqlException ex)
+                {
+                    Console.WriteLine($"SQL Error: {ex.Message}");
+                    throw new ApplicationException("An error occurred while saving the student fee.", ex);
+                }
             }
         }
 
+        private async Task<bool> SaveStudentFeeInternalAsync(StudentFee studentFee)
+        {
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            using var transaction = connection.BeginTransaction();
+
+            const string insertQuery = @"
+    INSERT INTO SchoolManagement.StudentFees 
+    (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod, TermID)
+    VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod, @TermID)";
+
+            var result = await connection.ExecuteAsync(insertQuery, studentFee, transaction: transaction);
+
+            if (result > 0)
+            {
+                transaction.Commit();
+
+                // Move this outside transaction
+                await connection.ExecuteAsync("EXEC SchoolManagement.FixStudentFeeAmounts");
+
+                return true;
+            }
+            else
+            {
+                transaction.Rollback();
+                return false;
+            }
+        }
+
+        public async Task<List<Student>> GetStudentsWithSiblingsToDiscountAsync()
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = @"
+        SELECT s.StudentID, 
+               s.StudentFirstName,
+               s.StudentLastName,
+               s.ClassID,
+               s.GuardianFullName
+        FROM SchoolManagement.Students s
+        WHERE s.GuardianFullName IN (
+            SELECT GuardianFullName
+            FROM SchoolManagement.Students
+            GROUP BY GuardianFullName
+            HAVING COUNT(StudentID) > 1
+        )
+        AND s.GuardianFullName NOT IN (
+            SELECT GuardianFullName
+            FROM SchoolManagement.StudentDiscounts
+            WHERE IsActive = 1
+        )
+        ORDER BY s.GuardianFullName, s.StudentFirstName, s.StudentLastName";
+
+                var students = await connection.QueryAsync<Student>(sql);
+                return students.ToList();
+            }
+        }
+
+
+
+        public async Task AddStudentDiscountAsync(StudentDiscount discount)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                var sql = @"
+                INSERT INTO SchoolManagement.StudentDiscounts 
+                    (StudentID, GuardianFullName, DiscountType, DiscountValue, IsActive, CreatedDate, UserID)
+                VALUES (@StudentID, @GuardianFullName, @DiscountType, @DiscountValue, 1, GETDATE(), @UserID)";
+
+                await connection.ExecuteAsync(sql, discount);
+            }
+        }
 
 
         public async Task<List<StudentOwingRecord>> GetAllStudentsWhoOweFeesAsync()
@@ -5944,6 +6060,17 @@ VALUES (
                 var result = await connection.QueryAsync<StudentFee>(query, new { ClassID = classId, TermID = termId });
                 return result.ToList();
             }
+        }
+
+        /*fees paid per date*/
+        public async Task<IEnumerable<StudentFee>> GetsStudentFeesByDateAsync(DateTime dateCreated)
+        {
+            using var connection = new SqlConnection(connectionString);
+            var result = await connection.QueryAsync<StudentFee>(
+                "GetAllStudentsFeesPerDate",
+                new { DateCreated = dateCreated },
+                commandType: CommandType.StoredProcedure);
+            return result;
         }
 
     }
