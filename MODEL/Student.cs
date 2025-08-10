@@ -33,7 +33,11 @@ namespace CORE.MODEL
 
         //FOR STUDENT DISCOUNT
         public bool Selected { get; set; }
+
+        public string DiscountType { get; set; }
+        public decimal? DiscountValue { get; set; }
     }
+
 
     public class StudentDiscount
     {

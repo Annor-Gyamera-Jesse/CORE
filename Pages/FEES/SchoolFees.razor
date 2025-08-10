@@ -96,12 +96,32 @@
 
             <!-- List of Students -->
             <RadzenListBox Data="@FilteredStudents"
-            TextProperty="FullName"
-            ValueProperty="StudentID"
-            @bind-Value="SelectedStudentID"
-            Change="OnStudentSelected"
-            Style="width: 100%; height: 600px;"
-            Placeholder="Select a Student" />
+                           ValueProperty="StudentID"
+                           @bind-Value="SelectedStudentID"
+                           Change="OnStudentSelected"
+                           Style="width: 100%; height: 600px;"
+                           Placeholder="Select a Student">
+                <Template Context="student">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>@student.FullName</span>
+
+                        @if (!string.IsNullOrEmpty(student.DiscountType))
+                        {
+                            <RadzenCard Style="padding: 4px 8px; background-color: #e0f2f1; border-radius: 6px; font-size: 0.8em;">
+                                @if (student.DiscountType == "Free")
+                                {
+                                    <span style="color: green;">Free</span>
+                                }
+                                else
+                                {
+                                    <span style="color: blue;">@student.DiscountValue% Off</span>
+                                }
+                            </RadzenCard>
+                        }
+                    </div>
+                </Template>
+            </RadzenListBox>
+
         </RadzenFieldset>
     </div>
 

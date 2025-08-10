@@ -2083,7 +2083,14 @@ namespace CORE.SERVICE
                     {
                         await connection.OpenAsync();
 
-                        var query = "SELECT * FROM SchoolManagement.Students";
+                        var query = @"
+                                      SELECT s.*,
+                               d.DiscountType,
+                               d.DiscountValue
+                        FROM SchoolManagement.Students s
+                        LEFT JOIN SchoolManagement.StudentDiscounts d 
+                            ON s.StudentID = d.StudentID AND d.IsActive = 1";
+            
                         var result = await connection.QueryAsync<Student>(query);
 
                         return result.AsList();
