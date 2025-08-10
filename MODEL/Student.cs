@@ -29,8 +29,21 @@ namespace CORE.MODEL
         public string ImageBase64 { get; set; }
         public string SchoolName { get; set; }
         public byte[] CompanyImage { get; set; }
-        public string SchoolImageBase64 { get; set; }        
+        public string SchoolImageBase64 { get; set; }
 
+        //FOR STUDENT DISCOUNT
+        public bool Selected { get; set; }
+    }
+
+    public class StudentDiscount
+    {
+        public int StudentID { get; set; }
+        public string GuardianFullName { get; set; }
+        public string DiscountType { get; set; }
+        public decimal DiscountValue { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedDate { get; set; }
+        public int UserID { get; set; }
     }
 
     public class StudentLookupDto

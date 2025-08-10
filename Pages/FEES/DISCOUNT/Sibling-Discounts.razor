@@ -1,0 +1,109 @@
+﻿@page "/core/pages/fees/sibling-discounts"
+@using CORE.MODEL
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService StudentService
+@inject NotificationMessageService NotificationService
+@inject IJSRuntime jsRuntime
+<RadzenNotification />
+
+<RadzenFieldset Legend="Sibling Discounts" Style="margin-bottom: 20px;">
+    <RadzenText>Apply sibling discounts to eligible students.</RadzenText>
+</RadzenFieldset>
+
+<RadzenDataGrid @ref="discountGrid" Data="@studentsWithSiblings" TItem="Student">
+    <Columns>
+        <RadzenDataGridColumn TItem="Student" Property="FullName" Title="Name" />
+        <RadzenDataGridColumn TItem="Student" Property="ClassID" Title="Class" />
+        <RadzenDataGridColumn TItem="Student" Property="GuardianFullName" Title="Guardian" />
+        <RadzenDataGridColumn TItem="Student" Context="data">
+            <Template Context="data">
+                <RadzenCheckBox TValue="bool" @bind-Value="@data.Selected" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+<RadzenButton Text="Done" Click="@ApplyDiscounts" Style="margin-top: 10px;" />
+
+@code {
+    private List<Student> studentsWithSiblings = new();
+    RadzenDataGrid<Student> discountGrid;
+    private int userId;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                NotificationService.ShowNotification("User Error", "User not logged in or session expired.", NotificationSeverity.Error);
+                return;
+            }
+
+            var user = await StudentService.GetUserByUsernameAsync(username);
+            if (user == null)
+            {
+                NotificationService.ShowNotification("User Error", "User not found.", NotificationSeverity.Error);
+                return;
+            }
+            userId = user.UserID;
+            if (userId <= 0)
+            {
+                NotificationService.ShowNotification("User Error", "Invalid user ID.", NotificationSeverity.Error);
+                return;
+            }           
+
+            // Fetch students with siblings eligible for discounts        
+            studentsWithSiblings = await StudentService.GetStudentsWithSiblingsToDiscountAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
+    }
+
+    private async Task ApplyDiscounts()
+    {
+        var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            NotificationService.ShowNotification("User Error", "User not logged in or session expired.", NotificationSeverity.Error);
+            return;
+        }
+        var selectedStudents = studentsWithSiblings.Where(s => s.Selected).ToList();
+        if (!selectedStudents.Any())
+        {
+            NotificationService.ShowNotification("No Selection", "Please select at least one student.", NotificationSeverity.Warning);
+            return;
+        }
+         
+
+        foreach (var student in selectedStudents)
+        {
+            await StudentService.AddStudentDiscountAsync(new StudentDiscount
+                {
+                    StudentID = student.StudentID,
+                    GuardianFullName = student.GuardianFullName,
+                    DiscountType = "Free", // or choose in UI
+                    DiscountValue = 0.00M,
+                    UserID = userId,
+                });
+        }
+
+        NotificationService.ShowNotification("Success", "Discounts applied.", NotificationSeverity.Success);
+
+        // Refresh list without already discounted students
+        studentsWithSiblings = await StudentService.GetStudentsWithSiblingsToDiscountAsync();
+    }
+}
