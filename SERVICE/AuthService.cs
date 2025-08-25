@@ -477,11 +477,11 @@ namespace CORE.SERVICE
             {
                 // Additional validation for required fields
                 if (string.IsNullOrEmpty(student.StudentFirstName) ||
-                    string.IsNullOrEmpty(student.StudentLastName) ||
-                    student.StudentDateOfBirth == null)
+                  string.IsNullOrEmpty(student.StudentLastName))
                 {
-                    throw new ArgumentException("StudentFirstName, StudentLastName, and StudentDateOfBirth are required fields.");
+                    throw new ArgumentException("First and last name are required.");
                 }
+
 
                 using (var connection = new SqlConnection(connectionString))
                 {
@@ -507,7 +507,7 @@ namespace CORE.SERVICE
                         // Add parameter for ClassID
                         command.Parameters.AddWithValue("@ClassID", student.ClassID);
                         command.Parameters.AddWithValue("@GuardianFullName", student.GuardianFullName ?? (object)DBNull.Value);
-                        command.Parameters.AddWithValue("@GuardianGender", student.GuardianGender);
+                        command.Parameters.AddWithValue("@GuardianGender", student.GuardianGender ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@GuardianHouseAddress", student.GuardianHouseAddress ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@GuardianWorkAddress", student.GuardianWorkAddress ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@GuardianEmail", student.GuardianEmail ?? (object)DBNull.Value);
@@ -2084,13 +2084,14 @@ namespace CORE.SERVICE
                         await connection.OpenAsync();
 
                         var query = @"
-                                      SELECT s.*,
-                               d.DiscountType,
-                               d.DiscountValue
-                        FROM SchoolManagement.Students s
-                        LEFT JOIN SchoolManagement.StudentDiscounts d 
-                            ON s.StudentID = d.StudentID AND d.IsActive = 1";
-            
+                    SELECT s.*,
+                           d.DiscountType,
+                           d.DiscountValue
+                    FROM SchoolManagement.Students s
+                    LEFT JOIN SchoolManagement.StudentDiscounts d 
+                        ON s.StudentID = d.StudentID AND d.IsActive = 1
+                    ORDER BY s.StudentFirstName ASC, s.StudentLastName ASC";
+
                         var result = await connection.QueryAsync<Student>(query);
 
                         return result.AsList();
@@ -2101,7 +2102,7 @@ namespace CORE.SERVICE
                     Console.WriteLine($"Error in GetAllStudents: {ex.Message}");
                     throw;
                 }
-            }, minutes: 20); // Cache for 20 minutes (adjust as needed)
+            }, minutes: 20);
         }
 
 
@@ -5776,13 +5777,44 @@ VALUES (
                 string query = @"
             SELECT StudentID, StudentFirstName, StudentLastName, ClassID
             FROM SchoolManagement.Students
-            ORDER BY ClassID, StudentFirstName";
+            ORDER BY ClassID, StudentFirstName ASC, StudentLastName ASC";
 
                 var result = await connection.QueryAsync<Student>(query);
                 return result.ToList();
 
             }, minutes: 10); // Cache for 10 minutes
         }
+
+        public async Task DeleteStudentAsync(int studentId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Move student to DeletedStudents
+                string moveQuery = @"
+            INSERT INTO SchoolManagement.DeletedStudents
+            SELECT *, GETDATE()
+            FROM SchoolManagement.Students
+            WHERE StudentID = @StudentID;
+
+            DELETE FROM SchoolManagement.Students
+            WHERE StudentID = @StudentID;";
+
+                await connection.ExecuteAsync(moveQuery, new { StudentID = studentId }, transaction);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
 
         public async Task<IEnumerable<StudentFeeHistory>> GetStudentFeeHistoryAsync(int studentId, int termId)
         {
