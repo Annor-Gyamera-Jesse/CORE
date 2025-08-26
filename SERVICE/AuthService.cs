@@ -30,6 +30,8 @@ using CORE.Pages.LOGIN_SCREEN;
 using CORE.SERVICE.Caching;
 using CORE.MODEL.DASHBOARD_AMOUNT_SUM;
 using CORE.MODEL.Fees_Statement_Summary;
+using CORE.MODEL.FEEDING_FEE;
+using System;
 
 namespace CORE.SERVICE
 {
@@ -6105,6 +6107,115 @@ VALUES (
             return result;
         }
 
-    }
+        /*FEEDING FEE*/
+        public async Task<List<SchoolTerm>> GetSchoolTermsAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = "SELECT TermID, Term, IsCurrentTerm FROM SchoolManagement.SchoolTerm ORDER BY TermID DESC";
+            var result = await connection.QueryAsync<SchoolTerm>(query);
+            return result.ToList();
+        }
 
+        public async Task<List<OtherFee>> GetOtherFeesAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = "SELECT FeeTypeID, FeeTypeName, Amount, ClassID FROM SchoolManagement.OtherFees";
+            var result = await connection.QueryAsync<OtherFee>(query);
+            return result.ToList();
+        }
+
+        public async Task SavePaymentAsync(PaymentsOtherFee payment)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        INSERT INTO SchoolManagement.PaymentsOtherFees 
+        (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, UserID, PaymentMethod, TermID, PaymentStatus) 
+        VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @UserID, @PaymentMethod, @TermID, @PaymentStatus)";
+
+            await connection.ExecuteAsync(query, payment);
+        }
+
+        public async Task<List<Student>> GetAllStudentsNameAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            string query = @"
+        SELECT StudentID, StudentFirstName, StudentLastName, ClassID
+        FROM SchoolManagement.Students
+        WHERE EnableSwitch = 1";
+
+    var result = await connection.QueryAsync<Student>(query);
+            return result.ToList();
+        }
+
+        //public async Task<SchoolTerm?> GetCurrentTermAsync()
+        //{
+        //    using var connection = new SqlConnection(connectionString);
+        //    string query = "SELECT TOP 1 TermID, Term, IsCurrentTerm FROM SchoolManagement.SchoolTerm WHERE IsCurrentTerm = 1";
+        //    return await connection.QueryFirstOrDefaultAsync<SchoolTerm>(query);
+        //}
+
+        public async Task<int> InsertOtherFeeAsync(OtherFee fee)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        INSERT INTO SchoolManagement.OtherFees
+        (FeeTypeName, Description, Amount, ClassID, UserID, RecDateCreated)
+        VALUES (@FeeTypeName, @Description, @Amount, @ClassID, @UserID, GETDATE())";
+
+            return await connection.ExecuteAsync(query, fee);
+        }
+
+
+        //  Insert new fee
+        public async Task<int> AddOtherFeeAsync(OtherFee fee)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+                INSERT INTO SchoolManagement.OtherFees 
+                (FeeTypeName, Description, Amount, ClassID, UserID) 
+                VALUES (@FeeTypeName, @Description, @Amount, @ClassID, @UserID)";
+
+            return await connection.ExecuteAsync(query, fee);
+        }
+
+        //  Update existing fee
+        public async Task<int> UpdateOtherFeeAsync(OtherFee fee, int userId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        UPDATE SchoolManagement.OtherFees 
+        SET FeeTypeName = @FeeTypeName,
+            Description = @Description,
+            Amount = @Amount,
+            ClassID = @ClassID,
+            EditBy = @EditBy,
+            EditedOnRecDateCreated = GETDATE()
+        WHERE FeeTypeID = @FeeTypeID";
+
+            return await connection.ExecuteAsync(query, new
+            {
+                fee.FeeTypeID,
+                fee.FeeTypeName,
+                fee.Description,
+                fee.Amount,
+                fee.ClassID,
+                EditBy = userId 
+            });
+        }
+
+
+        //  Delete (soft delete) fee
+        public async Task<int> DeleteOtherFeeAsync(int feeTypeId, int userId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+                UPDATE SchoolManagement.OtherFees 
+                SET DeletedBy = @UserId,
+                    DeletedOnRecDateCreated = GETDATE()
+                WHERE FeeTypeID = @FeeTypeID";
+
+            return await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, UserId = userId });
+        }
+    }
 }

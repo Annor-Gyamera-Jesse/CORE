@@ -1,0 +1,20 @@
+﻿<style>
+    .toolset-container {
+        display: flex;
+        gap: 10px; /* Adjust the spacing between buttons */
+    }
+
+    .toolset-btn {
+        font-size: 14px;
+        flex: 1; /* Makes both buttons take equal space */
+    }
+</style>
+
+  <div class="toolset-container mt-2">
+        <RadzenButton Text="EDIT DIALOG" Icon="money" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OneditDialog />
+</div>
+
+@code {
+    
+    [Parameter] public Action OneditDialog { get; set; }
+}

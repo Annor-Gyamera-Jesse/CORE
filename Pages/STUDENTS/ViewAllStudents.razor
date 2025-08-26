@@ -59,8 +59,6 @@
    
     <RadzenHeader title="Set School Fees Payment" class="header-container compact-header">
         <RadzenFieldset Text="TOOL COMPONENT" class="right-align">
-
-            <RadzenFieldset Text="TOOL COMPONENT" class="right-align">
                 <RadzenDropDown @bind-Value="selectedClass"
                                 Data="@classIds"
                                 Placeholder="Filter by Class"
@@ -72,11 +70,8 @@
                                Placeholder="Search by name..."
                                Style="width:200px; margin-left:10px"
                                Change="@(args => ApplyFilters())" />
-            </RadzenFieldset>
-
-
         </RadzenFieldset>
-    </RadzenHeader>
+      </RadzenHeader>
 
     <RadzenDataGrid Data="@filteredStudents" AllowPaging="true" PageSize="20" TItem="Student" Class="w-full">
         <Columns>

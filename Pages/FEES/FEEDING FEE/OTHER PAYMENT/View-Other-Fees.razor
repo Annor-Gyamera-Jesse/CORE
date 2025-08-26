@@ -1,0 +1,239 @@
+﻿@page "/core/pages/students/view-other-fees"
+@using CORE.MODEL
+@using CORE.MODEL.FEEDING_FEE
+@using CORE.MODEL.Term
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService authService
+@inherits View_Other_FeesCodeBehind
+@inject NotificationMessageService NotificationService
+@inject IJSRuntime jsRuntime
+<style>
+    .text-blue {
+        color: blue;
+    }
+
+    .text-red {
+        color: red;
+    }
+
+    .student-list-container {
+        max-width: 300px;
+        float: left;
+        margin-right: 20px;
+    }
+
+    .form-container {
+        margin-left: 320px;
+    }
+
+    .input-group {
+        margin-bottom: 15px;
+    }
+
+    /* PRINT STUDENT REPOR */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .right-align {
+        margin-left: auto;
+    }
+    /* Adjust the header height */
+    .compact-header {
+        height: 60px; /* Adjust the height to your preference */
+        padding: 5px 15px; /* Reduce padding */
+    }
+
+        /* Additional styling if needed */
+        .compact-header .rz-header-title {
+            font-size: 18px; /* Make the title smaller */
+        }
+
+    .custom-background {
+        background-color: green !important;
+    }
+</style>
+<RadzenNotification />
+
+<RadzenFieldset Text="OTHER FEES PAYMENT" Class="mb-4 p-4 bg-white shadow-md rounded">
+    <p class="text-gray-700">Manage and process other fee payments for students.</p>
+</RadzenFieldset>
+
+
+
+<LoadingSpinner Visible="isLoading" />
+@if (!isLoading)
+{
+    <RadzenHeader title="Payment" class="header-container compact-header">
+        <RadzenFieldset Text="OTHER FEE TOOL COMPONENT" class="right-align">
+
+            <!-- Current Term -->
+            <RadzenTextBox Value="@currentTerm?.Term"
+                           ReadOnly="true"
+                           Placeholder="Current Term"
+                           Style="width:200px; margin-right:10px;" />
+
+            <!-- Payment Date -->
+            <RadzenDatePicker @bind-Value="paymentDate"
+                              DateFormat="yyyy-MM-dd"
+                              Style="width:200px; margin-right:10px;" />
+
+            <!-- Buttons -->
+            <RadzenButton Text="EDIT"
+                          Icon="description"
+                          ButtonStyle="ButtonStyle.Info"
+                          Click="@EditDialog"
+                          Style="margin-right:10px;" />
+
+            <RadzenButton Text="ADD"
+                          Icon="check"
+                          ButtonStyle="ButtonStyle.Success"
+                          Click="@AddDialog" />
+        </RadzenFieldset>
+    </RadzenHeader>
+
+    <br/>
+
+
+    <RadzenDataGrid Data="@students" TItem="StudentExtended" Class="w-full" AllowPaging="true" PageSize="20">
+        <Columns>
+            <RadzenDataGridColumn TItem="StudentExtended" Property="StudentID" Title="ID" />
+            <RadzenDataGridColumn TItem="StudentExtended" Property="StudentFirstName" Title="First Name" />
+            <RadzenDataGridColumn TItem="StudentExtended" Property="StudentLastName" Title="Last Name" />
+            <RadzenDataGridColumn TItem="StudentExtended" Property="ClassID" Title="Class" />
+
+            <RadzenDataGridColumn TItem="StudentExtended" Title="Fee Type">
+                <Template Context="student">
+                    <RadzenDropDown Data="@GetFeeTypesForClass(student.ClassID)"
+                                    TextProperty="FeeTypeName"
+                                    ValueProperty="FeeTypeID"
+                                    @bind-Value="student.SelectedFeeTypeId"
+                                    Change="@(args => UpdateFeeAmount(student))"
+                                    Style="width:180px" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="StudentExtended" Title="Amount">
+                <Template Context="student">
+                    <span>@student.SelectedFeeAmount</span>
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn TItem="StudentExtended" Title="Actions">
+                <Template Context="student">
+                    <RadzenButton Text="Pay"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Click="@(async () => await PayFee(student))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+
+@code {
+    private List<StudentExtended> students = new();
+    private List<OtherFee> otherFees = new();
+    private SchoolTerm? currentTerm;
+    private DateTime paymentDate = DateTime.Today;
+    private bool isLoading = false;
+    public int userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+
+        var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            NotificationService.ShowNotification("User Error", "User not logged in or session expired.", NotificationSeverity.Error);
+            return;
+        }
+
+        var user = await authService.GetUserByUsernameAsync(username);
+        if (user == null)
+        {
+            NotificationService.ShowNotification("User Error", "User not found.", NotificationSeverity.Error);
+            return;
+        }
+
+        userId = user.UserID;
+
+
+        students = (await authService.GetAllStudentsNameAsync())
+            .Select(s => new StudentExtended(s))
+            .OrderBy(s => s.ClassID)
+            .ThenBy(s => s.StudentFirstName)
+            .ThenBy(s => s.StudentLastName)
+            .ToList();
+
+        // Pick only the current term
+        currentTerm = await authService.GetCurrentTermAsync();
+
+        otherFees = await authService.GetOtherFeesAsync();
+
+        isLoading = false;
+    }
+
+    private IEnumerable<OtherFee> GetFeeTypesForClass(string classId)
+    {
+        return otherFees.Where(f => f.ClassID == classId).ToList();
+    }
+
+    private void UpdateFeeAmount(StudentExtended student)
+    {
+        var fee = otherFees.FirstOrDefault(f => f.FeeTypeID == student.SelectedFeeTypeId);
+        student.SelectedFeeAmount = fee?.Amount ?? 0;
+        student.SelectedFeeTypeName = fee?.FeeTypeName ?? "";
+    }
+
+    private async Task PayFee(StudentExtended student)
+    {
+        if (currentTerm == null || student.SelectedFeeTypeId == 0)
+        {
+            Console.WriteLine("Please select FeeType.");
+            return;
+        }
+
+        var payment = new PaymentsOtherFee
+            {
+                StudentID = student.StudentID,
+                StudentName = $"{student.StudentFirstName} {student.StudentLastName}",
+                FeeTypeID = student.SelectedFeeTypeId,
+                FeeTypeName = student.SelectedFeeTypeName,
+                ClassID = student.ClassID,
+                AmountPaid = student.SelectedFeeAmount,
+                AmountLeft = 0,
+                PaymentDate = paymentDate, 
+                UserID = userId,
+                PaymentMethod = $"{student.SelectedFeeTypeName} Vault",
+                TermID = currentTerm.TermID, 
+                PaymentStatus = "Paid"
+            };
+
+        await authService.SavePaymentAsync(payment);
+        Console.WriteLine($"Payment saved for {student.StudentFirstName}");
+    }
+
+    public class StudentExtended : Student
+    {
+        public StudentExtended(Student s)
+        {
+            StudentID = s.StudentID;
+            StudentFirstName = s.StudentFirstName;
+            StudentLastName = s.StudentLastName;
+            ClassID = s.ClassID;
+        }
+        public int SelectedFeeTypeId { get; set; }
+        public string SelectedFeeTypeName { get; set; } = "";
+        public decimal SelectedFeeAmount { get; set; } = 0;
+    }
+
+    async void EditDialog() => await OpenEditDialog();
+
+    async void AddDialog() => await OpenAddDialog();
+}
