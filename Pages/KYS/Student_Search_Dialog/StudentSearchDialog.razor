@@ -3,13 +3,23 @@
 @using CORE.SERVICE
 @inject AuthService authService
 @inject DialogService DialogService
+
 <RadzenNotification />
 
-<LoadingSpinner Visible="isLoading"/>
+<LoadingSpinner Visible="isLoading" />
 @if (!isLoading)
 {
+    <div class="flex gap-4 mb-3">
+        <RadzenDropDown Data="@classIds" @bind-Value="selectedClass"
+                        Placeholder="Filter by Class" Style="width:200px"
+                        Change="@(args => ApplyFilters())" AllowClear="true" />
 
-    <RadzenGrid Data="@students" TItem="Student" RowSelect="@SelectStudent" AllowPaging="true" PageSize="10">
+        <RadzenTextBox @bind-Value="searchTerm" Placeholder="Search by name..."
+                       Style="width:250px" Change="@(args => ApplyFilters())" />
+    </div>
+
+    <RadzenGrid Data="@filteredStudents" TItem="Student" RowSelect="@SelectStudent"
+                AllowPaging="true" PageSize="10">
         <Columns>
             <RadzenGridColumn TItem="Student" Property="StudentID" Title="ID" />
             <RadzenGridColumn TItem="Student" Property="StudentFirstName" Title="First Name" />
@@ -19,11 +29,16 @@
         </Columns>
     </RadzenGrid>
 
-    <RadzenButton Text="Close" ButtonStyle="ButtonStyle.Danger" Style="margin-top:10px" Click="() => DialogService.Close(null)" />
+    <RadzenButton Text="Close" ButtonStyle="ButtonStyle.Danger"
+                  Style="margin-top:10px" Click="() => DialogService.Close(null)" />
 }
 
 @code {
     List<Student> students = new();
+    List<Student> filteredStudents = new();
+    List<string> classIds = new();
+    string selectedClass;
+    string searchTerm = string.Empty;
     public bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
@@ -31,13 +46,20 @@
         try
         {
             isLoading = true;
-            // Fetch students from the service            
-            students = await authService.GetAllStudents(); // Replace with your method to fetch students
+            students = await authService.GetAllStudents();
+
+            // collect unique classes
+            classIds = students.Where(s => !string.IsNullOrEmpty(s.ClassID))
+                               .Select(s => s.ClassID)
+                               .Distinct()
+                               .OrderBy(c => c)
+                               .ToList();
+
+            filteredStudents = new List<Student>(students);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error fetching students: {ex.Message}");
-            // Handle error (e.g., show a message to the user)
         }
         finally
         {
@@ -45,25 +67,35 @@
         }
     }
 
+    void ApplyFilters()
+    {
+        IEnumerable<Student> query = students;
+
+        // filter by class
+        if (!string.IsNullOrEmpty(selectedClass))
+        {
+            query = query.Where(s => s.ClassID == selectedClass);
+        }
+
+        // filter by name
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            string term = searchTerm.ToLower();
+            query = query.Where(s => (s.StudentFirstName ?? "").ToLower().Contains(term) ||
+                                     (s.StudentLastName ?? "").ToLower().Contains(term));
+        }
+
+        filteredStudents = query
+            .OrderBy(s => s.StudentFirstName)
+            .ThenBy(s => s.StudentLastName)
+            .ToList();
+    }
+
     void SelectStudent(Student student)
     {
-        try
+        if (student != null)
         {
-            isLoading = true;
-            if (student == null)
-            {
-                return;
-            }
             DialogService.Close(student);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error selecting student: {ex.Message}");
-            // Handle error (e.g., show a message to the user)
-        }
-        finally
-        {
-            isLoading = false;
         }
     }
 }
