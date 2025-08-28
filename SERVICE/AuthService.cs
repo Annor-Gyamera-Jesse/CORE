@@ -6217,5 +6217,45 @@ VALUES (
 
             return await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, UserId = userId });
         }
+
+
+        /*other_fee_summery*/
+        public async Task<List<FeeSummaryDto>> GetFeeSummaryAsync(DateTime? selectedDate, int? selectedTermId, int? selectedFeeTypeId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            string query = @"
+        SELECT 
+            s.ClassID,
+            ofee.FeeTypeName,
+            COUNT(DISTINCT s.StudentID) AS TotalStudents,
+            ofee.Amount AS FeePerStudent,
+            COUNT(DISTINCT s.StudentID) * ofee.Amount AS ExpectedAmount,
+            ISNULL(SUM(p.AmountPaid), 0) AS CollectedAmount,
+            (COUNT(DISTINCT s.StudentID) * ofee.Amount) - ISNULL(SUM(p.AmountPaid), 0) AS BalanceLeft
+        FROM SchoolManagement.Students s
+        JOIN SchoolManagement.OtherFees ofee
+            ON s.ClassID = ofee.ClassID
+        LEFT JOIN SchoolManagement.PaymentsOtherFees p
+            ON p.StudentID = s.StudentID
+           AND p.FeeTypeID = ofee.FeeTypeID
+           AND (@SelectedDate IS NULL OR CAST(p.PaymentDate AS DATE) = @SelectedDate)
+           AND (@SelectedTerm IS NULL OR p.TermID = @SelectedTerm)
+        WHERE ofee.FeeTypeID = @SelectedFeeTypeID
+        GROUP BY s.ClassID, ofee.FeeTypeName, ofee.Amount";
+
+            return (await connection.QueryAsync<FeeSummaryDto>(query,
+                new { SelectedDate = selectedDate, SelectedTerm = selectedTermId, SelectedFeeTypeID = selectedFeeTypeId })).ToList();
+        }
+
+        public async Task<List<OtherFee>> GetAllOtherFeesAsync()
+        {
+            using var conn = new SqlConnection(connectionString);
+            await conn.OpenAsync();
+            const string sql = "SELECT FeeTypeID, FeeTypeName, Amount, ClassID FROM SchoolManagement.OtherFees ORDER BY FeeTypeName";
+            var result = await conn.QueryAsync<OtherFee>(sql);
+            return result.ToList();
+        }
+
+
     }
 }
