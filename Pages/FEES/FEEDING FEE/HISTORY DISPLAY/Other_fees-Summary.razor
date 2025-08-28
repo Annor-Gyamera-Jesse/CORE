@@ -7,7 +7,8 @@
 
 <RadzenCard>
     <h3 class="mb-4">Class Fee Collection Summary</h3>
-
+    <RadzenFieldset Legend="Filter Options" Style="margin-bottom: 20px;">
+        <RadzenText>Select criteria to view fee collection summaries.</RadzenText>
     <div class="row mb-3">
         <div class="col-md-4">
             <RadzenLabel Text="Select Date" />
@@ -15,7 +16,7 @@
         </div>
         <div class="col-md-4">
             <RadzenLabel Text="Select Term" />
-            <RadzenDropDown Data="@terms" TextProperty="TermName" ValueProperty="TermID"
+            <RadzenDropDown Data="@terms" TextProperty="Term" ValueProperty="TermID"
                             @bind-Value="selectedTermId" Style="width:100%;" />
         </div>
         <div class="col-md-4">
@@ -26,6 +27,7 @@
     </div>
 
     <RadzenButton Text="Load Summary" Click="@LoadSummary" Style="margin-bottom:20px;" />
+    </RadzenFieldset>
 
     <div class="row">
         @foreach (var summary in summaries)
