@@ -4495,64 +4495,85 @@ VALUES
             }
         }
 
-        public async Task<bool> DeductFromBankAsync(string paymentMethod, decimal amount)
+        //CAUTION I THINK I WILL REVISITE HERE AGAIN
+        public async Task<bool> DeductFromBankAsync(string paymentMethod, decimal amount, int userId)
         {
             try
             {
                 using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
 
                 // Retrieve the BankID based on the payment method
                 string bankQuery = "SELECT BankID FROM SchoolManagement.Bank WHERE MethodName = @PaymentMethod";
                 int bankId = await connection.ExecuteScalarAsync<int>(bankQuery, new { PaymentMethod = paymentMethod });
 
-                // Check if BankID is valid
                 if (bankId == 0)
-                {
                     throw new Exception("Invalid payment method selected. No corresponding BankID found.");
-                }
 
                 string query = @"
-        UPDATE SchoolManagement.Bank
-        SET AmountTransferred = AmountTransferred - @Amount
-        WHERE MethodName = @PaymentMethod";
+            UPDATE SchoolManagement.Bank
+            SET AmountTransferred = AmountTransferred - @Amount
+            WHERE MethodName = @PaymentMethod";
 
                 int rowsAffected = await connection.ExecuteAsync(query, new { Amount = amount, PaymentMethod = paymentMethod });
 
                 if (rowsAffected > 0)
                 {
-                    // Log the successful deduction
-                    await LogBankTransactionAsync(bankId, "Withdrawal", amount, "Success", null);
+                    // Log the successful deduction and add to SyncLog
+                    int? logId = await LogBankTransactionAsync(bankId, "Withdrawal", amount, "Success", null, connection, userId);
                     return true;
                 }
                 else
                 {
-                    // Log the failure
-                    await LogBankTransactionAsync(bankId, "Withdrawal", amount, "Failed", "No rows affected.");
+                    int? logId = await LogBankTransactionAsync(bankId, "Withdrawal", amount, "Failed", "No rows affected.", connection, userId);
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error deducting amount from bank: {ex.Message}");
-                await LogBankTransactionAsync(null, "Withdrawal", amount, "Failed", ex.Message);
+                using var connection = new SqlConnection(connectionString);
+                await LogBankTransactionAsync(null, "Withdrawal", amount, "Failed", ex.Message, connection, userId);
                 return false;
             }
         }
-        private async Task LogBankTransactionAsync(int? bankId, string transactionType, decimal amount, string status, string errorMessage)
+        private async Task<int?> LogBankTransactionAsync(int? bankId, string transactionType, decimal amount, string status, string errorMessage, SqlConnection existingConnection = null, int userId = 0)
         {
-            using var connection = new SqlConnection(connectionString);
-            string logQuery = @"
-    INSERT INTO SchoolManagement.BankTransactionLog (BankID, TransactionType, Amount, Status, ErrorMessage)
-    VALUES (@BankID, @TransactionType, @Amount, @Status, @ErrorMessage)";
+            bool disposeConnection = false;
+            if (existingConnection == null)
+            {
+                existingConnection = new SqlConnection(connectionString);
+                await existingConnection.OpenAsync();
+                disposeConnection = true;
+            }
 
-            await connection.ExecuteAsync(logQuery, new
+            string logQuery = @"
+        INSERT INTO SchoolManagement.BankTransactionLog 
+            (BankID, TransactionType, Amount, Status, ErrorMessage, UserID, CreatedAt)
+        VALUES (@BankID, @TransactionType, @Amount, @Status, @ErrorMessage, @UserID, GETDATE());
+        SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            int newLogId = await existingConnection.ExecuteScalarAsync<int>(logQuery, new
             {
                 BankID = bankId,
                 TransactionType = transactionType,
                 Amount = amount,
                 Status = status,
-                ErrorMessage = errorMessage
+                ErrorMessage = errorMessage,
+                UserID = userId
             });
+
+            // Add to SyncLog so it goes online later
+            string syncLogQuery = @"
+        INSERT INTO SchoolManagement.SyncLog
+            (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+        VALUES ('BankTransactionLog', @RecordID, 'INSERT', 'Pending', 0, 5, GETDATE())";
+
+            await existingConnection.ExecuteAsync(syncLogQuery, new { RecordID = newLogId });
+
+            if (disposeConnection)
+                existingConnection.Dispose();
+
+            return newLogId;
         }
 
         /*EXPENSES*/
@@ -4742,45 +4763,107 @@ VALUES
         }
 
         // Add a new category
-        public async Task AddExpensesCategoryAsync(ExpenseCategory category)
+        public async Task<int> AddExpensesCategoryAsync(ExpenseCategory category)
         {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-                var command = new SqlCommand("INSERT INTO SchoolManagement.ExpenseCategories (CategoryName, Description, UserID) VALUES (@CategoryName, @Description, @UserID)", connection);
-                command.Parameters.AddWithValue("@CategoryName", category.CategoryName);
-                command.Parameters.AddWithValue("@Description", (object)category.Description ?? DBNull.Value);
-                command.Parameters.AddWithValue("@UserID", category.UserID);
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
 
-                await command.ExecuteNonQueryAsync();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                var sql = @"
+INSERT INTO SchoolManagement.ExpenseCategories 
+    (CategoryName, Description, UserID)
+VALUES (@CategoryName, @Description, @UserID);
+SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                var newId = await connection.ExecuteScalarAsync<int>(sql, category, transaction);
+
+                if (newId > 0)
+                {
+                    // Insert into SyncLog for remote sync
+                    var logQuery = @"
+INSERT INTO SchoolManagement.SyncLog
+    (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+VALUES ('ExpenseCategories', @CategoryID, 'INSERT', 'Pending', 0, 5, GETDATE())";
+
+                    await connection.ExecuteAsync(logQuery, new { CategoryID = newId }, transaction);
+
+                    transaction.Commit();
+                    return newId;
+                }
+                else
+                {
+                    transaction.Rollback();
+                    return 0;
+                }
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
             }
         }
-
         // Update an existing category
         public async Task UpdateExpenseCategoryAsync(ExpenseCategory category)
         {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-                var command = new SqlCommand("UPDATE SchoolManagement.ExpenseCategories SET CategoryName = @CategoryName, Description = @Description WHERE CategoryID = @CategoryID", connection);
-                command.Parameters.AddWithValue("@CategoryName", category.CategoryName);
-                command.Parameters.AddWithValue("@Description", (object)category.Description ?? DBNull.Value);
-                command.Parameters.AddWithValue("@CategoryID", category.CategoryID);
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
 
-                await command.ExecuteNonQueryAsync();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                var sql = @"
+UPDATE SchoolManagement.ExpenseCategories
+SET CategoryName = @CategoryName,
+    Description = @Description
+WHERE CategoryID = @CategoryID";
+
+                await connection.ExecuteAsync(sql, category, transaction);
+
+                // Log update for sync
+                var logQuery = @"
+INSERT INTO SchoolManagement.SyncLog
+    (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+VALUES ('ExpenseCategories', @CategoryID, 'UPDATE', 'Pending', 0, 5, GETDATE())";
+
+                await connection.ExecuteAsync(logQuery, new { category.CategoryID }, transaction);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
             }
         }
 
         // Delete a category
         public async Task DeleteExpenseCategoryAsync(int categoryId)
         {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-                var command = new SqlCommand("DELETE FROM SchoolManagement.ExpenseCategories WHERE CategoryID = @CategoryID", connection);
-                command.Parameters.AddWithValue("@CategoryID", categoryId);
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
 
-                await command.ExecuteNonQueryAsync();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                var sql = "DELETE FROM SchoolManagement.ExpenseCategories WHERE CategoryID = @CategoryID";
+                await connection.ExecuteAsync(sql, new { CategoryID = categoryId }, transaction);
+
+                // Log delete for sync
+                var logQuery = @"
+INSERT INTO SchoolManagement.SyncLog
+    (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+VALUES ('ExpenseCategories', @CategoryID, 'DELETE', 'Pending', 0, 5, GETDATE())";
+
+                await connection.ExecuteAsync(logQuery, new { CategoryID = categoryId }, transaction);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
             }
         }
 
@@ -4814,47 +4897,108 @@ VALUES
         }
 
         // Add a new payment method
-        public async Task AddsPaymentMethodAsync(PaymentMethods method)
+        public async Task<int> AddsPaymentMethodAsync(PaymentMethods method)
         {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-                var command = new SqlCommand("INSERT INTO SchoolManagement.PaymentMethods (MethodName, Description, UserID, BankNumber) VALUES (@MethodName, @Description, @UserID, @BankNumber)", connection);
-                command.Parameters.AddWithValue("@MethodName", method.MethodName);
-                command.Parameters.AddWithValue("@Description", (object)method.Description ?? DBNull.Value);
-                command.Parameters.AddWithValue("@UserID", method.UserID);
-                command.Parameters.AddWithValue("@BankNumber", (object)method.BankNumber ?? DBNull.Value);
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
 
-                await command.ExecuteNonQueryAsync();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                var sql = @"
+            INSERT INTO SchoolManagement.PaymentMethods 
+                (MethodName, Description, UserID, BankNumber)
+            VALUES (@MethodName, @Description, @UserID, @BankNumber);
+            SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                // Insert and get new ID
+                var newId = await connection.ExecuteScalarAsync<int>(sql, method, transaction);
+
+                if (newId > 0)
+                {
+                    // Add sync log
+                    string logQuery = @"
+                INSERT INTO SchoolManagement.SyncLog
+                    (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+                VALUES ('PaymentMethods', @PaymentMethodID, 'INSERT', 'Pending', 0, 5, GETDATE())";
+
+                    await connection.ExecuteAsync(logQuery, new { PaymentMethodID = newId }, transaction);
+
+                    transaction.Commit();
+                    return newId;
+                }
+
+                transaction.Rollback();
+                return 0;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
             }
         }
 
         // Update an existing payment method
         public async Task UpdatePaymentMethodAsync(PaymentMethods method)
         {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-                var command = new SqlCommand("UPDATE SchoolManagement.PaymentMethods SET MethodName = @MethodName, Description = @Description, BankNumber = @BankNumber WHERE PaymentMethodID = @PaymentMethodID", connection);
-                command.Parameters.AddWithValue("@MethodName", method.MethodName);
-                command.Parameters.AddWithValue("@Description", (object)method.Description ?? DBNull.Value);
-                command.Parameters.AddWithValue("@PaymentMethodID", method.PaymentMethodID);
-                command.Parameters.AddWithValue("@BankNumber", method.BankNumber);
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
 
-                await command.ExecuteNonQueryAsync();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                var sql = @"
+            UPDATE SchoolManagement.PaymentMethods
+            SET MethodName = @MethodName,
+                Description = @Description,
+                BankNumber = @BankNumber
+            WHERE PaymentMethodID = @PaymentMethodID";
+
+                await connection.ExecuteAsync(sql, method, transaction);
+
+                // Add sync log
+                string logQuery = @"
+            INSERT INTO SchoolManagement.SyncLog
+                (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+            VALUES ('PaymentMethods', @PaymentMethodID, 'UPDATE', 'Pending', 0, 5, GETDATE())";
+
+                await connection.ExecuteAsync(logQuery, new { method.PaymentMethodID }, transaction);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
             }
         }
 
         // Delete a payment method
         public async Task DeletePaymentMethodAsync(int paymentMethodId)
         {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-                var command = new SqlCommand("DELETE FROM SchoolManagement.PaymentMethods WHERE PaymentMethodID = @PaymentMethodID", connection);
-                command.Parameters.AddWithValue("@PaymentMethodID", paymentMethodId);
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
 
-                await command.ExecuteNonQueryAsync();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                var sql = "DELETE FROM SchoolManagement.PaymentMethods WHERE PaymentMethodID = @PaymentMethodID";
+                await connection.ExecuteAsync(sql, new { PaymentMethodID = paymentMethodId }, transaction);
+
+                // Add sync log
+                string logQuery = @"
+            INSERT INTO SchoolManagement.SyncLog
+                (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+            VALUES ('PaymentMethods', @PaymentMethodID, 'DELETE', 'Pending', 0, 5, GETDATE())";
+
+                await connection.ExecuteAsync(logQuery, new { PaymentMethodID = paymentMethodId }, transaction);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
             }
         }
 
@@ -4864,25 +5008,49 @@ VALUES
         {
             using (var connection = new SqlConnection(connectionString))
             {
+                await connection.OpenAsync();
+
+                using var transaction = connection.BeginTransaction();
                 try
                 {
-                    await connection.OpenAsync();
+                    // Execute the stored procedure and get the transferred amount
+                    var transferredAmount = await connection.QuerySingleAsync<decimal>(
+                        "EXEC SchoolManagement.TransferStudentFeesToBank",
+                        commandType: CommandType.StoredProcedure,
+                        transaction: transaction);
 
-                    // Execute the stored procedure and capture the amount transferred
-                    var result = await connection.QuerySingleAsync<decimal>("EXEC SchoolManagement.TransferStudentFeesToBank", commandType: CommandType.StoredProcedure);
+                    // Log the successful bank transaction
+                    await LogBankTransactionAsync(null, "Deposit", transferredAmount, "Success", null);
 
-                    // Log the successful transfer
-                    await LogBankTransactionAsync(null, "Deposit", result, "Success", null);
+                    // Insert into SyncLog for remote sync
+                    string logQuery = @"
+                INSERT INTO SchoolManagement.SyncLog
+                    (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+                VALUES ('BankTransactionLog', @RecordID, 'INSERT', 'Pending', 0, 5, GETDATE())";
+
+                    // If you want to reference the last inserted BankTransactionLog record, you might modify LogBankTransactionAsync to return its ID
+                    var lastTransactionId = await connection.QuerySingleAsync<int>(
+                        "SELECT TOP 1 BankTransactionID FROM SchoolManagement.BankTransactionLog ORDER BY CreatedAt DESC",
+                        transaction: transaction);
+
+                    await connection.ExecuteAsync(logQuery, new { RecordID = lastTransactionId }, transaction);
+
+                    transaction.Commit();
                     return true; // Success
                 }
                 catch (Exception ex)
                 {
+                    transaction.Rollback();
                     Console.WriteLine("Error in TransferStudentFeesToBank: " + ex.Message);
-                    await LogBankTransactionAsync(null, "Deposit", 0, "Failed", ex.Message); // Log with 0 amount on failure
+
+                    // Log failure with 0 amount
+                    await LogBankTransactionAsync(null, "Deposit", 0, "Failed", ex.Message);
+
                     return false; // Failure
                 }
             }
         }
+
 
         public async Task<IEnumerable<BankTransaction>> GetBankTransactions()
         {
@@ -5388,23 +5556,26 @@ VALUES
 
         public async Task<bool> ProcessExpensePaymentAsync(Expense expense, int paymentMethodId)
         {
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            using var transaction = connection.BeginTransaction();
             try
             {
-                using var connection = new SqlConnection(connectionString);
-
-                // Step 1: Get BankID from payment method
+                // Step 1: Get BankID and current balance from payment method
                 string getBankQuery = @"
-                 SELECT b.BankID, b.AmountTransferred 
-                 FROM SchoolManagement.Bank b 
-                 JOIN SchoolManagement.PaymentMethods pm ON b.MethodName = pm.MethodName
-                 WHERE pm.PaymentMethodID = @PaymentMethodId";
+            SELECT b.BankID, b.AmountTransferred 
+            FROM SchoolManagement.Bank b 
+            JOIN SchoolManagement.PaymentMethods pm ON b.MethodName = pm.MethodName
+            WHERE pm.PaymentMethodID = @PaymentMethodId";
 
                 var bankInfo = await connection.QueryFirstOrDefaultAsync<(int BankID, decimal AmountTransferred)>(
-                    getBankQuery, new { PaymentMethodId = paymentMethodId });
+                    getBankQuery, new { PaymentMethodId = paymentMethodId }, transaction);
 
                 if (bankInfo.BankID == 0)
                 {
                     await LogsBankTransactionAsync(null, "Withdrawal", expense.Amount, "Failed", "Invalid Payment Method or BankID not found.");
+                    transaction.Rollback();
                     return false;
                 }
 
@@ -5412,40 +5583,64 @@ VALUES
                 if (bankInfo.AmountTransferred < expense.Amount)
                 {
                     await LogsBankTransactionAsync(bankInfo.BankID, "Withdrawal", expense.Amount, "Failed", "Insufficient funds.");
+                    transaction.Rollback();
                     return false;
                 }
 
                 // Step 3: Deduct the amount from the bank
                 string deductQuery = "UPDATE SchoolManagement.Bank SET AmountTransferred = AmountTransferred - @Amount WHERE BankID = @BankID";
-                int rowsAffected = await connection.ExecuteAsync(deductQuery, new { Amount = expense.Amount, BankID = bankInfo.BankID });
+                int rowsAffected = await connection.ExecuteAsync(deductQuery, new { Amount = expense.Amount, BankID = bankInfo.BankID }, transaction);
 
                 if (rowsAffected == 0)
                 {
                     await LogsBankTransactionAsync(bankInfo.BankID, "Withdrawal", expense.Amount, "Failed", "No rows affected.");
+                    transaction.Rollback();
                     return false;
                 }
 
-                // Step 4: Log the successful bank transaction
+                // Step 4: Insert the expense
+                string insertExpenseQuery = @"
+            INSERT INTO SchoolManagement.Expenses 
+                (UserID, CategoryID, Amount, ExpenseDate, Description)
+            VALUES 
+                (@UserID, @CategoryID, @Amount, @ExpenseDate, @Description);
+            SELECT SCOPE_IDENTITY();";
+
+                var expenseId = await connection.ExecuteScalarAsync<int>(insertExpenseQuery, expense, transaction);
+
+                if (expenseId <= 0)
+                {
+                    await LogsBankTransactionAsync(bankInfo.BankID, "Withdrawal", expense.Amount, "Failed", "Expense insert failed.");
+                    transaction.Rollback();
+                    return false;
+                }
+
+                // Step 5: Log the successful bank transaction
                 await LogsBankTransactionAsync(bankInfo.BankID, "Withdrawal", expense.Amount, "Success", null);
 
-                // Step 5: Log the payment
-                await LogPaymentAsync(null, bankInfo.BankID, "Expense", expense.Amount, "Success", null, paymentMethodId);
+                // Step 6: Log the payment
+                await LogPaymentAsync(expenseId, bankInfo.BankID, "Expense", expense.Amount, "Success", null, paymentMethodId);
 
-                // Step 6: Save the actual expense
-                string insertExpenseQuery = @"
-                   INSERT INTO SchoolManagement.Expenses (UserID, CategoryID, Amount, ExpenseDate, Description)
-                   VALUES (@UserID, @CategoryID, @Amount, @ExpenseDate, @Description)";
-                await connection.ExecuteAsync(insertExpenseQuery, expense);
+                // Step 7: Add entry to SyncLog for remote sync
+                string logQuery = @"
+            INSERT INTO SchoolManagement.SyncLog
+                (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+            VALUES ('Expenses', @ExpenseID, 'INSERT', 'Pending', 0, 5, GETDATE())";
 
+                await connection.ExecuteAsync(logQuery, new { ExpenseID = expenseId }, transaction);
+
+                transaction.Commit();
                 return true;
             }
             catch (Exception ex)
             {
+                transaction.Rollback();
                 await LogsBankTransactionAsync(null, "Withdrawal", expense.Amount, "Failed", ex.Message);
                 return false;
             }
-        
         }
+
+
         //added a method to fetch the list of processed expenses
         public async Task<IEnumerable<ExpenseHistoryView>> GetExpenseHistoryAsync()
         {
@@ -5520,35 +5715,20 @@ VALUES (
 
         public async Task<bool> LogManualDepositAsync(BankDeposit deposit, int userId)
         {
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
             try
             {
-                using var connection = new SqlConnection(connectionString);
-
-                // Step 1: Generate a unique SystemTransferID
+                // Generate a unique SystemTransferID
                 var systemTransferId = new Random().Next(100000, 999999);
 
-                // Step 2: Insert into Bank table
+                // Insert deposit into Bank table
                 string insertBankQuery = @"
-            INSERT INTO SchoolManagement.Bank (
-                PaymentMethodID,
-                BankNumber,
-                MethodName,
-                AmountTransferred,
-                SystemTransferID,
-                AmountInHand,
-                Remarks,
-                UserID
-            )
-            VALUES (
-                @PaymentMethodID,
-                @BankNumber,
-                @MethodName,
-                @AmountTransferred,
-                @SystemTransferID,
-                @AmountTransferred,
-                @Remarks,
-                @UserID
-            );
+            INSERT INTO SchoolManagement.Bank 
+                (PaymentMethodID, BankNumber, MethodName, AmountTransferred, SystemTransferID, AmountInHand, Remarks, UserID)
+            VALUES 
+                (@PaymentMethodID, @BankNumber, @MethodName, @AmountTransferred, @SystemTransferID, @AmountTransferred, @Remarks, @UserID);
             SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                 int bankId = await connection.ExecuteScalarAsync<int>(insertBankQuery, new
@@ -5562,7 +5742,7 @@ VALUES (
                     UserID = userId
                 });
 
-                // Step 3: Log the transaction in BankTransactionLogs
+                // Log transaction
                 await LogsBankTransactionAsync(bankId, "Deposit", deposit.AmountTransferred, "Success Manual Deposit", "");
 
                 return true;
@@ -5577,18 +5757,15 @@ VALUES (
         public async Task<bool> TransferFundsAsync(FundTransfer transfer, int userId)
         {
             using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            using var transaction = connection.BeginTransaction();
 
             try
             {
-                Console.WriteLine("Opening SQL connection...");
-                await connection.OpenAsync();
-                Console.WriteLine("SQL connection opened.");
-
-                using var transaction = connection.BeginTransaction();
-                Console.WriteLine("Transaction started.");
-
                 var systemTransferId = new Random().Next(100000, 999999);
 
+                // Get source and destination bank methods
                 var fromBank = await connection.QueryFirstOrDefaultAsync<dynamic>(
                     "SELECT TOP 1 * FROM SchoolManagement.Bank WHERE MethodName = @MethodName ORDER BY BankID DESC",
                     new { MethodName = transfer.FromMethod }, transaction: transaction);
@@ -5603,12 +5780,13 @@ VALUES (
                 if ((decimal)fromBank.AmountInHand < transfer.Amount)
                     throw new Exception("Insufficient funds in the source method.");
 
-                string insertQuery = @"INSERT INTO SchoolManagement.Bank 
-            (PaymentMethodID, BankNumber, MethodName, AmountTransferred, SystemTransferID, AmountInHand, Remarks, UserID)
+                string insertQuery = @"
+            INSERT INTO SchoolManagement.Bank 
+                (PaymentMethodID, BankNumber, MethodName, AmountTransferred, SystemTransferID, AmountInHand, Remarks, UserID)
             VALUES 
-            (@PaymentMethodID, @BankNumber, @MethodName, @AmountTransferred, @SystemTransferID, @AmountInHand, @Remarks, @UserID)";
+                (@PaymentMethodID, @BankNumber, @MethodName, @AmountTransferred, @SystemTransferID, @AmountInHand, @Remarks, @UserID)";
 
-                // Deduct
+                // Deduct from source
                 await connection.ExecuteAsync(insertQuery, new
                 {
                     PaymentMethodID = fromBank.PaymentMethodID,
@@ -5621,7 +5799,7 @@ VALUES (
                     UserID = userId
                 }, transaction);
 
-                // Credit
+                // Credit to destination
                 await connection.ExecuteAsync(insertQuery, new
                 {
                     PaymentMethodID = toBank.PaymentMethodID,
@@ -5635,13 +5813,11 @@ VALUES (
                 }, transaction);
 
                 transaction.Commit();
-                Console.WriteLine("Transaction committed.");
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception occurred: " + ex.Message);
-                Console.WriteLine(ex.StackTrace);
+                transaction.Rollback();
                 throw new Exception($"Transfer failed: {ex.Message}", ex);
             }
         }
@@ -5789,21 +5965,27 @@ VALUES (
 
         public async Task UpdateStaffEmploymentStatusAsync(int staffId, string newStatus, int changedByUserId)
         {
-            using (var connection = new SqlConnection(connectionString))
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            using var transaction = connection.BeginTransaction();
+            try
             {
-                await connection.OpenAsync();
+                // Get current status
                 var oldStatus = await connection.QueryFirstOrDefaultAsync<string>(
                     "SELECT EmploymentStatus FROM SchoolManagement.Staff WHERE StaffID = @StaffID",
-                    new { StaffID = staffId });
+                    new { StaffID = staffId }, transaction);
 
+                // Update status
                 await connection.ExecuteAsync(
                     "UPDATE SchoolManagement.Staff SET EmploymentStatus = @NewStatus WHERE StaffID = @StaffID",
-                    new { NewStatus = newStatus, StaffID = staffId });
+                    new { NewStatus = newStatus, StaffID = staffId }, transaction);
 
+                // Log change in history table
                 await connection.ExecuteAsync(@"
-                    INSERT INTO SchoolManagement.StaffEmploymentStatusHistory 
-                    (StaffID, OldStatus, NewStatus, ChangedByUserID, Remarks, ChangeDate)
-                    VALUES (@StaffID, @OldStatus, @NewStatus, @ChangedByUserID, @Remarks, GETDATE())",
+            INSERT INTO SchoolManagement.StaffEmploymentStatusHistory 
+            (StaffID, OldStatus, NewStatus, ChangedByUserID, Remarks, ChangeDate)
+            VALUES (@StaffID, @OldStatus, @NewStatus, @ChangedByUserID, @Remarks, GETDATE())",
                     new
                     {
                         StaffID = staffId,
@@ -5811,10 +5993,25 @@ VALUES (
                         NewStatus = newStatus,
                         ChangedByUserID = changedByUserId,
                         Remarks = "Updated Employment Status"
-                    });
-            }
+                    }, transaction);
 
+                // Optional: log for remote sync
+                string logQuery = @"
+            INSERT INTO SchoolManagement.SyncLog
+                (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+            VALUES ('Staff', @StaffID, 'UPDATE', 'Pending', 0, 5, GETDATE())";
+
+                await connection.ExecuteAsync(logQuery, new { StaffID = staffId }, transaction);
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
+
 
         //TEACHERS ATTENDANCE PDF EXPORT
         public async Task<IEnumerable<string>> GetTeacherNamesAsync()
@@ -6304,16 +6501,49 @@ VALUES (
             return result.ToList();
         }
 
-        public async Task SavePaymentAsync(PaymentsOtherFee payment)
-        {
-            using var connection = new SqlConnection(connectionString);
-            string query = @"
-        INSERT INTO SchoolManagement.PaymentsOtherFees 
-        (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, UserID, PaymentMethod, TermID, PaymentStatus) 
-        VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @UserID, @PaymentMethod, @TermID, @PaymentStatus)";
+       public async Task<int> SavePaymentAsync(PaymentsOtherFee payment)
+{
+    using var connection = new SqlConnection(connectionString);
+    await connection.OpenAsync();
 
-            await connection.ExecuteAsync(query, payment);
+    using var transaction = connection.BeginTransaction();
+    try
+    {
+        string query = @"
+        INSERT INTO SchoolManagement.PaymentsOtherFees
+        (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, UserID, PaymentMethod, TermID, PaymentStatus)
+        VALUES
+        (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @UserID, @PaymentMethod, @TermID, @PaymentStatus);
+        SELECT SCOPE_IDENTITY();";
+
+        var newId = await connection.ExecuteScalarAsync<int>(query, payment, transaction);
+
+        if (newId > 0)
+        {
+            // Log to SyncLog for offline/remote sync
+            string logQuery = @"
+            INSERT INTO SchoolManagement.SyncLog
+            (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+            VALUES ('PaymentsOtherFees', @PaymentID, 'INSERT', 'Pending', 0, 5, GETDATE())";
+
+            await connection.ExecuteAsync(logQuery, new { PaymentID = newId }, transaction);
+
+            transaction.Commit();
+            return newId;
         }
+        else
+        {
+            transaction.Rollback();
+            return 0;
+        }
+    }
+    catch
+    {
+        transaction.Rollback();
+        throw;
+    }
+}
+
 
         public async Task<List<Student>> GetAllStudentsNameAsync()
         {
@@ -6338,12 +6568,43 @@ VALUES (
         public async Task<int> InsertOtherFeeAsync(OtherFee fee)
         {
             using var connection = new SqlConnection(connectionString);
-            string query = @"
+            await connection.OpenAsync();
+
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                string query = @"
         INSERT INTO SchoolManagement.OtherFees
         (FeeTypeName, Description, Amount, ClassID, UserID, RecDateCreated)
-        VALUES (@FeeTypeName, @Description, @Amount, @ClassID, @UserID, GETDATE())";
+        VALUES (@FeeTypeName, @Description, @Amount, @ClassID, @UserID, GETDATE());
+        SELECT SCOPE_IDENTITY();";
 
-            return await connection.ExecuteAsync(query, fee);
+                var newId = await connection.ExecuteScalarAsync<int>(query, fee, transaction);
+
+                if (newId > 0)
+                {
+                    // Log to SyncLog
+                    string logQuery = @"
+            INSERT INTO SchoolManagement.SyncLog
+            (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+            VALUES ('OtherFees', @FeeID, 'INSERT', 'Pending', 0, 5, GETDATE())";
+
+                    await connection.ExecuteAsync(logQuery, new { FeeID = newId }, transaction);
+
+                    transaction.Commit();
+                    return newId;
+                }
+                else
+                {
+                    transaction.Rollback();
+                    return 0;
+                }
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
 
@@ -6363,7 +6624,12 @@ VALUES (
         public async Task<int> UpdateOtherFeeAsync(OtherFee fee, int userId)
         {
             using var connection = new SqlConnection(connectionString);
-            string query = @"
+            await connection.OpenAsync();
+
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                string query = @"
         UPDATE SchoolManagement.OtherFees 
         SET FeeTypeName = @FeeTypeName,
             Description = @Description,
@@ -6373,15 +6639,39 @@ VALUES (
             EditedOnRecDateCreated = GETDATE()
         WHERE FeeTypeID = @FeeTypeID";
 
-            return await connection.ExecuteAsync(query, new
+                var affectedRows = await connection.ExecuteAsync(query, new
+                {
+                    fee.FeeTypeID,
+                    fee.FeeTypeName,
+                    fee.Description,
+                    fee.Amount,
+                    fee.ClassID,
+                    EditBy = userId
+                }, transaction);
+
+                if (affectedRows > 0)
+                {
+                    // Log to SyncLog
+                    string logQuery = @"
+            INSERT INTO SchoolManagement.SyncLog
+            (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+            VALUES ('OtherFees', @FeeID, 'UPDATE', 'Pending', 0, 5, GETDATE())";
+
+                    await connection.ExecuteAsync(logQuery, new { FeeID = fee.FeeTypeID }, transaction);
+                    transaction.Commit();
+                }
+                else
+                {
+                    transaction.Rollback();
+                }
+
+                return affectedRows;
+            }
+            catch
             {
-                fee.FeeTypeID,
-                fee.FeeTypeName,
-                fee.Description,
-                fee.Amount,
-                fee.ClassID,
-                EditBy = userId 
-            });
+                transaction.Rollback();
+                throw;
+            }
         }
 
 
@@ -6389,15 +6679,43 @@ VALUES (
         public async Task<int> DeleteOtherFeeAsync(int feeTypeId, int userId)
         {
             using var connection = new SqlConnection(connectionString);
-            string query = @"
-                UPDATE SchoolManagement.OtherFees 
-                SET DeletedBy = @UserId,
-                    DeletedOnRecDateCreated = GETDATE()
-                WHERE FeeTypeID = @FeeTypeID";
+            await connection.OpenAsync();
 
-            return await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, UserId = userId });
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                string query = @"
+        UPDATE SchoolManagement.OtherFees 
+        SET DeletedBy = @UserId,
+            DeletedOnRecDateCreated = GETDATE()
+        WHERE FeeTypeID = @FeeTypeID";
+
+                var affectedRows = await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, UserId = userId }, transaction);
+
+                if (affectedRows > 0)
+                {
+                    // Log to SyncLog
+                    string logQuery = @"
+            INSERT INTO SchoolManagement.SyncLog
+            (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+            VALUES ('OtherFees', @FeeID, 'DELETE', 'Pending', 0, 5, GETDATE())";
+
+                    await connection.ExecuteAsync(logQuery, new { FeeID = feeTypeId }, transaction);
+                    transaction.Commit();
+                }
+                else
+                {
+                    transaction.Rollback();
+                }
+
+                return affectedRows;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
-
 
         /*other_fee_summery*/
         public async Task<List<FeeSummaryDto>> GetFeeSummaryAsync(DateTime? selectedDate, int? selectedTermId, int? selectedFeeTypeId)
