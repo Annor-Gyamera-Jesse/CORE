@@ -54,7 +54,7 @@ namespace CORE.SERVICE.OFFLINE_SERVICE
                             break;
                         case "FeeTypes":
                             await SyncFeeType(localConn, remoteConn, log);
-                            break;                      
+                            break;                        
 
 
                     }
@@ -245,7 +245,7 @@ namespace CORE.SERVICE.OFFLINE_SERVICE
 
         private static async Task SyncFeeType(SqlConnection localConn, SqlConnection remoteConn, SyncLog log)
         {
-            var feeType = await localConn.QuerySingleAsync<FeeType>(
+            var fee = await localConn.QuerySingleAsync<FeeType>(
                 "SELECT * FROM SchoolManagement.FeeTypes WHERE FeeTypeID = @id",
                 new { id = log.RecordID });
 
@@ -255,7 +255,7 @@ namespace CORE.SERVICE.OFFLINE_SERVICE
             INSERT INTO SchoolManagement.FeeTypes
             (FeeTypeName, Description, Amount, ClassID, RecDateCreated, UserID)
             VALUES (@FeeTypeName, @Description, @Amount, @ClassID, @RecDateCreated, @UserID)",
-                    feeType);
+                    fee);
             }
             else if (log.ActionType == "UPDATE")
             {
@@ -266,15 +266,20 @@ namespace CORE.SERVICE.OFFLINE_SERVICE
                 Amount=@Amount,
                 ClassID=@ClassID,
                 RecDateCreated=@RecDateCreated,
-                UserID=@UserID
+                UserID=@UserID,
+                EditedOnRecDateCreated=@EditedOnRecDateCreated,
+                EditBy=@EditBy
             WHERE FeeTypeID=@FeeTypeID",
-                    feeType);
+                    fee);
             }
             else if (log.ActionType == "DELETE")
             {
-                await remoteConn.ExecuteAsync(
-                    "DELETE FROM SchoolManagement.FeeTypes WHERE FeeTypeID=@id",
-                    new { id = log.RecordID });
+                await remoteConn.ExecuteAsync(@"
+            UPDATE SchoolManagement.FeeTypes SET
+                DeletedBy=@DeletedBy,
+                DeletedOnRecDateCreated=@DeletedOnRecDateCreated
+            WHERE FeeTypeID=@FeeTypeID",
+                    fee);
             }
         }
 

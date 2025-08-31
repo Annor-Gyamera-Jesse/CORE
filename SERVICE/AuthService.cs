@@ -4018,34 +4018,70 @@ namespace CORE.SERVICE
 
         public async Task UpdateFeeAmountAsync(int feeTypeId, string classId, decimal amount, int userId)
         {
-            using (var connection = new SqlConnection(connectionString))
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            using var transaction = connection.BeginTransaction();
+            try
             {
-                await connection.OpenAsync();
                 var query = @"
         UPDATE SchoolManagement.FeeTypes
         SET Amount = @Amount, EditedOnRecDateCreated = GETDATE(), EditBy = @UserID
         WHERE FeeTypeID = @FeeTypeID AND ClassID = @ClassID";
 
-                await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, ClassID = classId, Amount = amount, UserID = userId });
-            }
+                await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, ClassID = classId, Amount = amount, UserID = userId }, transaction);
 
-            _cacheService.Invalidate("AllActiveFeeTypes"); // Invalidate after update
+                // Add to SyncLog for remote sync
+                string logQuery = @"
+        INSERT INTO SchoolManagement.SyncLog
+            (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+        VALUES ('FeeTypes', @FeeTypeID, 'UPDATE', 'Pending', 0, 5, GETDATE())";
+
+                await connection.ExecuteAsync(logQuery, new { FeeTypeID = feeTypeId }, transaction);
+
+                transaction.Commit();
+
+                _cacheService.Invalidate("AllActiveFeeTypes"); // Invalidate cache
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         public async Task DeleteFeeAmountAsync(int feeTypeId, int userId)
         {
-            using (var connection = new SqlConnection(connectionString))
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            using var transaction = connection.BeginTransaction();
+            try
             {
-                await connection.OpenAsync();
                 var query = @"
         UPDATE SchoolManagement.FeeTypes
         SET DeletedBy = @UserID, DeletedOnRecDateCreated = GETDATE()
         WHERE FeeTypeID = @FeeTypeID";
 
-                await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, UserID = userId });
-            }
+                await connection.ExecuteAsync(query, new { FeeTypeID = feeTypeId, UserID = userId }, transaction);
 
-            _cacheService.Invalidate("AllActiveFeeTypes"); // Invalidate after soft delete
+                // Add to SyncLog for remote sync
+                string logQuery = @"
+        INSERT INTO SchoolManagement.SyncLog
+            (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+        VALUES ('FeeTypes', @FeeTypeID, 'DELETE', 'Pending', 0, 5, GETDATE())";
+
+                await connection.ExecuteAsync(logQuery, new { FeeTypeID = feeTypeId }, transaction);
+
+                transaction.Commit();
+
+                _cacheService.Invalidate("AllActiveFeeTypes"); // Invalidate cache
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         /*AccountReconciliationService*/
