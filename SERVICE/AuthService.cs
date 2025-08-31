@@ -479,21 +479,25 @@ namespace CORE.SERVICE
             {
                 // Additional validation for required fields
                 if (string.IsNullOrEmpty(student.StudentFirstName) ||
-                  string.IsNullOrEmpty(student.StudentLastName))
+                    string.IsNullOrEmpty(student.StudentLastName))
                 {
                     throw new ArgumentException("First and last name are required.");
                 }
-
 
                 using (var connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
 
-                    var query = "INSERT INTO SchoolManagement.Students (StudentFirstName, StudentLastName, StudentDateOfBirth, StudentGender, StudentAddress, StudentPhoneNumber, StudentEmail, ImageData, ClassID, " +
-                        "GuardianFullName, GuardianGender, GuardianHouseAddress, GuardianWorkAddress, GuardianEmail, GuardianFirstContact, GuardianSecondContact, EnableSwitch, StudentMedicalReport) " +
-                                "VALUES (@FirstName, @LastName, @DateOfBirth, @Gender, @Address, @PhoneNumber, @Email, @ImageData, @ClassID," +
-                                "@GuardianFullName, @GuardianGender, @GuardianHouseAddress, @GuardianWorkAddress, @GuardianEmail, @GuardianFirstContact, @GuardianSecondContact, @EnableSwitch, @StudentMedicalReport); " +
-                                "SELECT SCOPE_IDENTITY();";
+                    var query = @"INSERT INTO SchoolManagement.Students 
+                          (StudentFirstName, StudentLastName, StudentDateOfBirth, StudentGender, StudentAddress, 
+                           StudentPhoneNumber, StudentEmail, ImageData, ClassID,
+                           GuardianFullName, GuardianGender, GuardianHouseAddress, GuardianWorkAddress, 
+                           GuardianEmail, GuardianFirstContact, GuardianSecondContact, EnableSwitch, StudentMedicalReport) 
+                          VALUES (@FirstName, @LastName, @DateOfBirth, @Gender, @Address, @PhoneNumber, @Email, 
+                                  @ImageData, @ClassID, @GuardianFullName, @GuardianGender, @GuardianHouseAddress, 
+                                  @GuardianWorkAddress, @GuardianEmail, @GuardianFirstContact, @GuardianSecondContact, 
+                                  @EnableSwitch, @StudentMedicalReport); 
+                          SELECT SCOPE_IDENTITY();";
 
                     using (var command = new SqlCommand(query, connection))
                     {
@@ -504,9 +508,7 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@Address", student.StudentAddress ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@PhoneNumber", student.StudentPhoneNumber ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@Email", student.StudentEmail ?? (object)DBNull.Value);
-                        // Add parameter for ImageData
                         command.Parameters.Add("@ImageData", SqlDbType.VarBinary).Value = student.ImageData ?? (object)DBNull.Value;
-                        // Add parameter for ClassID
                         command.Parameters.AddWithValue("@ClassID", student.ClassID);
                         command.Parameters.AddWithValue("@GuardianFullName", student.GuardianFullName ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@GuardianGender", student.GuardianGender ?? (object)DBNull.Value);
@@ -518,19 +520,31 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@EnableSwitch", student.EnableSwitch);
                         command.Parameters.AddWithValue("@StudentMedicalReport", student.StudentMedicalReport ?? (object)DBNull.Value);
 
-                        // ExecuteScalarAsync returns the identity of the new record (StudentID)
                         var result = await command.ExecuteScalarAsync();
 
-                        // Check if the insertion was successful
-                        return result != null ? Convert.ToInt32(result) : 0;
+                        if (result != null)
+                        {
+                            int newId = Convert.ToInt32(result);
+
+                            // Insert into SyncLog
+                            string logQuery = @"INSERT INTO SchoolManagement.SyncLog 
+                                        (TableName, RecordID, ActionType) 
+                                        VALUES ('Students', @StudentID, 'INSERT')";
+                            await connection.ExecuteAsync(logQuery, new { StudentID = newId });
+
+                            return newId;
+                        }
+                        else
+                        {
+                            return 0;
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in AddStudentAsync: {ex.Message}");
-                // Handle the exception as needed (log, throw, etc.)
-                throw; // Rethrow the exception after logging/handling if needed
+                throw;
             }
         }
 
@@ -561,6 +575,14 @@ namespace CORE.SERVICE
             {
                 await connection.OpenAsync();
                 var result = await connection.ExecuteAsync(query, student);
+                if (result > 0)
+                {
+                    // Log the change for sync
+                    string logQuery = @"INSERT INTO SchoolManagement.SyncLog 
+                                (TableName, RecordID, ActionType) 
+                                VALUES ('Students', @StudentID, 'UPDATE')";
+                    await connection.ExecuteAsync(logQuery, new { student.StudentID });
+                }
                 return result > 0;
             }
         }
