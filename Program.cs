@@ -4,6 +4,7 @@ using CORE.SERVICE;
 using CORE.SERVICE.Caching;
 using CORE.SERVICE.MainLayout;
 using CORE.SERVICE.NOTIFICATION;
+using CORE.SERVICE.OFFLINE_SERVICE;
 using FastReport.Data;
 using FastReport.Utils;
 using Microsoft.Extensions.Caching.Memory;
@@ -54,7 +55,8 @@ builder.Services.AddScoped<AuthService>(provider =>
     var connectionString = "Server=ANDERSON-WALKER;Database=INTEL;Trusted_Connection=True;MultipleActiveResultSets=true;Encrypt=False;";
     return new AuthService(connectionString, memoryCache, cacheService);
 });
-
+builder.Services.AddSingleton<SyncService>();
+builder.Services.AddHostedService<SyncBackgroundService>();
 // Register MenuService with the necessary connection string
 builder.Services.AddScoped<MenuService>(provider => new MenuService("Server=ANDERSON-WALKER;Database=INTEL;Trusted_Connection=True;MultipleActiveResultSets=true;Encrypt=False;"));
 //builder.Services.AddScoped<MenuService>(provider => new MenuService("workstation id=SmssCore.mssql.somee.com;packet size=4096;user id=Smss_SQLLogin_1;pwd=rh5eysynka;data source=SmssCore.mssql.somee.com;persist security info=False;initial catalog=SmssCore;TrustServerCertificate=True;"));

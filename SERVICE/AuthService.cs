@@ -479,21 +479,25 @@ namespace CORE.SERVICE
             {
                 // Additional validation for required fields
                 if (string.IsNullOrEmpty(student.StudentFirstName) ||
-                  string.IsNullOrEmpty(student.StudentLastName))
+                    string.IsNullOrEmpty(student.StudentLastName))
                 {
                     throw new ArgumentException("First and last name are required.");
                 }
-
 
                 using (var connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
 
-                    var query = "INSERT INTO SchoolManagement.Students (StudentFirstName, StudentLastName, StudentDateOfBirth, StudentGender, StudentAddress, StudentPhoneNumber, StudentEmail, ImageData, ClassID, " +
-                        "GuardianFullName, GuardianGender, GuardianHouseAddress, GuardianWorkAddress, GuardianEmail, GuardianFirstContact, GuardianSecondContact, EnableSwitch, StudentMedicalReport) " +
-                                "VALUES (@FirstName, @LastName, @DateOfBirth, @Gender, @Address, @PhoneNumber, @Email, @ImageData, @ClassID," +
-                                "@GuardianFullName, @GuardianGender, @GuardianHouseAddress, @GuardianWorkAddress, @GuardianEmail, @GuardianFirstContact, @GuardianSecondContact, @EnableSwitch, @StudentMedicalReport); " +
-                                "SELECT SCOPE_IDENTITY();";
+                    var query = @"INSERT INTO SchoolManagement.Students 
+                          (StudentFirstName, StudentLastName, StudentDateOfBirth, StudentGender, StudentAddress, 
+                           StudentPhoneNumber, StudentEmail, ImageData, ClassID,
+                           GuardianFullName, GuardianGender, GuardianHouseAddress, GuardianWorkAddress, 
+                           GuardianEmail, GuardianFirstContact, GuardianSecondContact, EnableSwitch, StudentMedicalReport) 
+                          VALUES (@FirstName, @LastName, @DateOfBirth, @Gender, @Address, @PhoneNumber, @Email, 
+                                  @ImageData, @ClassID, @GuardianFullName, @GuardianGender, @GuardianHouseAddress, 
+                                  @GuardianWorkAddress, @GuardianEmail, @GuardianFirstContact, @GuardianSecondContact, 
+                                  @EnableSwitch, @StudentMedicalReport); 
+                          SELECT SCOPE_IDENTITY();";
 
                     using (var command = new SqlCommand(query, connection))
                     {
@@ -504,9 +508,7 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@Address", student.StudentAddress ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@PhoneNumber", student.StudentPhoneNumber ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@Email", student.StudentEmail ?? (object)DBNull.Value);
-                        // Add parameter for ImageData
                         command.Parameters.Add("@ImageData", SqlDbType.VarBinary).Value = student.ImageData ?? (object)DBNull.Value;
-                        // Add parameter for ClassID
                         command.Parameters.AddWithValue("@ClassID", student.ClassID);
                         command.Parameters.AddWithValue("@GuardianFullName", student.GuardianFullName ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@GuardianGender", student.GuardianGender ?? (object)DBNull.Value);
@@ -518,19 +520,31 @@ namespace CORE.SERVICE
                         command.Parameters.AddWithValue("@EnableSwitch", student.EnableSwitch);
                         command.Parameters.AddWithValue("@StudentMedicalReport", student.StudentMedicalReport ?? (object)DBNull.Value);
 
-                        // ExecuteScalarAsync returns the identity of the new record (StudentID)
                         var result = await command.ExecuteScalarAsync();
 
-                        // Check if the insertion was successful
-                        return result != null ? Convert.ToInt32(result) : 0;
+                        if (result != null)
+                        {
+                            int newId = Convert.ToInt32(result);
+
+                            // Insert into SyncLog
+                            string logQuery = @"INSERT INTO SchoolManagement.SyncLog 
+                                        (TableName, RecordID, ActionType) 
+                                        VALUES ('Students', @StudentID, 'INSERT')";
+                            await connection.ExecuteAsync(logQuery, new { StudentID = newId });
+
+                            return newId;
+                        }
+                        else
+                        {
+                            return 0;
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in AddStudentAsync: {ex.Message}");
-                // Handle the exception as needed (log, throw, etc.)
-                throw; // Rethrow the exception after logging/handling if needed
+                throw;
             }
         }
 
@@ -561,6 +575,14 @@ namespace CORE.SERVICE
             {
                 await connection.OpenAsync();
                 var result = await connection.ExecuteAsync(query, student);
+                if (result > 0)
+                {
+                    // Log the change for sync
+                    string logQuery = @"INSERT INTO SchoolManagement.SyncLog 
+                                (TableName, RecordID, ActionType) 
+                                VALUES ('Students', @StudentID, 'UPDATE')";
+                    await connection.ExecuteAsync(logQuery, new { student.StudentID });
+                }
                 return result > 0;
             }
         }
@@ -3339,27 +3361,42 @@ namespace CORE.SERVICE
             await connection.OpenAsync();
 
             using var transaction = connection.BeginTransaction();
-
-            const string insertQuery = @"
-    INSERT INTO SchoolManagement.StudentFees 
-    (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod, TermID)
-    VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod, @TermID)";
-
-            var result = await connection.ExecuteAsync(insertQuery, studentFee, transaction: transaction);
-
-            if (result > 0)
+            try
             {
-                transaction.Commit();
+                const string insertQuery = @"
+            INSERT INTO SchoolManagement.StudentFees 
+            (StudentID, FeeTypeID, StudentName, FeeTypeName, ClassID, AmountPaid, AmountLeft, PaymentDate, Note, UserID, PaymentMethod, TermID)
+            VALUES (@StudentID, @FeeTypeID, @StudentName, @FeeTypeName, @ClassID, @AmountPaid, @AmountLeft, @PaymentDate, @Note, @UserID, @PaymentMethod, @TermID);
+            SELECT SCOPE_IDENTITY();";
 
-                // Move this outside transaction
-                await connection.ExecuteAsync("EXEC SchoolManagement.FixStudentFeeAmounts");
+                var newId = await connection.ExecuteScalarAsync<int>(insertQuery, studentFee, transaction: transaction);
 
-                return true;
+                if (newId > 0)
+                {
+                    // Log to SyncLog for offline/remote sync
+                    string logQuery = @"INSERT INTO SchoolManagement.SyncLog 
+                                (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt) 
+                                VALUES ('StudentFees', @FeeID, 'INSERT', 'Pending', 0, 5, GETDATE())";
+
+                    await connection.ExecuteAsync(logQuery, new { FeeID = newId }, transaction);
+
+                    transaction.Commit();
+
+                    // Call procedure AFTER commit
+                    await connection.ExecuteAsync("EXEC SchoolManagement.FixStudentFeeAmounts");
+
+                    return true;
+                }
+                else
+                {
+                    transaction.Rollback();
+                    return false;
+                }
             }
-            else
+            catch
             {
                 transaction.Rollback();
-                return false;
+                throw;
             }
         }
 
@@ -3396,21 +3433,48 @@ namespace CORE.SERVICE
 
 
 
-        public async Task AddStudentDiscountAsync(StudentDiscount discount)
+        public async Task<int> AddStudentDiscountAsync(StudentDiscount discount)
         {
-            using (var connection = new SqlConnection(connectionString))
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            using var transaction = connection.BeginTransaction();
+            try
             {
-                await connection.OpenAsync();
-
                 var sql = @"
-                INSERT INTO SchoolManagement.StudentDiscounts 
-                    (StudentID, GuardianFullName, DiscountType, DiscountValue, IsActive, CreatedDate, UserID)
-                VALUES (@StudentID, @GuardianFullName, @DiscountType, @DiscountValue, 1, GETDATE(), @UserID)";
+            INSERT INTO SchoolManagement.StudentDiscounts 
+                (StudentID, GuardianFullName, DiscountType, DiscountValue, IsActive, CreatedDate, UserID)
+            VALUES (@StudentID, @GuardianFullName, @DiscountType, @DiscountValue, 1, GETDATE(), @UserID);
+            SELECT SCOPE_IDENTITY();";
 
-                await connection.ExecuteAsync(sql, discount);
+                // Insert discount and get new ID
+                var newId = await connection.ExecuteScalarAsync<int>(sql, discount, transaction);
+
+                if (newId > 0)
+                {
+                    // Insert into SyncLog for remote sync
+                    string logQuery = @"
+                INSERT INTO SchoolManagement.SyncLog
+                    (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+                VALUES ('StudentDiscounts', @DiscountID, 'INSERT', 'Pending', 0, 5, GETDATE())";
+
+                    await connection.ExecuteAsync(logQuery, new { DiscountID = newId }, transaction);
+
+                    transaction.Commit();
+                    return newId;
+                }
+                else
+                {
+                    transaction.Rollback();
+                    return 0;
+                }
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
             }
         }
-
 
         public async Task<List<StudentOwingRecord>> GetAllStudentsWhoOweFeesAsync()
         {
@@ -3623,21 +3687,61 @@ namespace CORE.SERVICE
             }, minutes: 1); // Cache for 1 MINT. (can be more, unless banks change often)
         }
 
-        public async Task LogsBankTransactionAsync(int? bankId, string transactionType, decimal amount, string status, string errorMessage)
+        public async Task<int> LogsBankTransactionAsync(
+       int? bankId,
+       string transactionType,
+       decimal amount,
+       string status,
+       string errorMessage)
         {
             using var connection = new SqlConnection(connectionString);
-            string logQuery = @"
-    INSERT INTO SchoolManagement.BankTransactionLog (BankID, TransactionType, Amount, Status, ErrorMessage)
-    VALUES (@BankID, @TransactionType, @Amount, @Status, @ErrorMessage)";
+            await connection.OpenAsync();
 
-            await connection.ExecuteAsync(logQuery, new
+            using var transaction = connection.BeginTransaction();
+            try
             {
-                BankID = bankId,
-                TransactionType = transactionType,
-                Amount = amount,
-                Status = status,
-                ErrorMessage = errorMessage
-            });
+                const string insertQuery = @"
+            INSERT INTO SchoolManagement.BankTransactionLog
+                (BankID, TransactionType, Amount, Status, ErrorMessage, CreatedAt)
+            VALUES
+                (@BankID, @TransactionType, @Amount, @Status, @ErrorMessage, GETDATE());
+            SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                // Insert and get ID
+                var newId = await connection.ExecuteScalarAsync<int>(insertQuery, new
+                {
+                    BankID = bankId,
+                    TransactionType = transactionType,
+                    Amount = amount,
+                    Status = status,
+                    ErrorMessage = errorMessage
+                }, transaction);
+
+                if (newId > 0)
+                {
+                    // Add to SyncLog
+                    const string syncQuery = @"
+                INSERT INTO SchoolManagement.SyncLog
+                    (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+                VALUES
+                    ('BankTransactionLog', @RecordID, 'INSERT', 'Pending', 0, 5, GETDATE());";
+
+                    await connection.ExecuteAsync(syncQuery, new { RecordID = newId }, transaction);
+
+                    transaction.Commit();
+                    return newId;
+                }
+                else
+                {
+                    transaction.Rollback();
+                    return 0;
+                }
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         /*logic to display student outstanding balance*/
@@ -3784,34 +3888,55 @@ namespace CORE.SERVICE
         }
 
         // Insert the fee amount for the selected class and fee type
-        public async Task InsertFeeAmountAsync(string classId, int feeTypeId, decimal amount, int userId, string feeTypeName)
+        public async Task<int> InsertFeeAmountAsync(string classId, int feeTypeId, decimal amount, int userId, string feeTypeName)
         {
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+
+            using var transaction = connection.BeginTransaction();
             try
             {
-                using (var connection = new SqlConnection(connectionString))
+                // Insert into FeeTypes
+                var query = @"
+            INSERT INTO SchoolManagement.FeeTypes 
+                (ClassID, FeeTypeName, Amount, UserID, RecDateCreated)
+            VALUES (@ClassID, @FeeTypeName, @Amount, @UserID, GETDATE());
+            SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                var newId = await connection.ExecuteScalarAsync<int>(query, new
                 {
-                    await connection.OpenAsync();
+                    ClassID = classId,
+                    FeeTypeName = feeTypeName,
+                    Amount = amount,
+                    UserID = userId
+                }, transaction);
 
-                    var query = @"
-                INSERT INTO SchoolManagement.FeeTypes (ClassID, FeeTypeName, Amount, UserID, RecDateCreated)
-                VALUES (@ClassID, @FeeTypeName, @Amount, @UserID, GETDATE())";
+                if (newId > 0)
+                {
+                    // Log for sync
+                    string logQuery = @"
+                INSERT INTO SchoolManagement.SyncLog
+                    (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+                VALUES ('FeeTypes', @FeeTypeID, 'INSERT', 'Pending', 0, 5, GETDATE())";
 
-                    var parameters = new
-                    {
-                        ClassID = classId,
-                        FeeTypeName = feeTypeName,
-                        Amount = amount,
-                        UserID = userId
-                    };
+                    await connection.ExecuteAsync(logQuery, new { FeeTypeID = newId }, transaction);
 
-                    await connection.ExecuteAsync(query, parameters);
+                    transaction.Commit();
+
+                    // Invalidate cache AFTER commit
+                    _cacheService.Invalidate("AllActiveFeeTypes");
+
+                    return newId;
                 }
-
-                // Invalidate cache after insert
-                _cacheService.Invalidate("AllActiveFeeTypes");
+                else
+                {
+                    transaction.Rollback();
+                    return 0;
+                }
             }
             catch (Exception ex)
             {
+                transaction.Rollback();
                 Console.WriteLine($"Error in InsertFeeAmountAsync: {ex.Message}");
                 throw;
             }
@@ -3821,21 +3946,39 @@ namespace CORE.SERVICE
         {
             try
             {
-                using (var connection = new SqlConnection(connectionString))
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+
+                using var transaction = connection.BeginTransaction();
+
+                var sql = @"
+        INSERT INTO SchoolManagement.FeeTypes 
+        (FeeTypeName, Description, Amount, ClassID, RecDateCreated, UserID)
+        VALUES (@FeeTypeName, '', @Amount, @ClassID, GETDATE(), @UserID);
+        SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                // Get new FeeTypeID
+                var newId = await connection.ExecuteScalarAsync<int>(sql, feeType, transaction);
+
+                if (newId > 0)
                 {
-                    await connection.OpenAsync();
+                    // Add to SyncLog for offline sync
+                    string logQuery = @"
+            INSERT INTO SchoolManagement.SyncLog
+            (TableName, RecordID, ActionType, SyncStatus, RetryCount, MaxRetry, CreatedAt)
+            VALUES ('FeeTypes', @FeeTypeID, 'INSERT', 'Pending', 0, 5, GETDATE())";
 
-                    var sql = @"
-                INSERT INTO SchoolManagement.FeeTypes 
-                (FeeTypeName, Description, Amount, ClassID, RecDateCreated, UserID)
-                VALUES 
-                (@FeeTypeName, '', @Amount, @ClassID, GETDATE(), @UserID);";
+                    await connection.ExecuteAsync(logQuery, new { FeeTypeID = newId }, transaction);
 
-                    await connection.ExecuteAsync(sql, feeType);
+                    transaction.Commit();
+
+                    // Invalidate cache after successful insert
+                    _cacheService.Invalidate("AllActiveFeeTypes");
                 }
-
-                // Invalidate cache after insert
-                _cacheService.Invalidate("AllActiveFeeTypes");
+                else
+                {
+                    transaction.Rollback();
+                }
             }
             catch (Exception ex)
             {
@@ -3843,6 +3986,7 @@ namespace CORE.SERVICE
                 throw;
             }
         }
+
 
 
         public async Task<List<Class>> GetAllforsetfeesFeeTypesAsync()
