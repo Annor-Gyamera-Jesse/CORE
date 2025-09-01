@@ -1,0 +1,50 @@
+﻿@page "/pull-online-data"
+@using Radzen
+@inject CORE.SERVICE.OFFLINE_SERVICE.SyncService SyncService
+@inject NotificationService NotificationService
+
+<h3>Pull Data From Online</h3>
+
+<RadzenButton Text="Pull All Online Data" Click="@PullData" Style="margin-bottom: 10px;" ButtonStyle="ButtonStyle.Primary" Icon="sync" />
+
+@if (!string.IsNullOrEmpty(StatusMessage))
+{
+    <p>@StatusMessage</p>
+}
+
+@code {
+    private string StatusMessage;
+
+    private async Task PullData()
+    {
+        try
+        {
+            StatusMessage = "Pulling data... please wait.";
+            
+            // Trigger UI update
+            StateHasChanged();
+
+            await SyncService.PullAllDataFromOnlineAsync();
+
+            StatusMessage = " All data pulled successfully!";
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Data Sync",
+                Detail = "All online data has been pulled successfully.",
+                Duration = 4000
+            });
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $" Error: {ex.Message}";
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Data Sync Error",
+                Detail = ex.Message,
+                Duration = 5000
+            });
+        }
+    }
+}

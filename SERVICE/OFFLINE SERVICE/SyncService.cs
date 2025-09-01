@@ -103,6 +103,67 @@ namespace CORE.SERVICE.OFFLINE_SERVICE
             }
         }
 
+        public async Task PullAllDataFromOnlineAsync()
+        {
+            var tables = new string[]
+            {
+        "lessonnotes","NonTeachingStaffsAttendance","TeachersAttendanceOut","Classes","TeachersAttendance",
+        "StaffEmploymentStatusHistory","TeacherEmploymentStatusHistory","TeachersAssesment","PhotoRecords",
+        "StudentClassHistory","SyncLog","Class","ReportViewPage","SchoolCourse","PaymentLog","Bank",
+        "SchoolExams","MobileAppRoles","SchoolCalendar","SchoolTable","TEACHERSLESSONNOTES",
+        "BankTransactionLog","TriggerLogs","SchoolTerm","Teacher","NonTeachingStaffs","Courses","FeeAssignmentLog",
+        "StudentFeeAccount","MobileAppMenuDisplay","FeeTypes","TeachersTask","Menu","Staff","StudentDiscounts",
+        "UserLog","SetMAinExams","StudentFees","ExamsContent","Users","PaymentCategory","BankBalances",
+        "NoticeBoard","BankBalanceSyncLog","TeacherSubjectAssignment","AssignTeachersSchoolTimetable",
+        "UserNoticeReadStatus","MessagesToRoleUsers","DeletedStudents","SalaryPayments","LoginScreenDetails",
+        "SchoolDepartMent","LeaveOfAbsence","Notifications","BankLog","Students","OtherFees",
+        "StudentCourseRegistrations","ExpenseCategories","StudentTimetable_Days","Expenses",
+        "TeacherStatusAuditLog","ClassScores","Roles","PaymentsOtherFees","PaymentMethods",
+        "StudentTimetable_Timeslots","TransactionLogs","ExpensePayments","FeeCorrectionLog",
+        "StudentTimetable_Schedule","StudentsAttendance","PaymentsOtherFeesTriggerLogs"
+            };
+
+            using var localConn = new SqlConnection(localConnectionString);
+            using var remoteConn = new SqlConnection(remoteConnectionString);
+
+            await localConn.OpenAsync();
+            await remoteConn.OpenAsync();
+
+            foreach (var table in tables)
+            {
+                try
+                {
+                    Console.WriteLine($"Syncing table: {table}");
+
+                    // 1️⃣ Get all records from online as object list
+                    var records = (await remoteConn.QueryAsync($"SELECT * FROM SchoolManagement.{table}")).ToList();
+
+                    // 2️⃣ Delete existing local records
+                    await Dapper.SqlMapper.ExecuteAsync(localConn, $"DELETE FROM SchoolManagement.{table}");
+
+                    // 3️⃣ Bulk insert records into local
+                    foreach (var record in records)
+                    {
+                        // Convert dynamic to dictionary
+                        var dict = (IDictionary<string, object>)record;
+                        var columns = dict.Keys;
+                        var columnList = string.Join(",", columns);
+                        var paramList = string.Join(",", columns.Select(c => "@" + c));
+                        var insertQuery = $"INSERT INTO SchoolManagement.{table} ({columnList}) VALUES ({paramList})";
+
+                        await Dapper.SqlMapper.ExecuteAsync(localConn, insertQuery, dict);
+                    }
+
+                    Console.WriteLine($"✅ Table {table} synced successfully!");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error syncing table {table}: {ex.Message}");
+                }
+            }
+
+            Console.WriteLine("All tables synced successfully!");
+        }
 
         private static async Task SyncStaffStatus(SqlConnection localConn, SqlConnection remoteConn, SyncLog log)
         {
