@@ -4496,7 +4496,7 @@ VALUES
         }
 
         //CAUTION I THINK I WILL REVISITE HERE AGAIN
-        public async Task<bool> DeductFromBankAsync(string paymentMethod, decimal amount, int userId)
+        public async Task<bool> DeductFromBankAsync(string paymentMethod, decimal amount)
         {
             try
             {
@@ -4520,19 +4520,19 @@ VALUES
                 if (rowsAffected > 0)
                 {
                     // Log the successful deduction and add to SyncLog
-                    int? logId = await LogBankTransactionAsync(bankId, "Withdrawal", amount, "Success", null, connection, userId);
+                    int? logId = await LogBankTransactionAsync(bankId, "Withdrawal", amount, "Success", null, connection);
                     return true;
                 }
                 else
                 {
-                    int? logId = await LogBankTransactionAsync(bankId, "Withdrawal", amount, "Failed", "No rows affected.", connection, userId);
+                    int? logId = await LogBankTransactionAsync(bankId, "Withdrawal", amount, "Failed", "No rows affected.", connection);
                     return false;
                 }
             }
             catch (Exception ex)
             {
                 using var connection = new SqlConnection(connectionString);
-                await LogBankTransactionAsync(null, "Withdrawal", amount, "Failed", ex.Message, connection, userId);
+                await LogBankTransactionAsync(null, "Withdrawal", amount, "Failed", ex.Message, connection);
                 return false;
             }
         }
