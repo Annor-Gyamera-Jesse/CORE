@@ -16,6 +16,13 @@ namespace CORE.STUDENTS_ATTENDANCES.STUDENTS
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<Per_Class_Attendance_Export>(dialogTitle, null, dialogOptions);
         }
+        public async Task OpenAllStudentsNamesClassDialog()
+        {
+            var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "600px", Resizable = false, Height = "340px" };
+            var dialogTitle = $"PRINT PER CLASS";
+            // Register dialog closed event with RadzenDialogService
+            await DialogService.OpenAsync<Print_Students_Name>(dialogTitle, null, dialogOptions);
+        }
      
         public async Task OpenAttendancePerStudentDialog()
         {

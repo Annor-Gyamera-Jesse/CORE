@@ -16,11 +16,14 @@
 <div class="toolset-container mt-2">
     <RadzenButton Text="PER CLASS" Icon="house" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Danger" Click=@OnOpenClassAttendanceExportDialog />
     <RadzenButton Text="PER STUDENT" Icon="people" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Info" Click=@OnOpenPerStudentExportDialog />   
+    <RadzenButton Text="PRINT STUDENT NAMES" Icon="group" class="toolbar-button-color-default toolset-btn" ButtonStyle="ButtonStyle.Dark" Click=@OnOpenPrintAllStudentExportDialog />
+
 </div>
 
 @code {
     [Parameter] public Action OnOpenClassAttendanceExportDialog { get; set; }
 
     [Parameter] public Action OnOpenPerStudentExportDialog { get; set; }
+[Parameter] public Action OnOpenPrintAllStudentExportDialog { get; set; }
      
 }

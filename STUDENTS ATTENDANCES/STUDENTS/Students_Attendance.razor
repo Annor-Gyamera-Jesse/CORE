@@ -64,7 +64,7 @@
 
             <RadzenHeader title="EXPORT ATTENDANCE" class="header-container compact-header">
         <RadzenFieldset Text="EXPORT ATTENDANCE" class="right-align" Icon="print">
-                    <StudentsAttendanceToolComponent OnOpenClassAttendanceExportDialog="OpenClassAttendanceExportDialog" OnOpenPerStudentExportDialog="OpenPerStudentExportDialog" />
+                    <StudentsAttendanceToolComponent OnOpenClassAttendanceExportDialog="OpenClassAttendanceExportDialog" OnOpenPerStudentExportDialog="OpenPerStudentExportDialog" OnOpenPrintAllStudentExportDialog="OpenPrintAllStudentExportDialog" />
         </RadzenFieldset>
         </RadzenHeader>
     </ChildContent>
@@ -180,5 +180,6 @@
 
 
     async void OpenPerStudentExportDialog() => await OpenAttendancePerStudentDialog();
-    async void OpenClassAttendanceExportDialog() => await OpenAttendanceByClassDialog();    
+    async void OpenClassAttendanceExportDialog() => await OpenAttendanceByClassDialog(); 
+    async void OpenPrintAllStudentExportDialog() => await OpenAllStudentsNamesClassDialog();
 }

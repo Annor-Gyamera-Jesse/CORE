@@ -1,0 +1,123 @@
+﻿@page "/student-list-pdf"
+@inject AuthService authService
+@inject NotificationMessageService Notify
+@inject IJSRuntime JSRuntime
+@using CORE.MODEL
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@using Radzen
+@using System.Text
+
+<h3>📄 Generate Student List PDF</h3>
+
+<RadzenDropDown Data="@classes"
+                TextProperty="ClassID"
+                ValueProperty="ClassID"
+                @bind-Value="selectedClassIdForList"
+                Placeholder="Select Class"
+                Style="width: 100%; margin-bottom: 20px;"
+                Change="@(async args => await LoadStudentsForList(args))" />
+
+<RadzenDropDown Data="@studentsForList"
+                TextProperty="FullName"
+                ValueProperty="StudentID"
+                @bind-Value="selectedStudentIdForList"
+                Placeholder="Select a student"
+                Disabled="@printAllInClass"
+                Style="width: 100%; margin-bottom: 20px;" />
+
+<RadzenCheckBox TriState="false" @bind-Value="printAllInClass" />
+<label style="margin-left:10px;">Print all students in selected class</label>
+
+<RadzenButton Text="Generate Student List PDF"
+              Icon="picture_as_pdf"
+              Click="@GenerateStudentListPdf"
+              Style="width: 100%; margin-top: 20px;" />
+
+@code {
+    private List<Class> classes = new();
+    private string? selectedClassIdForList;
+    private List<Student> studentsForList = new();
+    private int? selectedStudentIdForList;
+    private bool printAllInClass = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        classes = await authService.GetAllStudentsClassesAsync();
+    }
+
+   private async Task LoadStudentsForList(object args)
+{
+    if (args is string classId && !string.IsNullOrWhiteSpace(classId))
+    {
+        selectedClassIdForList = classId;
+        studentsForList = await authService.GetStudentsByClassIdAsync(classId);
+        // no need to assign FullName — it's computed from First + Last name
+    }
+}
+
+
+    private async Task GenerateStudentListPdf()
+    {
+        if (string.IsNullOrWhiteSpace(selectedClassIdForList))
+        {
+            Notify.ShowNotification("Please select a class.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        List<Student> targetStudents;
+        if (printAllInClass)
+        {
+            targetStudents = studentsForList;
+        }
+        else
+        {
+            if (selectedStudentIdForList is null or 0)
+            {
+                Notify.ShowNotification("Please select a student.", "", NotificationSeverity.Warning);
+                return;
+            }
+            targetStudents = studentsForList
+                .Where(s => s.StudentID == selectedStudentIdForList.Value)
+                .ToList();
+        }
+
+        if (!targetStudents.Any())
+        {
+            Notify.ShowNotification("No students found.", "", NotificationSeverity.Warning);
+            return;
+        }
+
+        var csvBuilder = new StringBuilder();
+        csvBuilder.AppendLine("STUDENT NAME, CLASS");
+
+        foreach (var stu in targetStudents)
+        {
+            csvBuilder.AppendLine($"{stu.StudentFirstName} {stu.StudentLastName}, {stu.ClassID}");
+        }
+
+        var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+        var base64Csv = Convert.ToBase64String(csvData);
+
+        var (companyName, schoolName, logoBase64) = await authService.GetPdfLoginScreenDetailsAsync();
+        var fileName = $"Student_List_{selectedClassIdForList}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+
+        var report = new
+        {
+            studentListCsv = base64Csv,
+            classId = selectedClassIdForList
+        };
+
+        await JSRuntime.InvokeVoidAsync(
+            "downloadStudentListPdf",
+            fileName,
+            report,
+            companyName,
+            schoolName,
+            logoBase64,
+            DateTime.Now.ToString("dd MMM yyyy")
+        );
+
+        Notify.ShowNotification("Student list PDF generated successfully.", "", NotificationSeverity.Success);
+    }
+}
