@@ -10,6 +10,7 @@
 @inject NotificationMessageService Notify
 @inject IJSRuntime jsRuntime
 
+
 <RadzenNotification />
 @inject DialogService DialogService
 
@@ -53,23 +54,35 @@
 {
 
     <RadzenFieldset Text="Students Registration">
-        <div class="row">
-            <div class="col-md-1">
-                <RadzenButton Text="Search and Edit" Icon="search" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Style="margin-right: -89px;" Click="@OpenSearchDialog" />
+        <div class="row mb-3 align-items-center">
+            <div class="col-auto">
+                <RadzenButton Text="Search and Edit"
+                              Icon="search"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Size="ButtonSize.Small"
+                              Click="@OpenSearchDialog" />
             </div>
-            <dive class="col-md-1">
-                <RadzenButton Text="Download Enrollment Form PDF" Icon="save_alt"
-                              Click="@DownloadEnrollmentForm"
-                              Style="width: 100%; margin-bottom: 10px;" />
-            </dive>
-            @if (isEditMode)
-            {
-                <div class="rz-card rz-shadow-lg rz-p-3 rz-mb-3 edit-mode-banner">
-                    <strong><i class="rz-icon rz-icon-edit" style="margin-right:5px;"></i>Edit Mode:</strong> You are editing an existing student record.
-                </div>
-            }
 
+            <div class="col-auto">
+                <RadzenButton Text="Open Enrollment Form"
+                              Icon="description"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Size="ButtonSize.Small"
+                              Click="@OpenEnrollmentForm" />
+            </div>
         </div>
+
+        @if (isEditMode)
+        {
+            <div class="rz-card rz-shadow-lg rz-p-3 rz-mb-3 edit-mode-banner">
+                <strong>
+                    <i class="rz-icon rz-icon-edit" style="margin-right:5px;"></i>
+                    Edit Mode:
+                </strong> You are editing an existing student record.
+            </div>
+        }
+
+
         <div class="row">
             <div class="col-md-3 text-md-end form-label">
                 <RadzenLabel Text="Student FirstName" Component="textstudentname" />
@@ -517,23 +530,27 @@
         }
     }
 
-    private async Task DownloadEnrollmentForm()
+    public async Task OpenEnrollmentForm()
     {
-        try
-        {
-            var (companyName, schoolName, logoBase64) = await authService.GetPdfLoginScreenDetailsAsync();
+        var dialogOptions = new DialogOptions()
+            {
+                Draggable = false,
+                ShowClose = true,
+                CloseDialogOnEsc = true,
+                Width = "800px",
+                Height = "60px",
+                Resizable = true
+            };
 
-            await jsRuntime.InvokeVoidAsync("downloadEnrollmentFormPdf",
-                                           companyName,
-                                           schoolName,
-                                           logoBase64,
-                                           DateTime.Now.ToString("dd MMM yyyy"));
+        var dialogTitle = "Enrollment Form";
 
-            Notify.ShowNotification("Enrollment Form PDF generated successfully.", "", NotificationSeverity.Success);
-        }
-        catch (Exception ex)
-        {
-            Notify.ShowNotification($"Error generating PDF: {ex.Message}", "", NotificationSeverity.Error);
-        }
+        // Use full namespace + component name
+        await DialogService.OpenAsync<CORE.Pages.STUDENTS.EnrollmentForm.SchoolEnrollmentForm>(
+            dialogTitle,
+            null,
+            dialogOptions
+        );
     }
+
+
 }

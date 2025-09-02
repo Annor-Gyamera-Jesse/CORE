@@ -1,4 +1,4 @@
-﻿function downloadEnrollmentFormPdf(companyName, schoolName, logoBase64, currentDate) {
+﻿function downloadEnrollmentFormPdf(companyName, schoolName, logoBase64, currentDate, level) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageHeight = doc.internal.pageSize.height;
@@ -12,6 +12,11 @@
         }
     }
 
+    function gh(amount) {
+        // Render whole amounts as-is; you can switch to toFixed(2) if you prefer
+        return `GHS ${amount}`;
+    }
+
     // === Logo + School Header ===
     if (logoBase64) {
         doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', 85, yOffset, 40, 25);
@@ -19,13 +24,23 @@
     }
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
-    doc.text(companyName.toUpperCase(), 105, yOffset, { align: 'center' });
+    doc.text(companyName?.toUpperCase() || "", 105, yOffset, { align: 'center' });
     yOffset += 8;
     doc.setFontSize(13);
-    doc.text(schoolName, 105, yOffset, { align: 'center' });
+    doc.text(schoolName || "", 105, yOffset, { align: 'center' });
     yOffset += 5;
     doc.setDrawColor(0);
-    doc.line(20, yOffset, 190, yOffset); // underline
+    doc.line(20, yOffset, 190, yOffset);
+    yOffset += 10;
+
+    // === Title with Level ===
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(`ENROLLMENT FORM – ${level}`, 105, yOffset, { align: 'center' });
+    yOffset += 8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`Printed: ${currentDate}`, 105, yOffset, { align: 'center' });
     yOffset += 10;
 
     // === Student Details Section ===
@@ -51,23 +66,22 @@
     ];
     studentFields.forEach(field => {
         checkPageBreak(12);
-        doc.rect(20, yOffset - 5, 170, 8); // input box
+        doc.rect(20, yOffset - 5, 170, 8);
         doc.text(field, 22, yOffset);
         yOffset += 12;
     });
 
-    // === Fees Table ===
+    // === Fees Payable (single level only) ===
     checkPageBreak(50);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text("FEES PAYABLE", 105, yOffset, { align: 'center' });
-    yOffset += 5;
+    doc.text(`FEES PAYABLE – ${level}`, 105, yOffset, { align: 'center' });
+    yOffset += 6;
 
-    const headers = ['Item', 'Preschool', 'Primary', 'JHS'];
     const items = [
         'Admission Fees',
         'P.T.A DUES',
-        'Tuition Fees ',
+        'Tuition Fees',
         'Friday Wear',
         'Maintenance Fee',
         'First Aid Fees',
@@ -76,50 +90,49 @@
         'Textbooks',
         'Total'
     ];
-    const fees = {
+
+    // Keep your exact numbers (including Total) per level
+    const feesByLevel = {
         Preschool: [25, 10, 190, 100, 10, 10, 10, 10, 0, 365],
         Primary: [25, 10, 200, 100, 10, 10, 10, 10, 70, 445],
         JHS: [25, 10, 300, 100, 10, 10, 10, 10, 70, 475]
     };
 
-    const colWidths = [70, 35, 35, 35];
+    const amounts = feesByLevel[level] || [];
+
+    // Two-column table: Item | Amount
+    const colWidths = [110, 60];
     let startX = 20;
+    const rowH = 8;
 
-    // draw table header
+    // Header
     doc.setFontSize(11);
-    let rowHeight = 8;
-    startX = 20;
-    headers.forEach((h, i) => {
-        doc.rect(startX, yOffset, colWidths[i], rowHeight);
-        doc.text(h, startX + colWidths[i] / 2, yOffset + 6, { align: 'center' });
-        startX += colWidths[i];
-    });
-    yOffset += rowHeight;
+    doc.rect(startX, yOffset, colWidths[0], rowH);
+    doc.text('Item', startX + 2, yOffset + 6);
+    doc.rect(startX + colWidths[0], yOffset, colWidths[1], rowH);
+    doc.text('Amount (GHS)', startX + colWidths[0] + colWidths[1] / 2, yOffset + 6, { align: 'center' });
+    yOffset += rowH;
 
-    // draw rows with data
+    // Rows
     doc.setFont('helvetica', 'normal');
-    items.forEach((item, rowIndex) => {
-        checkPageBreak(15);
-        startX = 20;
+    items.forEach((label, idx) => {
+        checkPageBreak(12);
+        const val = amounts[idx];
+        doc.rect(startX, yOffset, colWidths[0], rowH);
+        doc.text(label, startX + 2, yOffset + 6);
 
-        headers.forEach((h, colIndex) => {
-            doc.rect(startX, yOffset, colWidths[colIndex], rowHeight);
-
-            if (colIndex === 0) {
-                // Item name
-                doc.text(item, startX + 2, yOffset + 6);
-            } else {
-                // Fees
-                const colName = headers[colIndex];
-                const feeValue = fees[colName][rowIndex];
-                if (feeValue !== undefined) {
-                    doc.text(String(feeValue), startX + colWidths[colIndex] / 2, yOffset + 6, { align: 'center' });
-                }
+        doc.rect(startX + colWidths[0], yOffset, colWidths[1], rowH);
+        if (typeof val !== "undefined") {
+            const isTotal = label.toLowerCase() === 'total';
+            if (isTotal) {
+                doc.setFont('helvetica', 'bold');
             }
-
-            startX += colWidths[colIndex];
-        });
-        yOffset += rowHeight;
+            doc.text(gh(val), startX + colWidths[0] + colWidths[1] - 4, yOffset + 6, { align: 'right' });
+            if (isTotal) {
+                doc.setFont('helvetica', 'normal');
+            }
+        }
+        yOffset += rowH;
     });
 
     // === Requirements ===
@@ -133,7 +146,7 @@
     const requirements = ["2 Toilet Rolls", "2 Toilet Soaps", "Water bottle", "1 Dettol"];
     requirements.forEach(req => {
         checkPageBreak(12);
-        doc.circle(23, yOffset - 2, 1, 'F'); // bullet
+        doc.circle(23, yOffset - 2, 1, 'F');
         doc.text(req, 28, yOffset);
         yOffset += 8;
     });
@@ -165,5 +178,6 @@
     doc.text("Parent/Guardian: _______________________", 110, yOffset);
 
     // === Save PDF ===
-    doc.save(`Enrollment_Form_${new Date().toISOString().slice(0, 10)}.pdf`);
+    const safeLevel = (level || 'Form').replace(/[^\w-]/g, '');
+    doc.save(`Enrollment_Form_${safeLevel}_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
