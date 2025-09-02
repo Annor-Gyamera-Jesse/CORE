@@ -6268,10 +6268,12 @@ VALUES (
         {
             using var connection = new SqlConnection(connectionString);
             return (await connection.QueryAsync<Student>(
-                "SELECT StudentID, (StudentFirstName + ' ' + StudentLastName) as FullName, ClassID " +
-                "FROM SchoolManagement.Students WHERE ClassID = @classId",
+                @"SELECT StudentID, StudentFirstName, StudentLastName, ClassID
+          FROM SchoolManagement.Students
+          WHERE ClassID = @classId",
                 new { classId })).ToList();
         }
+
 
     }
 }

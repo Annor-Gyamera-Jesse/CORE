@@ -64,7 +64,24 @@
     yOffset += 5;
 
     const headers = ['Item', 'Preschool', 'Primary', 'JHS'];
-    const items = ['Admission Fees GH', 'Tuition Fees GH', 'Friday Wear', 'Maintenance Fee', 'First Aid Fees', 'Crest', 'Sports Fee', 'Textbooks', 'Total'];
+    const items = [
+        'Admission Fees',
+        'P.T.A DUES',
+        'Tuition Fees ',
+        'Friday Wear',
+        'Maintenance Fee',
+        'First Aid Fees',
+        'Crest',
+        'Sports Fee',
+        'Textbooks',
+        'Total'
+    ];
+    const fees = {
+        Preschool: [25, 10, 190, 100, 10, 10, 10, 10, 0, 365],
+        Primary: [25, 10, 200, 100, 10, 10, 10, 10, 70, 445],
+        JHS: [25, 10, 300, 100, 10, 10, 10, 10, 70, 475]
+    };
+
     const colWidths = [70, 35, 35, 35];
     let startX = 20;
 
@@ -79,17 +96,28 @@
     });
     yOffset += rowHeight;
 
-    // table rows
+    // draw rows with data
     doc.setFont('helvetica', 'normal');
-    items.forEach(item => {
+    items.forEach((item, rowIndex) => {
         checkPageBreak(15);
         startX = 20;
-        headers.forEach((h, i) => {
-            doc.rect(startX, yOffset, colWidths[i], rowHeight);
-            if (i === 0) {
-                doc.text(item, startX + 2, yOffset + 6); // left align for item name
+
+        headers.forEach((h, colIndex) => {
+            doc.rect(startX, yOffset, colWidths[colIndex], rowHeight);
+
+            if (colIndex === 0) {
+                // Item name
+                doc.text(item, startX + 2, yOffset + 6);
+            } else {
+                // Fees
+                const colName = headers[colIndex];
+                const feeValue = fees[colName][rowIndex];
+                if (feeValue !== undefined) {
+                    doc.text(String(feeValue), startX + colWidths[colIndex] / 2, yOffset + 6, { align: 'center' });
+                }
             }
-            startX += colWidths[i];
+
+            startX += colWidths[colIndex];
         });
         yOffset += rowHeight;
     });
