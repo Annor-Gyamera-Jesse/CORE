@@ -57,6 +57,11 @@
             <div class="col-md-1">
                 <RadzenButton Text="Search and Edit" Icon="search" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Style="margin-right: -89px;" Click="@OpenSearchDialog" />
             </div>
+            <dive class="col-md-1">
+                <RadzenButton Text="Download Enrollment Form PDF" Icon="save_alt"
+                              Click="@DownloadEnrollmentForm"
+                              Style="width: 100%; margin-bottom: 10px;" />
+            </dive>
             @if (isEditMode)
             {
                 <div class="rz-card rz-shadow-lg rz-p-3 rz-mb-3 edit-mode-banner">
@@ -512,5 +517,23 @@
         }
     }
 
+    private async Task DownloadEnrollmentForm()
+    {
+        try
+        {
+            var (companyName, schoolName, logoBase64) = await authService.GetPdfLoginScreenDetailsAsync();
 
+            await jsRuntime.InvokeVoidAsync("downloadEnrollmentFormPdf",
+                                           companyName,
+                                           schoolName,
+                                           logoBase64,
+                                           DateTime.Now.ToString("dd MMM yyyy"));
+
+            Notify.ShowNotification("Enrollment Form PDF generated successfully.", "", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification($"Error generating PDF: {ex.Message}", "", NotificationSeverity.Error);
+        }
+    }
 }
