@@ -11,50 +11,50 @@
 @inject IJSRuntime jsRuntime
 <style>
     .text-blue {
-        color: blue;
+    color: blue;
     }
 
     .text-red {
-        color: red;
+    color: red;
     }
 
     .student-list-container {
-        max-width: 300px;
-        float: left;
-        margin-right: 20px;
+    max-width: 300px;
+    float: left;
+    margin-right: 20px;
     }
 
     .form-container {
-        margin-left: 320px;
+    margin-left: 320px;
     }
 
     .input-group {
-        margin-bottom: 15px;
+    margin-bottom: 15px;
     }
 
     /* PRINT STUDENT REPOR */
     .header-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     }
 
     .right-align {
-        margin-left: auto;
+    margin-left: auto;
     }
     /* Adjust the header height */
     .compact-header {
-        height: 60px; /* Adjust the height to your preference */
-        padding: 5px 15px; /* Reduce padding */
+    height: 60px; /* Adjust the height to your preference */
+    padding: 5px 15px; /* Reduce padding */
     }
 
-        /* Additional styling if needed */
-        .compact-header .rz-header-title {
-            font-size: 18px; /* Make the title smaller */
-        }
+    /* Additional styling if needed */
+    .compact-header .rz-header-title {
+    font-size: 18px; /* Make the title smaller */
+    }
 
     .custom-background {
-        background-color: green !important;
+    background-color: green !important;
     }
 </style>
 <RadzenNotification />
@@ -73,26 +73,26 @@
 
             <!-- Current Term -->
             <RadzenTextBox Value="@currentTerm?.Term"
-                           ReadOnly="true"
-                           Placeholder="Current Term"
-                           Style="width:200px; margin-right:10px;" />
+            ReadOnly="true"
+            Placeholder="Current Term"
+            Style="width:200px; margin-right:10px;" />
 
             <!-- Payment Date -->
             <RadzenDatePicker @bind-Value="paymentDate"
-                              DateFormat="yyyy-MM-dd"
-                              Style="width:200px; margin-right:10px;" />
+            DateFormat="yyyy-MM-dd"
+            Style="width:200px; margin-right:10px;" />
 
             <!-- Buttons -->
             <RadzenButton Text="EDIT"
-                          Icon="description"
-                          ButtonStyle="ButtonStyle.Info"
-                          Click="@EditDialog"
-                          Style="margin-right:10px;" />
+            Icon="description"
+            ButtonStyle="ButtonStyle.Info"
+            Click="@EditDialog"
+            Style="margin-right:10px;" />
 
             <RadzenButton Text="ADD"
-                          Icon="check"
-                          ButtonStyle="ButtonStyle.Success"
-                          Click="@AddDialog" />
+            Icon="check"
+            ButtonStyle="ButtonStyle.Success"
+            Click="@AddDialog" />
         </RadzenFieldset>
     </RadzenHeader>
 
@@ -109,11 +109,11 @@
             <RadzenDataGridColumn TItem="StudentExtended" Title="Fee Type">
                 <Template Context="student">
                     <RadzenDropDown Data="@GetFeeTypesForClass(student.ClassID)"
-                                    TextProperty="FeeTypeName"
-                                    ValueProperty="FeeTypeID"
-                                    @bind-Value="student.SelectedFeeTypeId"
-                                    Change="@(args => UpdateFeeAmount(student))"
-                                    Style="width:180px" />
+                    TextProperty="FeeTypeName"
+                    ValueProperty="FeeTypeID"
+                    @bind-Value="student.SelectedFeeTypeId"
+                    Change="@(args => UpdateFeeAmount(student))"
+                    Style="width:180px" />
                 </Template>
             </RadzenDataGridColumn>
 
@@ -126,8 +126,8 @@
             <RadzenDataGridColumn TItem="StudentExtended" Title="Actions">
                 <Template Context="student">
                     <RadzenButton Text="Pay"
-                                  ButtonStyle="ButtonStyle.Primary"
-                                  Click="@(async () => await PayFee(student))" />
+                    ButtonStyle="ButtonStyle.Primary"
+                    Click="@(async () => await PayFee(student))" />
                 </Template>
             </RadzenDataGridColumn>
         </Columns>
@@ -144,55 +144,92 @@
 
     protected override async Task OnInitializedAsync()
     {
-        isLoading = true;
-
-        var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
-
-        if (string.IsNullOrWhiteSpace(username))
+        try
         {
-            NotificationService.ShowNotification("User Error", "User not logged in or session expired.", NotificationSeverity.Error);
-            return;
-        }
+            isLoading = true;
 
-        var user = await authService.GetUserByUsernameAsync(username);
-        if (user == null)
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                NotificationService.ShowNotification("User Error", "User not logged in or session expired.", NotificationSeverity.Error);
+                return;
+            }
+
+            var user = await authService.GetUserByUsernameAsync(username);
+            if (user == null)
+            {
+                NotificationService.ShowNotification("User Error", "User not found.", NotificationSeverity.Error);
+                return;
+            }
+
+            userId = user.UserID;
+
+
+            students = (await authService.GetAllStudentsNameAsync())
+                .Select(s => new StudentExtended(s))
+                .OrderBy(s => s.ClassID)
+                .ThenBy(s => s.StudentFirstName)
+                .ThenBy(s => s.StudentLastName)
+                .ToList();
+
+            // Pick only the current term
+            currentTerm = await authService.GetCurrentTermAsync();
+
+            otherFees = await authService.GetOtherFeesAsync();
+        }
+        catch (Exception ex)
         {
-            NotificationService.ShowNotification("User Error", "User not found.", NotificationSeverity.Error);
-            return;
+            NotificationService.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
         }
-
-        userId = user.UserID;
-
-
-        students = (await authService.GetAllStudentsNameAsync())
-            .Select(s => new StudentExtended(s))
-            .OrderBy(s => s.ClassID)
-            .ThenBy(s => s.StudentFirstName)
-            .ThenBy(s => s.StudentLastName)
-            .ToList();
-
-        // Pick only the current term
-        currentTerm = await authService.GetCurrentTermAsync();
-
-        otherFees = await authService.GetOtherFeesAsync();
-
-        isLoading = false;
+        finally
+        {
+            isLoading = false;
+        }    
     }
 
     private IEnumerable<OtherFee> GetFeeTypesForClass(string classId)
     {
-        return otherFees.Where(f => f.ClassID == classId).ToList();
+        try
+        {
+            isLoading = true;
+            return otherFees.Where(f => f.ClassID == classId).ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
+            return new List<OtherFee>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void UpdateFeeAmount(StudentExtended student)
     {
+        try
+        {
+            isLoading = true;
         var fee = otherFees.FirstOrDefault(f => f.FeeTypeID == student.SelectedFeeTypeId);
         student.SelectedFeeAmount = fee?.Amount ?? 0;
         student.SelectedFeeTypeName = fee?.FeeTypeName ?? "";
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task PayFee(StudentExtended student)
     {
+        try
+        {
+            isLoading = true;
         if (currentTerm == null || student.SelectedFeeTypeId == 0)
         {
             Console.WriteLine("Please select FeeType.");
@@ -217,6 +254,16 @@
 
         await authService.SavePaymentAsync(payment);
         Console.WriteLine($"Payment saved for {student.StudentFirstName}");
+            NotificationService.ShowNotification("Success", $"Payment saved for {student.StudentFirstName}", NotificationSeverity.Success);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     public class StudentExtended : Student

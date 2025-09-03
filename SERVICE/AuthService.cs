@@ -6256,6 +6256,24 @@ VALUES (
             return result.ToList();
         }
 
+        //print all students name
+        public async Task<List<Class>> GetAllStudentsClassesAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            return (await connection.QueryAsync<Class>(
+                "SELECT ClassID FROM SchoolManagement.Class ORDER BY ClassID")).ToList();
+        }
+
+        public async Task<List<Student>> GetStudentsByClassIdAsync(string classId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            return (await connection.QueryAsync<Student>(
+                @"SELECT StudentID, StudentFirstName, StudentLastName, ClassID
+          FROM SchoolManagement.Students
+          WHERE ClassID = @classId",
+                new { classId })).ToList();
+        }
+
 
     }
 }

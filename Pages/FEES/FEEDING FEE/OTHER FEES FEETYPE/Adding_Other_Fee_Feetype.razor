@@ -1,6 +1,7 @@
 ﻿@page "/adding-other-fees"
 @using CORE.MODEL
 @using CORE.MODEL.FEEDING_FEE
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
 @inject AuthService authService
@@ -8,74 +9,102 @@
 @inject NotificationMessageService NotificationService
 @inject IJSRuntime jsRuntime
 <RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
 
-<RadzenCard Style="padding:20px; max-width:600px; margin:auto;">
-    <h3 class="text-center">Add Other Fees</h3>
+@if (!isLoading)
+{
+    <RadzenCard Style="padding:20px; max-width:600px; margin:auto;">
+        <h3 class="text-center">Add Other Fees</h3>
 
-    <div class="row">
-        <!-- Fee Type Name -->
-        <div class="col-12 mb-3">
-            <RadzenLabel Text="Fee Type Name" Component="FeeTypeName" />
-            <RadzenTextBox @bind-Value="otherFee.FeeTypeName" Name="FeeTypeName" Style="width:100%;" />
+        <div class="row">
+            <!-- Fee Type Name -->
+            <div class="col-12 mb-3">
+                <RadzenLabel Text="Fee Type Name" Component="FeeTypeName" />
+                <RadzenTextBox @bind-Value="otherFee.FeeTypeName" Name="FeeTypeName" Style="width:100%;" />
+            </div>
+
+            <!-- Amount -->
+            <div class="col-12 mb-3">
+                <RadzenLabel Text="Amount" Component="Amount" />
+                <RadzenNumeric @bind-Value="otherFee.Amount" Name="Amount" Style="width:100%;" />
+            </div>
+
+            <!-- Class Dropdown -->
+            <div class="col-12 mb-3">
+                <RadzenLabel Text="Class" Component="ClassID" />
+                <RadzenDropDown Data="@classes"
+                TextProperty="ClassID"
+                ValueProperty="ClassID"
+                @bind-Value="otherFee.ClassID"
+                Style="width:100%;" />
+            </div>
+
+            <!-- Submit Button -->
+            <div class="col-12 text-center mt-3">
+                <RadzenButton Text="Submit" Click="@SubmitFee" Style="width:200px;" ButtonStyle="ButtonStyle.Primary" />
+            </div>
         </div>
-
-        <!-- Amount -->
-        <div class="col-12 mb-3">
-            <RadzenLabel Text="Amount" Component="Amount" />
-            <RadzenNumeric @bind-Value="otherFee.Amount" Name="Amount" Style="width:100%;" />
-        </div>
-
-        <!-- Class Dropdown -->
-        <div class="col-12 mb-3">
-            <RadzenLabel Text="Class" Component="ClassID" />
-            <RadzenDropDown Data="@classes"
-            TextProperty="ClassID"
-            ValueProperty="ClassID"
-            @bind-Value="otherFee.ClassID"
-            Style="width:100%;" />
-        </div>
-
-        <!-- Submit Button -->
-        <div class="col-12 text-center mt-3">
-            <RadzenButton Text="Submit" Click="@SubmitFee" Style="width:200px;" ButtonStyle="ButtonStyle.Primary" />
-        </div>
-    </div>
-</RadzenCard>
-
+    </RadzenCard>
+}
 @code {
     private OtherFee otherFee = new();
     private List<Class> classes = new();
     public int userId;
+    private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
-       // isLoading = true;
-
-        var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
-
-        if (string.IsNullOrWhiteSpace(username))
+        try
         {
-            NotificationService.ShowNotification("User Error", "User not logged in or session expired.", NotificationSeverity.Error);
-            return;
-        }
+            isLoading = true;
 
-        var user = await authService.GetUserByUsernameAsync(username);
-        if (user == null)
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                NotificationService.ShowNotification("User Error", "User not logged in or session expired.", NotificationSeverity.Error);
+                return;
+            }
+
+            var user = await authService.GetUserByUsernameAsync(username);
+            if (user == null)
+            {
+                NotificationService.ShowNotification("User Error", "User not found.", NotificationSeverity.Error);
+                return;
+            }
+
+            userId = user.UserID;
+
+            // Load classes for dropdown
+            classes = await authService.GetAllClassAsync();
+        }
+        catch (Exception ex)
         {
-            NotificationService.ShowNotification("User Error", "User not found.", NotificationSeverity.Error);
-            return;
+            NotificationService.ShowNotification("Initialization Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
         }
-
-        userId = user.UserID;
-
-        // Load classes for dropdown
-        classes = await authService.GetAllClassAsync();
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task SubmitFee()
     {
         try
         {
+            isLoading = true;
+            if (string.IsNullOrWhiteSpace(otherFee.FeeTypeName))
+            {
+                notificationService.Notify(NotificationSeverity.Warning, "Validation Error", "Fee Type Name is required.");
+                return;
+            }
+            if (otherFee.Amount <= 0)
+            {
+                notificationService.Notify(NotificationSeverity.Warning, "Validation Error", "Amount must be greater than zero.");
+                return;
+            }
+                
+                
             otherFee.UserID = userId;
             
             await authService.InsertOtherFeeAsync(otherFee);
