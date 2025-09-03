@@ -2,68 +2,100 @@
 @using CORE.MODEL
 @using CORE.MODEL.FEEDING_FEE
 @using CORE.MODEL.Term
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService authService
 
-<RadzenCard>
-    <h3 class="mb-4">Class Fee Collection Summary</h3>
-    <RadzenFieldset Legend="Filter Options" Style="margin-bottom: 20px;">
-        <RadzenText>Select criteria to view fee collection summaries.</RadzenText>
-    <div class="row mb-3">
-        <div class="col-md-4">
-            <RadzenLabel Text="Select Date" />
-            <RadzenDatePicker @bind-Value="selectedDate" DateFormat="yyyy-MM-dd" />
-        </div>
-        <div class="col-md-4">
-            <RadzenLabel Text="Select Term" />
-            <RadzenDropDown Data="@terms" TextProperty="Term" ValueProperty="TermID"
-                            @bind-Value="selectedTermId" Style="width:100%;" />
-        </div>
-        <div class="col-md-4">
-            <RadzenLabel Text="Select Fee Type" />
-            <RadzenDropDown Data="@feeTypes" TextProperty="FeeTypeName" ValueProperty="FeeTypeID"
-                            @bind-Value="selectedFeeTypeId" Style="width:100%;" />
-        </div>
-    </div>
+<RadzenNotification />
+<LoadingSpinner Visible="isLoading" />
 
-    <RadzenButton Text="Load Summary" Click="@LoadSummary" Style="margin-bottom:20px;" />
-    </RadzenFieldset>
+@if (!isLoading)
+{
 
-    <div class="row">
-        @foreach (var summary in summaries)
-        {
-            <div class="col-md-4">
-                <RadzenCard Style="margin:10px; padding:15px; background:#f9f9f9;">
-                    <h5>@summary.ClassID - @summary.FeeTypeName</h5>
-                    <p><b>Students:</b> @summary.TotalStudents</p>
-                    <p><b>Fee Per Student:</b> @summary.FeePerStudent</p>
-                    <p><b>Expected:</b> @summary.ExpectedAmount</p>
-                    <p><b>Collected:</b> @summary.CollectedAmount</p>
-                    <p><b>Balance Left:</b> @summary.BalanceLeft</p>
-                </RadzenCard>
+    <RadzenCard>
+        <h3 class="mb-4">Class Fee Collection Summary</h3>
+        <RadzenFieldset Legend="Filter Options" Style="margin-bottom: 20px;">
+            <RadzenText>Select criteria to view fee collection summaries.</RadzenText>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <RadzenLabel Text="Select Date" />
+                    <RadzenDatePicker @bind-Value="selectedDate" DateFormat="yyyy-MM-dd" />
+                </div>
+                <div class="col-md-4">
+                    <RadzenLabel Text="Select Term" />
+                    <RadzenDropDown Data="@terms" TextProperty="Term" ValueProperty="TermID"
+                    @bind-Value="selectedTermId" Style="width:100%;" />
+                </div>
+                <div class="col-md-4">
+                    <RadzenLabel Text="Select Fee Type" />
+                    <RadzenDropDown Data="@feeTypes" TextProperty="FeeTypeName" ValueProperty="FeeTypeID"
+                    @bind-Value="selectedFeeTypeId" Style="width:100%;" />
+                </div>
             </div>
-        }
-    </div>
-</RadzenCard>
 
+            <RadzenButton Text="Load Summary" Click="@LoadSummary" Style="margin-bottom:20px;" />
+        </RadzenFieldset>
+
+        <div class="row">
+            @foreach (var summary in summaries)
+            {
+                <div class="col-md-4">
+                    <RadzenCard Style="margin:10px; padding:15px; background:#f9f9f9;">
+                        <h5>@summary.ClassID - @summary.FeeTypeName</h5>
+                        <p><b>Students:</b> @summary.TotalStudents</p>
+                        <p><b>Fee Per Student:</b> @summary.FeePerStudent</p>
+                        <p><b>Expected:</b> @summary.ExpectedAmount</p>
+                        <p><b>Collected:</b> @summary.CollectedAmount</p>
+                        <p><b>Balance Left:</b> @summary.BalanceLeft</p>
+                    </RadzenCard>
+                </div>
+            }
+        </div>
+    </RadzenCard>
+}
 @code {
     private DateTime? selectedDate;
     private int? selectedTermId;
     private int? selectedFeeTypeId;
-
+    private bool isLoading = false;
     private List<SchoolTerm> terms = new();
     private List<OtherFee> feeTypes = new();
     private List<FeeSummaryDto> summaries = new();
 
     protected override async Task OnInitializedAsync()
     {
-        terms = (await authService.GetAllTermsAsync()).ToList();
-        feeTypes = await authService.GetAllOtherFeesAsync();
+        try
+        {
+            isLoading = true;
+            terms = (await authService.GetAllTermsAsync()).ToList();
+            feeTypes = await authService.GetAllOtherFeesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadSummary()
     {
-        summaries = await authService.GetFeeSummaryAsync(selectedDate, selectedTermId, selectedFeeTypeId);
+        try
+        {
+            isLoading = true;
+
+            summaries = await authService.GetFeeSummaryAsync(selectedDate, selectedTermId, selectedFeeTypeId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading summary: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
   
 }

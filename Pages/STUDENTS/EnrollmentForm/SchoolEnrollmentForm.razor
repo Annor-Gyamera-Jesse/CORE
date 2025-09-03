@@ -13,34 +13,39 @@
 @inject DialogService DialogService
 
 <RadzenNotification />
+<LoadingSpinner Visible="isLoading"/>
+@if (!isLoading)
+{
 
-<div class="row">
-    <div class="col-md-4">
-        <RadzenButton Text="Preschool PDF" Icon="picture_as_pdf"
-                      Style="width:100%; margin-bottom:10px"
-                      Click="@(() => DownloadEnrollmentForm(LevelPreschool))" ButtonStyle="ButtonStyle.Danger" />
+    <div class="row">
+        <div class="col-md-4">
+            <RadzenButton Text="Preschool PDF" Icon="picture_as_pdf"
+            Style="width:100%; margin-bottom:10px"
+            Click="@(() => DownloadEnrollmentForm(LevelPreschool))" ButtonStyle="ButtonStyle.Danger" />
+        </div>
+        <div class="col-md-4">
+            <RadzenButton Text="Primary PDF" Icon="picture_as_pdf"
+            Style="width:100%; margin-bottom:10px"
+            Click="@(() => DownloadEnrollmentForm(LevelPrimary))" ButtonStyle="ButtonStyle.Success" />
+        </div>
+        <div class="col-md-4">
+            <RadzenButton Text="JHS PDF" Icon="picture_as_pdf"
+            Style="width:100%; margin-bottom:10px"
+            Click="@(() => DownloadEnrollmentForm(LevelJhs))" ButtonStyle="ButtonStyle.Dark" />
+        </div>
     </div>
-    <div class="col-md-4">
-        <RadzenButton Text="Primary PDF" Icon="picture_as_pdf"
-                      Style="width:100%; margin-bottom:10px"
-                      Click="@(() => DownloadEnrollmentForm(LevelPrimary))" ButtonStyle="ButtonStyle.Success" />
-    </div>
-    <div class="col-md-4">
-        <RadzenButton Text="JHS PDF" Icon="picture_as_pdf"
-                      Style="width:100%; margin-bottom:10px"
-                      Click="@(() => DownloadEnrollmentForm(LevelJhs))" ButtonStyle="ButtonStyle.Dark" />
-    </div>
-</div>
-
+}
 @code {
     private const string LevelPreschool = "Preschool";
     private const string LevelPrimary = "Primary";
     private const string LevelJhs = "JHS";
+    public bool isLoading = false;
 
     private async Task DownloadEnrollmentForm(string level)
     {
         try
         {
+            isLoading = true;
             var (companyName, schoolName, logoBase64) = await authService.GetPdfLoginScreenDetailsAsync();
 
             await jsRuntime.InvokeVoidAsync(
@@ -57,6 +62,10 @@
         catch (Exception ex)
         {
             Notify.ShowNotification($"Error generating {level} PDF: {ex.Message}", "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿@page "/editotherfees"
 @using CORE.MODEL.FEEDING_FEE
+@using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @using CORE.SERVICE.NOTIFICATION
 @inject AuthService otherFeesService
@@ -10,68 +11,75 @@
 
 <PageTitle>Other Fees</PageTitle>
 
-<RadzenCard Style="padding:20px">
-    <h3 class="text-xl font-bold mb-3">Manage Other Fees</h3>
+<LoadingSpinner Visible="isLoading" />
 
-    <RadzenDataGrid @ref="grid" Data="@otherFees" TItem="OtherFee"
-                    AllowPaging="true" PageSize="10"
-                    AllowFiltering="true" AllowSorting="true"
-                    RowUpdate="@OnUpdateRow"
-                    EditMode="DataGridEditMode.Single">
-        <Columns>
-            <RadzenDataGridColumn TItem="OtherFee" Property="FeeTypeID" Title="ID" Width="70px" />
+@if (!isLoading)
+{
+    <RadzenCard Style="padding:20px">
+        <h3 class="text-xl font-bold mb-3">Manage Other Fees</h3>
 
-            <RadzenDataGridColumn TItem="OtherFee" Property="FeeTypeName" Title="Fee Type">
-                <EditTemplate Context="fee">
-                    <RadzenTextBox @bind-Value="fee.FeeTypeName" Style="width:100%" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
+        <RadzenDataGrid @ref="grid" Data="@otherFees" TItem="OtherFee"
+        AllowPaging="true" PageSize="10"
+        AllowFiltering="true" AllowSorting="true"
+        RowUpdate="@OnUpdateRow"
+        EditMode="DataGridEditMode.Single">
+            <Columns>
+                <RadzenDataGridColumn TItem="OtherFee" Property="FeeTypeID" Title="ID" Width="70px" />
 
-            <RadzenDataGridColumn TItem="OtherFee" Property="Description" Title="Description">
-                <EditTemplate Context="fee">
-                    <RadzenTextBox @bind-Value="fee.Description" Style="width:100%" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="OtherFee" Property="FeeTypeName" Title="Fee Type">
+                    <EditTemplate Context="fee">
+                        <RadzenTextBox @bind-Value="fee.FeeTypeName" Style="width:100%" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="OtherFee" Property="Amount" Title="Amount">
-                <EditTemplate Context="fee">
-                    <RadzenNumeric @bind-Value="fee.Amount" Style="width:100%" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="OtherFee" Property="Description" Title="Description">
+                    <EditTemplate Context="fee">
+                        <RadzenTextBox @bind-Value="fee.Description" Style="width:100%" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="OtherFee" Property="ClassID" Title="Class">
-                <EditTemplate Context="fee">
-                    <RadzenTextBox @bind-Value="fee.ClassID" Style="width:100%" />
-                </EditTemplate>
-            </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="OtherFee" Property="Amount" Title="Amount">
+                    <EditTemplate Context="fee">
+                        <RadzenNumeric @bind-Value="fee.Amount" Style="width:100%" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-            <RadzenDataGridColumn TItem="OtherFee" Context="data" Title="Actions" Width="200px">
-                <Template Context="data">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small"
-                                  Click="@(() => grid.EditRow(data))" />
-                    <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small"
-                                  Click="@(() => grid.UpdateRow(data))"
-                                  Style="margin-left:5px" />
-                    <RadzenButton Icon="cancel" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
-                                  Click="@(() => grid.CancelEditRow(data))"
-                                  Style="margin-left:5px" />
-                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
-                                  Click="@(() => DeleteRow(data))"
-                                  Style="margin-left:5px" />
-                </Template>
-            </RadzenDataGridColumn>
-        </Columns>
-    </RadzenDataGrid>
+                <RadzenDataGridColumn TItem="OtherFee" Property="ClassID" Title="Class">
+                    <EditTemplate Context="fee">
+                        <RadzenTextBox @bind-Value="fee.ClassID" Style="width:100%" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
 
-</RadzenCard>
+                <RadzenDataGridColumn TItem="OtherFee" Context="data" Title="Actions" Width="200px">
+                    <Template Context="data">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small"
+                        Click="@(() => grid.EditRow(data))" />
+                        <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small"
+                        Click="@(() => grid.UpdateRow(data))"
+                        Style="margin-left:5px" />
+                        <RadzenButton Icon="cancel" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
+                        Click="@(() => grid.CancelEditRow(data))"
+                        Style="margin-left:5px" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small"
+                        Click="@(() => DeleteRow(data))"
+                        Style="margin-left:5px" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
 
+    </RadzenCard>
+}
 @code {
     private RadzenDataGrid<OtherFee> grid;
     private List<OtherFee> otherFees = new();
     public int userId;
-
+    private bool isLoading = false;
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+        isLoading = true;
         var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
 
         if (string.IsNullOrWhiteSpace(username))
@@ -90,10 +98,22 @@
         userId = user.UserID;
 
         otherFees = await otherFeesService.GetOtherFeesAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     async Task OnUpdateRow(OtherFee fee)
     {
+        try
+        {
+        isLoading = true;
         await otherFeesService.UpdateOtherFeeAsync(fee, userId);
 
         notificationService.Notify(new NotificationMessage
@@ -102,11 +122,28 @@
                 Summary = "Updated",
                 Detail = $"Fee updated successfully by user {userId}!"
             });
+        }
+        catch (Exception ex)
+        {
+            notificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = $"An error occurred: {ex.Message}"
+                });
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     async Task DeleteRow(OtherFee fee)
     {
-        int userId = 1; // ⚡ replace with logged-in user id
+        try
+        {
+            isLoading = true;
+        // userId = user.UserID
         await otherFeesService.DeleteOtherFeeAsync(fee.FeeTypeID, userId);
 
         otherFees.Remove(fee);
@@ -116,5 +153,19 @@
                 Summary = "Deleted",
                 Detail = "Fee deleted successfully!"
             });
+        }
+        catch (Exception ex)
+        {
+            notificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = $"An error occurred: {ex.Message}"
+                });
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }

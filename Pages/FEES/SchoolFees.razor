@@ -96,11 +96,11 @@
 
             <!-- List of Students -->
             <RadzenListBox Data="@FilteredStudents"
-                           ValueProperty="StudentID"
-                           @bind-Value="SelectedStudentID"
-                           Change="OnStudentSelected"
-                           Style="width: 100%; height: 600px;"
-                           Placeholder="Select a Student">
+            ValueProperty="StudentID"
+            @bind-Value="SelectedStudentID"
+            Change="OnStudentSelected"
+            Style="width: 100%; height: 600px;"
+            Placeholder="Select a Student">
                 <Template Context="student">
                     <div style="display: flex; align-items: center; justify-content: space-between;">
                         <span>@student.FullName</span>
@@ -132,8 +132,8 @@
                 <div class="col-md-5">
                     <RadzenLabel Text="School Term" />
                     <RadzenTextBox Value="@currentTermName"
-                                   Disabled="true"
-                                   Style="width: 100%;" />
+                    Disabled="true"
+                    Style="width: 100%;" />
                 </div>
                 <div class="col-md-6">
                     <RadzenLabel Text="Payment Date" />
@@ -142,9 +142,9 @@
                 <div class="col-md-8">
                     <RadzenLabel Text="This Term Outstanding Balance" />
                     <RadzenTextBox Value="@OutstandingBalance.ToString("F2")"
-                                   Style="width: 100%; background-color: #ffe2e6;"
-                                   Disabled="true"
-                                   Placeholder="Outstanding Balance" />
+                    Style="width: 100%; background-color: #ffe2e6;"
+                    Disabled="true"
+                    Placeholder="Outstanding Balance" />
                     <RadzenCard Style="background-color: #ffe2e6; padding: 16px; margin-top: 20px; border-left: 6px solid red;">
                         <h3 style="color: #b00020;">This Term Outstanding Balance</h3>
                         <p style="font-size: 1.2em;">
@@ -195,13 +195,13 @@
                     <!-- Fee Type Dropdown -->
                     <RadzenLabel Text="Fee Type" />
                     <RadzenDropDown @bind-Value="SelectedFeeTypeID"
-                                    Data="@FeeTypes"
-                                    TextProperty="FeeTypeName"
-                                    ValueProperty="FeeTypeID"
-                                    Style="width: 100%;"
-                                    Disabled="@string.IsNullOrEmpty(SelectedClassID)"
-                                    Placeholder="Select Fee Type"
-                                    Change="LoadClassFeeDetails" />
+                    Data="@FeeTypes"
+                    TextProperty="FeeTypeName"
+                    ValueProperty="FeeTypeID"
+                    Style="width: 100%;"
+                    Disabled="@string.IsNullOrEmpty(SelectedClassID)"
+                    Placeholder="Select Fee Type"
+                    Change="LoadClassFeeDetails" />
 
                 </div>
             </div>
@@ -215,7 +215,7 @@
 
 
                 @* @if (!IsCashInHand) *@
-              @*   {
+                @*   {
                     <RadzenLabel Text="Payment To Which Bank" Style="margin-top: 10px;" />
                     <RadzenDropDown @bind-Value="PaymentMethod"
                                     Data="@PaymentMethods"
@@ -251,9 +251,9 @@
                         }
                     }
                 </div>
-              @*   <div class="col-md-6"> *@
-                  @*   <RadzenLabel Text="Total Amount Left" />  *@
-                 @*  <RadzenNumeric TValue="decimal"
+                @*   <div class="col-md-6"> *@
+                @*   <RadzenLabel Text="Total Amount Left" />  *@
+                @*  <RadzenNumeric TValue="decimal"
                     @bind-Value="AmountPaid"
                     Style="width: 100%;"
                     Disabled="true"
@@ -265,7 +265,7 @@
                                    Disabled="true"
                                    Class="custom-background" /> *@
 
-              @*   </div> *@
+                @*   </div> *@
             </div>
 
             <!-- Save Button -->
@@ -296,7 +296,7 @@
     private string SearchTerm = string.Empty;
     private string SelectedClassID; // Holds the selected class
     private List<Class> Classes = new List<Class>(); // Stores the list of classes
-    // private bool IsCashInHand = false;
+                                                     // private bool IsCashInHand = false;
     private bool _isCashInHand;  
     private List<StudentFee> PreviousBalancesBreakdown = new List<StudentFee>();
     private string currentTermName;
@@ -320,7 +320,7 @@
         try
         {
             isLoading = true;
-            
+
             var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
 
             if (string.IsNullOrWhiteSpace(username))
@@ -374,22 +374,36 @@
 
     private async Task OnClassSelected(object value)
     {
-        SelectedClassID = value?.ToString();
-
-        // Filter students based on the selected class
-        if (!string.IsNullOrEmpty(SelectedClassID))
+        try
         {
-            FilteredStudents = Students.Where(s => s.ClassID == SelectedClassID).ToList();
-            FeeTypes = await StudentService.GetFeeTypesByClassAsync(SelectedClassID);
-        }
-        else
-        {
-            FilteredStudents = Students; // Reset the list if no class is selected
-        }
+            isLoading = true;
 
-        // Clear any previously selected fee type and reset outstanding balance
-        SelectedFeeTypeID = 0;
-        OutstandingBalance = 0;
+            SelectedClassID = value?.ToString();
+
+            // Filter students based on the selected class
+            if (!string.IsNullOrEmpty(SelectedClassID))
+            {
+                FilteredStudents = Students.Where(s => s.ClassID == SelectedClassID).ToList();
+                FeeTypes = await StudentService.GetFeeTypesByClassAsync(SelectedClassID);
+            }
+            else
+            {
+                FilteredStudents = Students; // Reset the list if no class is selected
+            }
+
+            // Clear any previously selected fee type and reset outstanding balance
+            SelectedFeeTypeID = 0;
+            OutstandingBalance = 0;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.ShowNotification("Error", $"Error: {ex.Message}", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
 
