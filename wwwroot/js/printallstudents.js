@@ -35,70 +35,31 @@
     const headers = lines[0].split(',');
     const dataRows = lines.slice(1).map(l => l.split(','));
 
-    const widths = [100, 60];
+    const widths = [120, 50]; // student name wider
     const startX = 20;
 
     // Header row
     doc.setFillColor(200, 200, 200);
-    doc.rect(startX, yOffset - 5, widths[0] + widths[1], 8, 'F');
-    let currentX = startX;
-    headers.forEach((h, i) => {
-        doc.text(h.trim(), currentX + widths[i] / 2, yOffset, { align: 'center' });
-        currentX += widths[i];
-    });
+    doc.rect(startX, yOffset - 5, widths[0], 8, 'F');
+    doc.rect(startX + widths[0], yOffset - 5, widths[1], 8, 'F');
+    doc.text(headers[0].trim(), startX + widths[0] / 2, yOffset, { align: 'center' });
+    doc.text(headers[1].trim(), startX + widths[0] + widths[1] / 2, yOffset, { align: 'center' });
 
-    // Data rows
     yOffset += 10;
     doc.setFont('helvetica', 'normal');
+
+    // Data rows
     dataRows.forEach(row => {
-        let rowX = startX;
-        row.forEach((cell, i) => {
-            doc.text(cell.trim(), rowX + widths[i] / 2, yOffset, { align: 'center' });
-            rowX += widths[i];
-        });
+        if (row.length < 2) return;
+        doc.text(row[0].trim(), startX + 2, yOffset); // student name (left aligned)
+        doc.text(row[1].trim(), startX + widths[0] + widths[1] / 2, yOffset, { align: 'center' }); // class
         yOffset += 8;
+
         if (yOffset > 270) {
             doc.addPage();
             yOffset = 20;
         }
     });
-
-    // === Fees Section ===
-    yOffset += 15;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text("Fee Structure", 105, yOffset, { align: 'center' });
-    yOffset += 8;
-
-    const fees = classFees[report.classId.toUpperCase()] || [];
-    if (fees.length > 0) {
-        doc.setFontSize(10);
-
-        // Header
-        doc.setFillColor(200, 200, 200);
-        doc.rect(startX, yOffset - 5, 120, 8, 'F');
-        doc.rect(startX + 120, yOffset - 5, 40, 8, 'F');
-        doc.text("ITEM", startX + 60, yOffset, { align: 'center' });
-        doc.text("AMOUNT (GHS)", startX + 140, yOffset, { align: 'center' });
-        yOffset += 10;
-
-        let total = 0;
-        fees.forEach(fee => {
-            doc.text(fee.item, startX + 2, yOffset);
-            doc.text(fee.amount.toString(), startX + 140, yOffset, { align: 'center' });
-            total += fee.amount;
-            yOffset += 8;
-            if (yOffset > 270) {
-                doc.addPage();
-                yOffset = 20;
-            }
-        });
-
-        // Total row
-        doc.setFont('helvetica', 'bold');
-        doc.text("TOTAL", startX + 2, yOffset);
-        doc.text(total.toString(), startX + 140, yOffset, { align: 'center' });
-    }
 
     doc.save(fileName);
 }
