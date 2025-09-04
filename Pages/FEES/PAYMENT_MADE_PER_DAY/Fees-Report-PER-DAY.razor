@@ -1,0 +1,105 @@
+﻿@page "/fees-report"
+@using CORE.Pages.LOADING_COMPONENT
+@using CORE.SERVICE
+@using CORE.SERVICE.NOTIFICATION
+@inject AuthService authService
+@inject NotificationMessageService Notify
+
+<RadzenNotification />
+
+<LoadingSpinner Visible="isLoading" />
+@if (!isLoading)
+{
+    <div class="p-4">
+        <h2 class="mb-3" style="color:#2c3e50;">
+            💰 Daily Payment Report
+        </h2>
+
+        <div class="d-flex align-items-center mb-4">
+            <RadzenDatePicker @bind-Value="selectedDate" DateFormat="dd/MM/yyyy"
+            Style="width:200px; margin-right:10px;" />
+            <RadzenButton Text="Get Payments" Icon="search"
+            ButtonStyle="ButtonStyle.Primary"
+            Click="@LoadPayments" />
+        </div>
+
+        @if (payments.Any())
+        {
+            <!-- Total Summary Card -->
+            <RadzenCard Style="margin-bottom:20px; background:#f8f9fa; border-left:5px solid #28a745;">
+                <div class="p-3">
+                    <h4 style="margin:0; color:#28a745;">
+                        Total Amount Paid on @selectedDate?.ToString("dd MMM yyyy")
+                    </h4>
+                    <h2 style="margin:0; font-weight:bold;">
+                        GHS @payments.Sum(p => p.AmountPaid)
+                    </h2>
+                </div>
+            </RadzenCard>
+
+            <!-- Payments Table -->
+            <RadzenDataGrid Data="@payments" TItem="StudentFeesReport" ShowPagingSummary="true"
+            PageSize="10" AllowSorting="true" AllowFiltering="true"
+            Class="shadow-sm rounded">
+                <Columns>
+                    <RadzenDataGridColumn TItem="StudentFeesReport" Property="StudentName" Title="👩‍🎓 Student Name" />
+                    <RadzenDataGridColumn TItem="StudentFeesReport" Property="AmountPaid" Title="💵 Amount Paid (GHS)"
+                    TextAlign="TextAlign.Center" />
+                    <RadzenDataGridColumn TItem="StudentFeesReport" Property="Term" Title="📘 Term" />
+                    <RadzenDataGridColumn TItem="StudentFeesReport" Property="PaymentDate" Title="📅 Payment Date"
+                    FormatString="{0:dd/MM/yyyy}" TextAlign="TextAlign.Center" />
+                </Columns>
+            </RadzenDataGrid>
+        }
+    </div>
+}
+
+@code {
+    private DateTime? selectedDate;
+    private List<StudentFeesReport> payments = new();
+    public bool isLoading = false;
+
+    private async Task LoadPayments()
+    {
+        try
+        {
+            isLoading = true;
+            if (selectedDate is null)
+            {
+                Notify.ShowNotification("Please select a date.", "", NotificationSeverity.Warning);
+                return;
+            }
+
+            try
+            {
+                payments = await authService.GetPaymentsByDateAsync(selectedDate.Value);
+                if (!payments.Any())
+                {
+                    Notify.ShowNotification("No payments found for this date.", "", NotificationSeverity.Info);
+                }
+            }
+            catch (Exception ex)
+            {
+                Notify.ShowNotification("Error loading payments: " + ex.Message, "", NotificationSeverity.Error);
+            }
+        }
+        catch(Exception ex)
+        {
+            Notify.ShowNotification("Error loading payments: " + ex.Message, "", NotificationSeverity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
+
+    }
+
+    public class StudentFeesReport
+    {
+        public string StudentName { get; set; }
+        public decimal AmountPaid { get; set; }
+        public string Term { get; set; }
+        public DateTime PaymentDate { get; set; }
+    }
+}
