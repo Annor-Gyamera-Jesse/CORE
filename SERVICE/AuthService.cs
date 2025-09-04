@@ -32,6 +32,7 @@ using CORE.MODEL.DASHBOARD_AMOUNT_SUM;
 using CORE.MODEL.Fees_Statement_Summary;
 using CORE.MODEL.FEEDING_FEE;
 using System;
+using static CORE.Pages.FEES.PAYMENT_MADE_PER_DAY.Fees_Report_PER_DAY;
 
 namespace CORE.SERVICE
 {
@@ -6272,6 +6273,25 @@ VALUES (
           FROM SchoolManagement.Students
           WHERE ClassID = @classId",
                 new { classId })).ToList();
+        }
+
+        public async Task<List<StudentFeesReport>> GetPaymentsByDateAsync(DateTime date)
+        {
+            using var connection = new SqlConnection(connectionString);
+
+            var sql = @"
+        SELECT 
+            sf.StudentName,
+            sf.AmountPaid,
+            st.Term,
+            CONVERT(date, sf.PaymentDate) AS PaymentDate
+        FROM SchoolManagement.StudentFees sf
+        INNER JOIN SchoolManagement.SchoolTerm st ON sf.TermID = st.TermID
+        WHERE CONVERT(date, sf.PaymentDate) = @date
+          AND sf.AmountPaid > 0   
+        ORDER BY sf.StudentName";
+
+            return (await connection.QueryAsync<StudentFeesReport>(sql, new { date })).ToList();
         }
 
 
