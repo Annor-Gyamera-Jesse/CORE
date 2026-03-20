@@ -7,6 +7,6 @@
         public string SchoolName { get; set; }
         public string CompanyRegisteredName { get; set; }
         public string SoftWareVerssion { get; set; }
-        public int CompanyRegisteredDate => DateTime.Now.Year;
+        public int CompanyRegisteredDate { get; set; }
     }
 }

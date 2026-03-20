@@ -27,11 +27,7 @@
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                 <NotAuthorized>
-                    @* Redirect unauthorized users to login *@
-                    @if (!Navigation.Uri.Contains("login"))
-                    {
-                        Navigation.NavigateTo("/login", true);
-                    }
+                    <RedirectToLogin />
                 </NotAuthorized>
             </AuthorizeRouteView>
         </Found>

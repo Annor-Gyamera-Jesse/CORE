@@ -14,39 +14,251 @@
 @using Microsoft.AspNetCore.Components.Web
 
 <RadzenNotification />
-
 @attribute [AllowAnonymous]
 
+<LoadingSpinner Visible="isLoading" />
 
-
-<LoadingSpinner Visible="isLoading"/>
 @if (!isLoading)
 {
-    <div class="container">
-        <div class="login-container">
-            <RadzenText Text="Login" TextStyle="Radzen.Blazor.TextStyle.H3" class="mb-4" />
+    <div class="login-wrapper">
+        <div class="login-card">
+
+            <div class="login-icon-wrap">
+                <span class="login-icon material-icons">school</span>
+            </div>
+
+            <h2 class="login-title">Welcome Back</h2>
+            <p class="login-subtitle">Sign in to continue to your dashboard</p>
 
             @if (showInvalidLoginMessage)
             {
-                <RadzenAlert Text="Invalid credentials. Please try again." Severity="Radzen.AlertSeverity.Error" />
+                <div class="login-alert">
+                    <span class="material-icons alert-icon">error_outline</span>
+                    Invalid credentials. Please try again.
+                </div>
             }
 
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" id="username" @bind="@Username" class="form-control" @onkeydown="HandleKeyPress" />
+            <div class="login-field">
+                <label class="login-label">Username</label>
+                <div class="input-wrap">
+                    <span class="material-icons input-icon">person_outline</span>
+                    <input type="text"
+                           @bind="@Username"
+                           @onkeydown="HandleKeyPress"
+                           placeholder="Enter your username"
+                           class="login-input" />
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" @bind="@Password" class="form-control" @onkeydown="HandleKeyPress" />
+            <div class="login-field">
+                <label class="login-label">Password</label>
+                <div class="input-wrap">
+                    <span class="material-icons input-icon">lock_outline</span>
+                    <input type="password"
+                           @bind="@Password"
+                           @onkeydown="HandleKeyPress"
+                           placeholder="Enter your password"
+                           class="login-input" />
+                </div>
             </div>
-            <br />
-            <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2" Class="mb-4">
-                <RadzenButton Icon="login" Text="Login" ButtonStyle="Radzen.ButtonStyle.Primary" Click="@login" />
-            </RadzenText>
+
+            <button class="login-btn" @onclick="login">
+                <span class="material-icons btn-icon">login</span>
+                Sign In
+            </button>
+
+            <a href="/forget-password" class="forgot-link">Forgot your password?</a>
         </div>
     </div>
 }
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+    @@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+    .login-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100%;
+        padding: 2rem;
+        font-family: 'Nunito', sans-serif;
+    }
+
+    .login-card {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 2.5rem 2rem;
+        width: 100%;
+        max-width: 380px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @@keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(24px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .login-icon-wrap {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #1a6dff 0%, #0a4fd6 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 24px rgba(26, 109, 255, 0.35);
+        margin-bottom: 0.25rem;
+    }
+
+    .login-icon {
+        color: white;
+        font-size: 32px;
+    }
+
+    .login-title {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+        letter-spacing: -0.4px;
+    }
+
+    .login-subtitle {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    .login-alert {
+        width: 100%;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 10px;
+        padding: 0.65rem 1rem;
+        color: #dc2626;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .alert-icon {
+        font-size: 18px;
+    }
+
+    .login-field {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .login-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+
+    .input-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 0.85rem;
+        color: #94a3b8;
+        font-size: 20px;
+        pointer-events: none;
+    }
+
+    .login-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.75rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-family: 'Nunito', sans-serif;
+        font-size: 0.95rem;
+        color: #0f172a;
+        background: #f8fafc;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        box-sizing: border-box;
+    }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #1a6dff;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(26, 109, 255, 0.12);
+        }
+
+        .login-input::placeholder {
+            color: #cbd5e1;
+        }
+
+    .login-btn {
+        width: 100%;
+        padding: 0.85rem;
+        background: linear-gradient(135deg, #1a6dff 0%, #0a4fd6 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-family: 'Nunito', sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        transition: transform 0.15s, box-shadow 0.15s;
+        box-shadow: 0 4px 16px rgba(26, 109, 255, 0.35);
+    }
+
+        .login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(26, 109, 255, 0.45);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+    .btn-icon {
+        font-size: 20px;
+    }
+
+    .forgot-link {
+        font-size: 0.82rem;
+        color: #1a6dff;
+        font-weight: 600;
+        text-decoration: none;
+        margin-top: 0.25rem;
+        transition: color 0.15s;
+    }
+
+        .forgot-link:hover {
+            color: #0a4fd6;
+            text-decoration: underline;
+        }
+</style>
 
 @code {
     private string Username { get; set; }
@@ -60,7 +272,7 @@
         {
             try
             {
-                isLoading = true; // Show the spinner while processing            
+                isLoading = true;
                 await login();
             }
             catch (Exception ex)
@@ -69,11 +281,10 @@
             }
             finally
             {
-                isLoading = false; // Hide the spinner once done
+                isLoading = false;
             }
+        }
     }
-    }
-
 
     private async Task login()
     {
@@ -85,8 +296,7 @@
 
         try
         {
-            isLoading = true; // Show the spinner while processing
-
+            isLoading = true;
             var user = await authService.GetUserByUsernameAsync(Username);
 
             if (user != null && user.Password == Password)
@@ -98,14 +308,12 @@
                 await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userMenuItems", JsonSerializer.Serialize(userRoleAndMenuAccess.MenuItems));
 
                 Notify.ShowNotification("PERFECT", "Happy Working.", NotificationSeverity.Success);
-                // Log the login event
                 await authService.LogUserEventAsync(user.UserID, "Login");
-
                 NavigationManager.NavigateTo("/landingpage");
-              
             }
             else
             {
+                showInvalidLoginMessage = true;
                 Notify.ShowNotification("ALERT", "Invalid credentials. Please try again.", NotificationSeverity.Error);
             }
         }
@@ -115,8 +323,7 @@
         }
         finally
         {
-            isLoading = false; // Hide the spinner once done
+            isLoading = false;
         }
     }
-
 }

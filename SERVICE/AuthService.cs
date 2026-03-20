@@ -12,7 +12,6 @@ using CORE.MODEL.Expenses;
 using CORE.MODEL.Bank;
 using CORE.MODEL.Term;
 using CORE.MODEL.Department;
-using CORE.MODEL.Bank.LOG;
 using CORE.MODEL.Bank.Transaction_Logs;
 using CORE.MODEL.Set_Exams;
 using CORE.MODEL.LeaveManagement;
@@ -4705,7 +4704,7 @@ VALUES
             }
         }
 
-        public async Task<IEnumerable<BankTransaction>> GetBankTransactions()
+        public async Task<IEnumerable<BankTransactionLog>> GetBankTransactions()
         {
             using (var connection = new SqlConnection(connectionString))
             {
@@ -4713,7 +4712,7 @@ VALUES
         SELECT * FROM SchoolManagement.BankTransactionLog
         ORDER BY TransactionDate DESC";
 
-                return await connection.QueryAsync<BankTransaction>(query);
+                return await connection.QueryAsync<BankTransactionLog>(query);
             }
         }
 

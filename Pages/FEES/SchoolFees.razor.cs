@@ -14,7 +14,7 @@ namespace CORE.Pages.FEES
         [Inject]
         public Radzen.DialogService DialogService { get; set; }
 
-        public async Task OpenPaymentDialog()
+        protected async Task OpenPaymentDialog()
         {
             var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "600px", Resizable = false, Height = "355px" };
             var dialogTitle = $"Student Fees Statements";
@@ -22,29 +22,29 @@ namespace CORE.Pages.FEES
             await DialogService.OpenAsync<Payment_Dialog>(dialogTitle, null, dialogOptions);
         }
 
-        public async Task OpenTransferOfFundsDialog()
+        protected async Task OpenTransferOfFundsDialog()
         {
             var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "600px", Resizable = false, Height = "582px" };
             var dialogTitle = $"BANK TRANSFER";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<Transfer_Of_Funds>(dialogTitle, null, dialogOptions);
-        } 
-        public async Task OpenCashInHandsDialog()
+        }
+        protected async Task OpenCashInHandsDialog()
         {
             var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "360px", Resizable = false, Height = "209px" };
             var dialogTitle = $"CASH IN HANDS";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<Cash_In_Hand>(dialogTitle, null, dialogOptions);
         }
-        public async Task OpenFeesPerDateDialog()
+        protected async Task OpenFeesPerDateDialog()
         {
             var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "360px", Resizable = false, Height = "295px" };
             var dialogTitle = $"Fees Export To PDF Per Date";
             // Register dialog closed event with RadzenDialogService
             await DialogService.OpenAsync<StudentFeeReportByDate>(dialogTitle, null, dialogOptions);
-        } 
-        
-        public async Task OpenCarryOverDialog()
+        }
+
+        protected async Task OpenCarryOverDialog()
         {
             var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "450px", Resizable = false, Height = "265px" };
             var dialogTitle = $"Carry Over Unpaid Fees to a New Term";
@@ -52,7 +52,7 @@ namespace CORE.Pages.FEES
             await DialogService.OpenAsync<Carry_Over>(dialogTitle, null, dialogOptions);
         }
 
-        public async Task OpenFeesSummaryDialog()
+        protected async Task OpenFeesSummaryDialog()
         {
             var dialogOptions = new DialogOptions() { Draggable = false, ShowClose = true, CloseDialogOnEsc = true, Width = "450px", Resizable = false, Height = "273px" };
             var dialogTitle = $"FEES STATEMENT";

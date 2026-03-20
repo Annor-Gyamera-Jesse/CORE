@@ -1,12 +1,61 @@
-﻿<!-- LoadingSpinner.razor -->
+﻿@* LoadingSpinner.razor *@
+
+
+<style>
+    .spinner-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .spinner-box {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 2rem 2.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+
+    .spinner-ring {
+        width: 44px;
+        height: 44px;
+        border: 3.5px solid #e2e8f0;
+        border-top-color: #1a6dff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .spinner-label {
+        font-family: 'Nunito', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: 0.3px;
+    }
+</style>
+
 <div class="spinner-overlay" style="@(Visible ? "display:flex;" : "display:none;")">
-    <div class="spinner"></div>
+    <div class="spinner-box">
+        <div class="spinner-ring"></div>
+        <span class="spinner-label">Loading...</span>
+    </div>
 </div>
 
 @code {
-    [Parameter]
-    public bool Visible { get; set; }
-    [Parameter]
-    public RenderFragment ChildContent { get; set; }
-    private bool _isFirstRender = true;
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public RenderFragment ChildContent { get; set; }
 }

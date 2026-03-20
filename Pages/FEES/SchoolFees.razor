@@ -14,51 +14,166 @@
 
 <!-- Custom CSS -->
 <style>
-    .text-blue {
-    color: blue;
+    .fees-page {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
     }
 
-    .text-red {
-    color: red;
+    .fees-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+        background: #fff;
+        border-bottom: 1px solid #e0e0e0;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        margin-bottom: 0;
     }
 
-    .student-list-container {
-    max-width: 300px;
-    float: left;
-    margin-right: 20px;
+    .fees-toolbar-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
     }
 
-    .form-container {
-    margin-left: 320px;
+    .fees-body {
+        display: flex;
+        gap: 16px;
+        padding: 16px;
     }
 
-    .input-group {
-    margin-bottom: 15px;
+    .student-panel {
+        width: 280px;
+        flex-shrink: 0;
     }
 
-    /* PRINT STUDENT REPOR */
-    .header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    .payment-panel {
+        flex: 1;
+        min-width: 0;
     }
 
-    .right-align {
-    margin-left: auto;
-    }
-    /* Adjust the header height */
-    .compact-header {
-    height: 60px; /* Adjust the height to your preference */
-    padding: 5px 15px; /* Reduce padding */
+    .balance-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 14px;
     }
 
-    /* Additional styling if needed */
-    .compact-header .rz-header-title {
-    font-size: 18px; /* Make the title smaller */
+    .balance-card {
+        flex: 1;
+        padding: 14px 16px;
+        border-radius: 8px;
+        border-left: 5px solid;
     }
 
-    .custom-background {
-    background-color: green!important;
+        .balance-card.outstanding {
+            background: #fff1f2;
+            border-color: #e53935;
+        }
+
+        .balance-card.previous {
+            flex: 1.4;
+            background: #fffbeb;
+            border-color: #f59e0b;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        .balance-card h4 {
+            margin: 0 0 6px 0;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+
+        .balance-card.outstanding h4 {
+            color: #b71c1c;
+        }
+
+        .balance-card.previous h4 {
+            color: #92400e;
+        }
+
+    .balance-amount {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #b71c1c;
+    }
+
+    .payment-summary-bar {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding: 12px 16px;
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        margin-bottom: 14px;
+    }
+
+    .summary-chip {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .summary-chip label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            color: #6b7280;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .summary-chip span {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #166534;
+        }
+
+    .summary-divider {
+        width: 1px;
+        height: 32px;
+        background: #bbf7d0;
+    }
+
+    .payment-method-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-top: 8px;
+    }
+
+    .field-group {
+        margin-bottom: 14px;
+    }
+
+        .field-group > label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+    .save-btn-wrap {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .discount-badge {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        background: #e0f2f1;
     }
 </style>
 
@@ -66,214 +181,214 @@
 
 @if (!isLoading)
 {
+    <div class="fees-page">
 
-    <RadzenHeader title="School Fees Payment" class="header-container compact-header">
-        <RadzenFieldset Text="EXPORT STUDENT REPORT" class="right-align">
-            <FeesToolPanelComponent OnFeesDialog="FeesDialog" OnFeesPerDateDialog="FeesPerDate" OnTransferOfFundsDialog="TransferOfFunds" OnCashInHandsDialog="CashInHandsDialog" OnFeesStatementDialog="FeesStatementDialog" />@* Oncarryover="Carryover" *@
-        </RadzenFieldset>
-    </RadzenHeader>
-    <br />
+        <!-- TOOLBAR -->
+        <div class="fees-toolbar">
+            <h5 class="fees-toolbar-title">
+                &#x1F4B0; School Fees Payment
+                &mdash; <span style="color:#6b7280; font-weight:400;">@currentTermName</span>
+            </h5>
+            <FeesToolPanelComponent OnFeesDialog="FeesDialog"
+                                    OnFeesPerDateDialog="FeesPerDate"
+                                    OnTransferOfFundsDialog="TransferOfFunds"
+                                    OnCashInHandsDialog="CashInHandsDialog"
+                                    OnFeesStatementDialog="FeesStatementDialog" />
+        </div>
 
-    <div class="student-list-container">
-        <RadzenFieldset Text="STUDENTS NAMES" Icon="search">
-            <!-- Search Box for Students -->
-            <div class="input-group">
-                <RadzenLabel Text="Class" />
-                <RadzenDropDown @bind-Value="SelectedClassID"
-                Data="@Classes"
-                TextProperty="ClassID"
-                ValueProperty="ClassID"
-                Style="width: 100%; margin-bottom: 10px;"
-                Placeholder="Select Class"
-                Change="OnClassSelected" AllowClear="true" />
+        <!-- BODY -->
+        <div class="fees-body">
 
-                <RadzenLabel Text="Search Student" />
-                <RadzenTextBox @bind-Value="SearchTerm"
-                Style="width: 100%; margin-bottom: 10px;"
-                Placeholder="Enter student name..."
-                Change="FilterStudents" />
+            <!-- LEFT: STUDENT LIST -->
+            <div class="student-panel">
+                <RadzenFieldset Text="Students" Icon="person">
+                    <div class="field-group">
+                        <label>Class</label>
+                        <RadzenDropDown @bind-Value="SelectedClassID"
+                                        Data="@Classes"
+                                        TextProperty="ClassID"
+                                        ValueProperty="ClassID"
+                                        Style="width:100%;"
+                                        Placeholder="All Classes"
+                                        Change="OnClassSelected"
+                                        AllowClear="true" />
+                    </div>
+                    <div class="field-group">
+                        <label>Search</label>
+                        <RadzenTextBox @bind-Value="SearchTerm"
+                                       Style="width:100%;"
+                                       Placeholder="Student name..."
+                                       Change="FilterStudents" />
+                    </div>
+                    <RadzenListBox Data="@FilteredStudents"
+                                   ValueProperty="StudentID"
+                                   @bind-Value="SelectedStudentID"
+                                   Change="OnStudentSelected"
+                                   Style="width:100%; height:520px;">
+                        <Template Context="student">
+                            <div style="display:flex; align-items:center; justify-content:space-between; padding:2px 0;">
+                                <span style="font-size:0.9rem;">@student.FullName</span>
+                                @if (!string.IsNullOrEmpty(student.DiscountType))
+                                {
+                                    @if (student.DiscountType == "Free")
+                                    {
+                                        <span class="discount-badge" style="color:green;">Free</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="discount-badge" style="color:#1d4ed8;">@student.DiscountValue% Off</span>
+                                    }
+                                }
+                            </div>
+                        </Template>
+                    </RadzenListBox>
+                </RadzenFieldset>
             </div>
 
-            <!-- List of Students -->
-            <RadzenListBox Data="@FilteredStudents"
-            ValueProperty="StudentID"
-            @bind-Value="SelectedStudentID"
-            Change="OnStudentSelected"
-            Style="width: 100%; height: 600px;"
-            Placeholder="Select a Student">
-                <Template Context="student">
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <span>@student.FullName</span>
+            <!-- RIGHT: PAYMENT FORM -->
+            <div class="payment-panel">
 
-                        @if (!string.IsNullOrEmpty(student.DiscountType))
+                <!-- SUMMARY BAR -->
+                @if (SelectedStudentID > 0)
+                {
+                    var sel = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID);
+                    if (sel != null)
+                    {
+                        <div class="payment-summary-bar">
+                            <div class="summary-chip">
+                                <label>Student</label>
+                                <span>@sel.FullName</span>
+                            </div>
+                            <div class="summary-divider"></div>
+                            <div class="summary-chip">
+                                <label>Class</label>
+                                <span>@sel.ClassID</span>
+                            </div>
+                            @if (SelectedFeeTypeID > 0)
+                            {
+                                var ft = FeeTypes.FirstOrDefault(f => f.FeeTypeID == SelectedFeeTypeID);
+                                if (ft != null)
+                                {
+                                    <div class="summary-divider"></div>
+                                    <div class="summary-chip">
+                                        <label>Fee Type</label>
+                                        <span>@ft.FeeTypeName</span>
+                                    </div>
+                                    <div class="summary-divider"></div>
+                                    <div class="summary-chip">
+                                        <label>Paying</label>
+                                        <span style="color:#15803d;">&#x20b5;@AmountPaid.ToString("F2")</span>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                }
+
+                <!-- BALANCE CARDS -->
+                <div class="balance-row">
+                    <div class="balance-card outstanding">
+                        <h4>This Term Outstanding</h4>
+                        <div class="balance-amount">
+                            @((OutstandingBalance > 0) ? $"₵{OutstandingBalance:F2}" : "—")
+                        </div>
+                        @if (OutstandingBalance == 0 && SelectedStudentID > 0 && SelectedFeeTypeID > 0)
                         {
-                            <RadzenCard Style="padding: 4px 8px; background-color: #e0f2f1; border-radius: 6px; font-size: 0.8em;">
-                                @if (student.DiscountType == "Free")
-                                {
-                                    <span style="color: green;">Free</span>
-                                }
-                                else
-                                {
-                                    <span style="color: blue;">@student.DiscountValue% Off</span>
-                                }
-                            </RadzenCard>
+                            <small style="color:#16a34a; font-weight:600;">&#x2713; Fully paid</small>
                         }
                     </div>
-                </Template>
-            </RadzenListBox>
 
-        </RadzenFieldset>
-    </div>
-
-    <div class="form-container" style="max-width: 800px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; background-color: #f9f9f9;">
-        <!-- Date and FeeID -->
-        <RadzenFieldset Text="FEES PAYMENT" Icon="money">
-            <div class="row input-group">
-                <div class="col-md-5">
-                    <RadzenLabel Text="School Term" />
-                    <RadzenTextBox Value="@currentTermName"
-                    Disabled="true"
-                    Style="width: 100%;" />
-                </div>
-                <div class="col-md-6">
-                    <RadzenLabel Text="Payment Date" />
-                    <RadzenDatePicker @bind-Value="PaymentDate" Style="width: 100%;" />
-                </div>
-                <div class="col-md-8">
-                    <RadzenLabel Text="This Term Outstanding Balance" />
-                    <RadzenTextBox Value="@OutstandingBalance.ToString("F2")"
-                    Style="width: 100%; background-color: #ffe2e6;"
-                    Disabled="true"
-                    Placeholder="Outstanding Balance" />
-                    <RadzenCard Style="background-color: #ffe2e6; padding: 16px; margin-top: 20px; border-left: 6px solid red;">
-                        <h3 style="color: #b00020;">This Term Outstanding Balance</h3>
-                        <p style="font-size: 1.2em;">
-                            @((OutstandingBalance > 0) ? $"- ₵{OutstandingBalance:F2}" : "No balance owed")
-                        </p>
-                    </RadzenCard>
-
-                    <RadzenCard Style="background-color: #fef3c7; padding: 16px; margin-top: 20px; border-left: 6px solid orange; max-height: 250px; overflow-y: auto; margin-left: 20px; width: 350px;">
-                        <h3 style="color: #b45309;">Previous Balances</h3>
-
+                    <div class="balance-card previous">
+                        <h4>Previous Balances</h4>
                         @if (PreviousBalancesBreakdown != null && PreviousBalancesBreakdown.Any())
                         {
-                            <ul style="line-height: 1.6; padding-left: 18px;">
+                            <ul style="margin:0; padding-left:16px; line-height:1.8;">
                                 @foreach (var fee in PreviousBalancesBreakdown)
                                 {
-                                    <li style="margin-bottom: 8px;">
-                                        <strong>@fee.FeeTypeName (@fee.ClassID)</strong>: ₵@fee.AmountLeft
-                                        <br />
-                                        <small style="color: #555;">@fee.Note</small>
+                                    <li style="font-size:0.83rem;">
+                                        <strong>@fee.FeeTypeName (@fee.ClassID)</strong>: &#x20b5;@fee.AmountLeft
+                                        @if (!string.IsNullOrEmpty(fee.Note))
+                                        {
+                                            <br />
+                            
+                                            <small style="color:#78716c;">@fee.Note</small>
+                                        }
                                     </li>
                                 }
                             </ul>
                         }
                         else
                         {
-                            <p>No previous balances carried over.</p>
+                            <small style="color:#92400e;">No previous balances.</small>
                         }
-                    </RadzenCard>
-
-
+                    </div>
                 </div>
-            </div>
 
+                <!-- PAYMENT FORM -->
+                <RadzenFieldset Text="Payment Details" Icon="payment">
+                    <div style="display:flex; gap:16px;">
+                        <div style="flex:1;" class="field-group">
+                            <label>Payment Date</label>
+                            <RadzenDatePicker @bind-Value="PaymentDate" Style="width:100%;" />
+                        </div>
+                        <div style="flex:1;" class="field-group">
+                            <label>Fee Type</label>
+                            <RadzenDropDown @bind-Value="SelectedFeeTypeID"
+                                            Data="@FeeTypes"
+                                            TextProperty="FeeTypeName"
+                                            ValueProperty="FeeTypeID"
+                                            Style="width:100%;"
+                                            Disabled="@string.IsNullOrEmpty(SelectedClassID)"
+                                            Placeholder="Select Fee Type"
+                                            Change="LoadClassFeeDetails" />
+                        </div>
+                    </div>
 
-            <div class="row input-group">
-                <!-- Class Dropdown -->
-                @*                 <RadzenLabel Text="Class" />
-                <RadzenDropDown @bind-Value="SelectedClassID"
-                                Data="@Classes"
-                                TextProperty="ClassID"
-                                ValueProperty="ClassID"
-                                Style="width: 100%;"
-                                Placeholder="Select Class"
-                                Change="OnClassSelected" /> *@
+                    <div class="field-group">
+                        <label>Amount Paid (&#x20b5;)</label>
+                        <RadzenNumeric TValue="decimal"
+                                       @bind-Value="AmountPaid"
+                                       Style="width:100%;" />
+                    </div>
 
-
-                <div class="row input-group">
-                    <!-- Fee Type Dropdown -->
-                    <RadzenLabel Text="Fee Type" />
-                    <RadzenDropDown @bind-Value="SelectedFeeTypeID"
-                    Data="@FeeTypes"
-                    TextProperty="FeeTypeName"
-                    ValueProperty="FeeTypeID"
-                    Style="width: 100%;"
-                    Disabled="@string.IsNullOrEmpty(SelectedClassID)"
-                    Placeholder="Select Fee Type"
-                    Change="LoadClassFeeDetails" />
-
-                </div>
-            </div>
-
-            <!-- Payment Details -->
-            <RadzenFieldset Legend="Payment Details" Style="margin-top: 20px;">
-                <RadzenLabel Text="Amount Paid" />
-                <RadzenNumeric TValue="decimal"
-                @bind-Value="AmountPaid"
-                Style="width: 100%;" />
-
-
-                @* @if (!IsCashInHand) *@
-                @*   {
-                    <RadzenLabel Text="Payment To Which Bank" Style="margin-top: 10px;" />
-                    <RadzenDropDown @bind-Value="PaymentMethod"
-                                    Data="@PaymentMethods"
-                                    Placeholder="Select Payment Method"
-                                    Style="width: 100%;" />
-                } *@
-
-
-                <RadzenCheckBox @bind-Value="IsCashInHand" Style="margin-top: 10px;" TValue="bool" />
-                <RadzenLabel Text="Cash In Hand" Style="margin-left: 10px;" />
-                <br/>
-                <RadzenLabel Text="Note" Style="margin-top: 10px;" />
-                <RadzenTextBox @bind-Value="Note"
-                Style="width: 100%;"
-                Multiline="true" />
-            </RadzenFieldset>
-
-            <!-- Total Amount Details -->
-            <div class="row input-group">
-                <div class="col-md-6">
-                    @if (SelectedStudentID > 0)
-                    {
-                        var selectedStudent = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID);
-                        if (selectedStudent != null)
+                    <div class="payment-method-group">
+                        <RadzenCheckBox @bind-Value="IsCashInHand" TValue="bool" />
+                        <RadzenLabel Text="Cash In Hand" />
+                        @if (!IsCashInHand)
                         {
-                            <RadzenCard Style="background-color: #e0f7fa; padding: 16px; margin-top: 20px; border-left: 6px solid #00796b;">
-                                <h3 style="color: #00796b;">Selected Student </h3>
-                                <p style="font-size: 1.2em;">
-                                    <strong>Name:</strong> @selectedStudent.FullName<br />
-                                    <strong>Class:</strong> @selectedStudent.ClassID
-                                </p>
-                            </RadzenCard>
+                            @* <div style="flex:1; margin-left:4px;">
+                                <RadzenDropDown @bind-Value="PaymentMethod"
+                                                Data="@PaymentMethods"
+                                                Placeholder="Select Bank / Method"
+                                                Style="width:100%;" />
+                            </div> *@
                         }
-                    }
-                </div>
-                @*   <div class="col-md-6"> *@
-                @*   <RadzenLabel Text="Total Amount Left" />  *@
-                @*  <RadzenNumeric TValue="decimal"
-                    @bind-Value="AmountPaid"
-                    Style="width: 100%;"
-                    Disabled="true"
-                    Max="@OutstandingBalance"
-                    Change="@((decimal value) => UpdateAmountLeft(value))"
-                    Class="custom-background" />
-                    <RadzenNumeric TValue="decimal"
-                                   Value="@(TotalAmountLeft - AmountPaid)"
-                                   Disabled="true"
-                                   Class="custom-background" /> *@
+                        else
+                        {
+                            <span style="font-size:0.83rem; color:#6b7280;">Payment recorded as cash</span>
+                        }
+                    </div>
 
-                @*   </div> *@
+                    <div class="field-group" style="margin-top:14px;">
+                        <label>Note <span style="font-weight:400; color:#9ca3af;">(optional)</span></label>
+                        <RadzenTextBox @bind-Value="Note"
+                                       Style="width:100%;"
+                                       Multiline="true" />
+                    </div>
+
+                    <div class="save-btn-wrap">
+                        <RadzenButton Text="Save Payment"
+                                      Icon="save"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Click="SavePayment"
+                                      Style="width:100%; font-size:1rem; padding:12px;" />
+                    </div>
+                </RadzenFieldset>
             </div>
-
-            <!-- Save Button -->
-            <RadzenButton Text="Save Payment" Click="SavePayment" Style="width: 100%; margin-top: 20px;" />
-        </RadzenFieldset>
+        </div>
     </div>
-
 }
+
 @code {
     private DateTime PaymentDate = DateTime.Now;
     private string FeeID = string.Empty;
@@ -297,7 +412,7 @@
     private string SelectedClassID; // Holds the selected class
     private List<Class> Classes = new List<Class>(); // Stores the list of classes
                                                      // private bool IsCashInHand = false;
-    private bool _isCashInHand;  
+    private bool _isCashInHand;
     private List<StudentFee> PreviousBalancesBreakdown = new List<StudentFee>();
     private string currentTermName;
 
@@ -316,7 +431,7 @@
     }
 
     protected override async Task OnInitializedAsync()
-    {        
+    {
         try
         {
             isLoading = true;
@@ -409,16 +524,14 @@
 
     private void FilterStudents(object value)
     {
-        if (string.IsNullOrWhiteSpace(SearchTerm))
-        {
-            FilteredStudents = Students; // Reset filter if search is empty
-        }
-        else
-        {
-            FilteredStudents = Students
-                .Where(s => s.FullName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
+        // Start from the class-filtered list if a class is selected, otherwise all students
+        var baseList = !string.IsNullOrEmpty(SelectedClassID)
+            ? Students.Where(s => s.ClassID == SelectedClassID)
+            : Students.AsEnumerable();
+
+        FilteredStudents = string.IsNullOrWhiteSpace(SearchTerm)
+            ? baseList.ToList()
+            : baseList.Where(s => s.FullName.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
     private async Task OnStudentSelected(object args)
@@ -447,7 +560,7 @@
                 TotalAmount = feeType.Amount;
                 var studentFee = studentFees.FirstOrDefault(f => f.FeeTypeID == SelectedFeeTypeID);
 
-                OutstandingBalance = studentFee != null ? (feeType.Amount - studentFee.AmountPaid) : feeType.Amount;               
+                OutstandingBalance = studentFee != null ? (feeType.Amount - studentFee.AmountPaid) : feeType.Amount;
             }
         }
         catch (Exception ex)
@@ -464,14 +577,17 @@
     private void ResetPaymentForm()
     {
         PaymentDate = DateTime.Now;
-        // SelectedTermID = 0;
         SelectedFeeTypeID = 0;
         AmountPaid = 0;
         Note = string.Empty;
-        // OutstandingBalance = 0;
+        OutstandingBalance = 0;
         TotalAmountLeft = 0;
-        IsCashInHand = false;
+        _isCashInHand = false;   // Set backing field directly to avoid setter side-effect
         PaymentMethod = null;
+        SelectedClassID = null;
+        FilteredStudents = Students;
+        SelectedStudentID = 0;
+        PreviousBalancesBreakdown = new List<StudentFee>();
     }
 
 
@@ -516,47 +632,15 @@
 
     private async Task SavePayment()
     {
-        isLoading = true;  // Start loading
-        StateHasChanged();
-
-        if (AmountPaid <= 0 || SelectedStudentID == 0 || SelectedFeeTypeID == 0)
+        // Validate before setting isLoading so spinner never gets stuck on early exit
+        if (SelectedStudentID <= 0)
         {
-            NotificationService.ShowNotification("Validation Error", "All fields are required.", NotificationSeverity.Warning);
-            return;
-        }
-        if (SelectedStudentID == 0 || SelectedTermID == 0 || SelectedFeeTypeID == 0 || AmountPaid <= 0)
-        {
-            NotificationService.ShowNotification("Validation Error", "Please complete all required fields.", NotificationSeverity.Warning);
-            return;
-        }
-        if (PaymentDate == default(DateTime))
-        {
-            NotificationService.ShowNotification("Validation Error", "Please select a valid payment date.", NotificationSeverity.Warning);
-            return;
-        }
-        if (SelectedFeeTypeID <= 0)
-        {
-            NotificationService.ShowNotification("Validation Error", "Please select a valid fee type.", NotificationSeverity.Warning);
-            return;
-        }
-        if (AmountPaid > TotalAmountLeft)
-        {
-            NotificationService.ShowNotification("Validation Error", "Amount paid cannot exceed the total amount left.", NotificationSeverity.Warning);
+            NotificationService.ShowNotification("Validation Error", "Please select a student.", NotificationSeverity.Warning);
             return;
         }
         if (SelectedTermID <= 0)
         {
-            NotificationService.ShowNotification("Validation Error", "Please select a valid term.", NotificationSeverity.Warning);
-            return;
-        }
-        if (string.IsNullOrEmpty(PaymentMethod) && !IsCashInHand)
-        {
-            NotificationService.ShowNotification("Validation Error", "Please select a payment method.", NotificationSeverity.Warning);
-            return;
-        }
-        if (SelectedStudentID <= 0)
-        {
-            NotificationService.ShowNotification("Validation Error", "Please select a student.", NotificationSeverity.Warning);
+            NotificationService.ShowNotification("Validation Error", "No active term found. Please contact admin.", NotificationSeverity.Warning);
             return;
         }
         if (SelectedFeeTypeID <= 0)
@@ -564,9 +648,29 @@
             NotificationService.ShowNotification("Validation Error", "Please select a fee type.", NotificationSeverity.Warning);
             return;
         }
+        if (AmountPaid <= 0)
+        {
+            NotificationService.ShowNotification("Validation Error", "Amount paid must be greater than zero.", NotificationSeverity.Warning);
+            return;
+        }
+        if (PaymentDate == default(DateTime))
+        {
+            NotificationService.ShowNotification("Validation Error", "Please select a valid payment date.", NotificationSeverity.Warning);
+            return;
+        }
+        if (AmountPaid > OutstandingBalance)
+        {
+            NotificationService.ShowNotification("Validation Error", "Amount paid cannot exceed the outstanding balance.", NotificationSeverity.Warning);
+            return;
+        }
         if (OutstandingBalance < 0)
         {
             NotificationService.ShowNotification("Validation Error", "Outstanding balance cannot be negative.", NotificationSeverity.Warning);
+            return;
+        }
+        if (string.IsNullOrEmpty(PaymentMethod) && !IsCashInHand)
+        {
+            NotificationService.ShowNotification("Validation Error", "Please select a payment method.", NotificationSeverity.Warning);
             return;
         }
 
@@ -575,23 +679,40 @@
         {
             PaymentMethod = "Cash In Hand";
         }
+
+        // Resolve names once so confirmation dialog and payment object share same values
+        var studentName = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.FullName ?? "Unknown";
+        var feeTypeName = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID)?.FeeTypeName ?? "Unknown";
+        var studentClassID = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.ClassID;
+
+        // Confirm before committing financial transaction
+        bool confirmed = await DialogService.Confirm(
+            $"Save payment of \u20b5{AmountPaid:F2} for {studentName} ({feeTypeName})?",
+            "Confirm Payment",
+            new ConfirmOptions { OkButtonText = "Yes, Save", CancelButtonText = "Cancel" }
+        ) ?? false;
+
+        if (!confirmed) return;
+
+        isLoading = true;
+        StateHasChanged();
         try
         {
             var payment = new StudentFee
-                {
-                    StudentID = SelectedStudentID,
-                    FeeTypeID = SelectedFeeTypeID,
-                    StudentName = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.FullName,
-                    FeeTypeName = FeeTypes.FirstOrDefault(ft => ft.FeeTypeID == SelectedFeeTypeID)?.FeeTypeName,
-                    ClassID = Students.FirstOrDefault(s => s.StudentID == SelectedStudentID)?.ClassID,
-                    AmountPaid = AmountPaid,
-                    AmountLeft = TotalAmountLeft - AmountPaid,
-                    PaymentDate = PaymentDate,
-                    PaymentMethod = PaymentMethod,
-                    TermID = SelectedTermID,
-                    Note = Note,
-                    UserID = userId
-                };
+            {
+                StudentID = SelectedStudentID,
+                FeeTypeID = SelectedFeeTypeID,
+                StudentName = studentName,
+                FeeTypeName = feeTypeName,
+                ClassID = studentClassID,
+                AmountPaid = AmountPaid,
+                AmountLeft = TotalAmountLeft - AmountPaid,
+                PaymentDate = PaymentDate,
+                PaymentMethod = PaymentMethod,
+                TermID = SelectedTermID,
+                Note = Note,
+                UserID = userId
+            };
 
             // Save the student fee
             var success = await StudentService.SaveStudentFeeAsync(payment);
@@ -636,7 +757,7 @@
         StateHasChanged();
         try
         {
-        OutstandingBalance = TotalAmount - value;
+            OutstandingBalance = TotalAmount - value;
         }
         catch (Exception ex)
         {
@@ -650,15 +771,39 @@
     }
 
 
-    async void FeesDialog() => await OpenPaymentDialog();
-    
-    async void FeesPerDate() => await OpenFeesPerDateDialog();
+    async void FeesDialog()
+    {
+        try { await OpenPaymentDialog(); }
+        catch (Exception ex) { NotificationService.ShowNotification("Error", ex.Message, NotificationSeverity.Error); }
+    }
 
-    async void TransferOfFunds() => await OpenTransferOfFundsDialog();
-    
-    async void CashInHandsDialog() => await OpenCashInHandsDialog();
+    async void FeesPerDate()
+    {
+        try { await OpenFeesPerDateDialog(); }
+        catch (Exception ex) { NotificationService.ShowNotification("Error", ex.Message, NotificationSeverity.Error); }
+    }
 
-    async void Carryover() => await OpenCarryOverDialog();
-    
-    async void FeesStatementDialog() => await OpenFeesSummaryDialog();
+    async void TransferOfFunds()
+    {
+        try { await OpenTransferOfFundsDialog(); }
+        catch (Exception ex) { NotificationService.ShowNotification("Error", ex.Message, NotificationSeverity.Error); }
+    }
+
+    async void CashInHandsDialog()
+    {
+        try { await OpenCashInHandsDialog(); }
+        catch (Exception ex) { NotificationService.ShowNotification("Error", ex.Message, NotificationSeverity.Error); }
+    }
+
+    async void Carryover()
+    {
+        try { await OpenCarryOverDialog(); }
+        catch (Exception ex) { NotificationService.ShowNotification("Error", ex.Message, NotificationSeverity.Error); }
+    }
+
+    async void FeesStatementDialog()
+    {
+        try { await OpenFeesSummaryDialog(); }
+        catch (Exception ex) { NotificationService.ShowNotification("Error", ex.Message, NotificationSeverity.Error); }
+    }
 }
