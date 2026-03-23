@@ -216,6 +216,7 @@
                     <div class="field-group">
                         <label>Search</label>
                         <RadzenTextBox @bind-Value="SearchTerm"
+                                       Disabled="true";
                                        Style="width:100%;"
                                        Placeholder="Student name..."
                                        Change="FilterStudents" />
@@ -326,11 +327,19 @@
 
                 <!-- PAYMENT FORM -->
                 <RadzenFieldset Text="Payment Details" Icon="payment">
-                    <div style="display:flex; gap:16px;">
+                    <div style="display:flex; gap:16px; margin-bottom:14px;">
+                        <div style="flex:1;" class="field-group">
+                            <label>School Term</label>
+                            <RadzenTextBox Value="@currentTermName"
+                                           Disabled="false"
+                                           Style="width:100%; background-color:#f3f4f6; font-weight:600;" />
+                        </div>
                         <div style="flex:1;" class="field-group">
                             <label>Payment Date</label>
                             <RadzenDatePicker @bind-Value="PaymentDate" Style="width:100%;" />
                         </div>
+                    </div>
+                    <div style="display:flex; gap:16px;">
                         <div style="flex:1;" class="field-group">
                             <label>Fee Type</label>
                             <RadzenDropDown @bind-Value="SelectedFeeTypeID"

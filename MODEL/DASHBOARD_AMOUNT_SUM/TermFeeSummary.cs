@@ -12,6 +12,7 @@
     {
         public string ClassID { get; set; }
         public int TermID { get; set; }
+        public string TermName { get; set; }
         public int TotalStudents { get; set; }
         public int FeeTypesCount { get; set; }
         public decimal ExpectedTotal { get; set; }

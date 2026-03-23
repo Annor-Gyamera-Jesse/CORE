@@ -15,41 +15,51 @@
 @if (!isLoading)
 {
     <div class="card" style="padding: 20px; max-width: 600px; margin: auto;">
-        <RadzenTextBox Placeholder="🔍 Search student by name..." Value="@searchText"
-        Style="width: 100%; margin-bottom: 20px;"
-        Change="@(args => SearchStudents(args))" />
+        <RadzenTextBox Placeholder="&#x1F50D; Search student by name..."
+                       Value="@studentSearch"
+                       Style="width: 100%; margin-bottom: 20px;"
+                       Change="@(args => SearchStudents(args))" />
 
-        <RadzenDropDown Data="@students" TextProperty="FullName" ValueProperty="StudentID"
-        @bind-Value="selectedStudentId" Placeholder="Select a student"
-        Style="width: 100%; margin-bottom: 20px;" />
+        <RadzenDropDown Data="@students"
+                        TextProperty="FullName"
+                        ValueProperty="StudentID"
+                        @bind-Value="selectedStudentId"
+                        Placeholder="Select a student"
+                        Style="width: 100%; margin-bottom: 20px;" />
 
-        <RadzenDropDown Data="@terms" TextProperty="Term" ValueProperty="TermID"
-        @bind-Value="selectedTermId" Placeholder="Select term"
-        Style="width: 100%; margin-bottom: 20px;" />
+        <RadzenDropDown Data="@terms"
+                        TextProperty="Term"
+                        ValueProperty="TermID"
+                        @bind-Value="selectedTermId"
+                        Placeholder="Select term"
+                        Style="width: 100%; margin-bottom: 20px;" />
 
-        <RadzenButton Text="Generate Report" Icon="save_alt" Click="@GenerateStudentReport"
-        Disabled="@isLoading" Style="width: 100%; margin-bottom: 10px;" />
+        <RadzenButton Text="Generate Report"
+                      Icon="save_alt"
+                      Click="@GenerateStudentReport"
+                      Disabled="@isLoading"
+                      Style="width: 100%; margin-bottom: 10px;" />
     </div>
 }
+
 @code {
-    private string searchText;
+    private string studentSearch;
     private int selectedStudentId;
-    private List<Student> students = new();
-    private bool isLoading;
-    private List<SchoolTerm> terms = new();
     private int selectedTermId;
+    private bool isLoading;
+    private List<Student> students = new();
+    private List<SchoolTerm> terms = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             isLoading = true;
-
             terms = await authService.GetAllSchoolTermsAsync();
         }
         catch (Exception ex)
         {
-            Notify.ShowNotification($"Error loading terms: {ex.Message}", "", NotificationSeverity.Error);
+            Notify.ShowNotification("Initialisation Error", $"Error loading terms: {ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
@@ -57,37 +67,20 @@
         }
     }
 
-
     private async Task SearchStudents(object args)
     {
+        if (args is not string query || string.IsNullOrWhiteSpace(query))
+            return;
+
         try
         {
             isLoading = true;
-            if (args is null || args is not string)
-            {
-                return;
-            }
-            if (args is string searchText && !string.IsNullOrWhiteSpace(searchText))
-            {
-                this.searchText = searchText;
-                try
-                {
-                    isLoading = true;
-                    students = (await authService.SearchStudentsAsync(searchText)).ToList();
-                }
-                catch (Exception ex)
-                {
-                    Notify.ShowNotification($"Error searching students: {ex.Message}", "", NotificationSeverity.Error);
-                }
-                finally
-                {
-                    isLoading = false;
-                }
-            }
+            studentSearch = query;
+            students = (await authService.SearchStudentsAsync(query)).ToList();
         }
         catch (Exception ex)
         {
-            Notify.ShowNotification($"Error searching students: {ex.Message}", "", NotificationSeverity.Error);
+            Notify.ShowNotification("Search Error", $"Error searching students: {ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
@@ -97,9 +90,14 @@
 
     private async Task GenerateStudentReport()
     {
-        if (string.IsNullOrWhiteSpace(searchText) || selectedStudentId == 0 || selectedTermId == 0)
+        if (selectedStudentId == 0)
         {
-            Notify.ShowNotification("Please select student and term.", "", NotificationSeverity.Warning);
+            Notify.ShowNotification("Validation", "Please select a student.", NotificationSeverity.Warning);
+            return;
+        }
+        if (selectedTermId == 0)
+        {
+            Notify.ShowNotification("Validation", "Please select a term.", NotificationSeverity.Warning);
             return;
         }
 
@@ -110,7 +108,7 @@
             var studentFeeData = (await authService.GetStudentFeesByStudentIdandTermAsync(selectedStudentId, selectedTermId)).ToList();
             if (!studentFeeData.Any())
             {
-                Notify.ShowNotification("No data found.", "", NotificationSeverity.Warning);
+                Notify.ShowNotification("No Data", "No fee records found for the selected student and term.", NotificationSeverity.Warning);
                 return;
             }
 
@@ -118,23 +116,23 @@
             var expectedFees = (await authService.GetFeeAmountsByClassIDAsync(classId)).ToList();
             var expectedTotal = expectedFees.Sum(x => x.Amount);
 
-            // === Build full CSV for display ===
+            // Build CSV payload
             var csvBuilder = new StringBuilder();
             foreach (var record in studentFeeData)
             {
                 csvBuilder.AppendLine($"{record.StudentName}, {record.FeeTypeName}, {record.ClassID}, {record.AmountPaid:F2}, {record.AmountLeft:F2}, {record.TermID}");
             }
 
-            // === Calculate total paid and balance from latest fee status per fee type ===
+            // Summarise per fee type — order by PaymentDate descending for reliable most-recent status
             var feeTypeSummaries = studentFeeData
                 .GroupBy(f => f.FeeTypeID)
                 .Select(g =>
                 {
-                    var latest = g.OrderBy(f => f.AmountLeft).First(); // smallest balance is most recent
+                    var latest = g.OrderByDescending(f => f.PaymentDate).First();
                     return new
                     {
-                        Paid = g.Sum(x => x.AmountPaid),         // Total paid over time
-                        Left = latest.AmountLeft                 // Final status
+                        Paid = g.Sum(x => x.AmountPaid),
+                        Left = latest.AmountLeft
                     };
                 })
                 .ToList();
@@ -142,31 +140,28 @@
             var totalPaid = feeTypeSummaries.Sum(x => x.Paid);
             var totalLeft = feeTypeSummaries.Sum(x => x.Left);
 
-            // === Append Expected Fees ===
             csvBuilder.AppendLine("Expected Fee Amounts:");
             foreach (var item in expectedFees)
             {
                 csvBuilder.AppendLine($"{item.FeeTypeName.ToUpper()}: GH {item.Amount:F2}");
             }
-
             csvBuilder.AppendLine($"TOTAL EXPECTED FEES: GH {expectedTotal:F2}");
             csvBuilder.AppendLine($"TOTAL PAID: GH {totalPaid:F2}");
             csvBuilder.AppendLine($"OUTSTANDING BALANCE: GH {totalLeft:F2}");
 
-            var csvData = Encoding.UTF8.GetBytes(csvBuilder.ToString());
-            var base64Csv = Convert.ToBase64String(csvData);
-
+            var base64Csv = Convert.ToBase64String(Encoding.UTF8.GetBytes(csvBuilder.ToString()));
             var (companyName, schoolName, logoBase64) = await authService.GetPdfLoginScreenDetailsAsync();
             var fileName = $"Student_Fees_{selectedStudentId}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
 
-            var report = new
+            var reports = new[]
             {
-                feeDataCsv = base64Csv,
-                studentName = studentFeeData.First().StudentName,
-                termId = studentFeeData.First().TermID.ToString()
+                new
+                {
+                    feeDataCsv  = base64Csv,
+                    studentName = studentFeeData.First().StudentName,
+                    termId      = studentFeeData.First().TermID.ToString()
+                }
             };
-
-            var reports = new[] { report };
 
             await JSRuntime.InvokeVoidAsync(
                 "downloadPdfFeesForMultipleStudents",
@@ -178,17 +173,15 @@
                 DateTime.Now.ToString("dd MMM yyyy")
             );
 
-            Notify.ShowNotification("Report generated successfully.", "", NotificationSeverity.Success);
+            Notify.ShowNotification("Success", "Report generated successfully.", NotificationSeverity.Success);
         }
         catch (Exception ex)
         {
-            Notify.ShowNotification($"Error: {ex.Message}", "", NotificationSeverity.Error);
+            Notify.ShowNotification("Error", $"Report generation failed: {ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
             isLoading = false;
         }
     }
-
-
 }
