@@ -15,223 +15,748 @@
 <LoadingSpinner Visible="isLoading" />
 
 <style>
-    .dashboard-container {
-        padding: 40px;
+    .pg {
+        min-height: 100vh;
+        background: #f4f6fb;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* ── HEADER ── */
+    .pg-hdr {
+        background: #fff;
+        border-bottom: 1px solid #eaecf3;
+        padding: 0 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 62px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .pg-hdr-left {
         display: flex;
         flex-direction: column;
-        gap: 30px;
-        align-items: center;
-        animation: fadeIn 1.2s ease-in-out;
-    }
-
-    .card-container {
-        display: flex;
-        flex-wrap: wrap;
         justify-content: center;
-        gap: 25px;
     }
 
-    .dashboard-card {
-        width: 280px;
-        background: linear-gradient(145deg, #1e1e2f, #23233e);
-        color: white;
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        text-align: center;
-        transition: 0.3s ease;
+        .pg-hdr-left h5 {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #1a1d2e;
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+
+        .pg-hdr-left span {
+            font-size: 0.72rem;
+            color: #9aa0b4;
+            margin-top: 1px;
+        }
+
+    .pg-term-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: linear-gradient(135deg,#ecfdf5,#d1fae5);
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        border-radius: 24px;
+        padding: 6px 16px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
     }
 
-        .dashboard-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        .pg-term-badge .dot {
+            width: 7px;
+            height: 7px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
         }
 
-        .dashboard-card i {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
+    @@keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+            transform: scale(1);
         }
 
-        .dashboard-card h1 {
-            font-size: 1.4rem;
+        50% {
+            opacity: 0.5;
+            transform: scale(1.4);
+        }
+    }
+
+    .pg-term-set {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+        .pg-term-set label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #9aa0b4;
+            white-space: nowrap;
+        }
+
+    /* ── HERO BANNER ── */
+    .pg-hero {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+        padding: 32px 32px 80px 32px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .pg-hero::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 280px;
+            height: 280px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+
+        .pg-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -80px;
+            left: 40%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+
+        .pg-hero h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #fff;
+            margin: 0 0 6px 0;
+            letter-spacing: -0.02em;
+        }
+
+        .pg-hero p {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.72);
             margin: 0;
         }
 
-        .dashboard-card h2 {
-            font-size: 2.3rem;
-            margin: 10px 0 0;
-            font-weight: 700;
-        }
-
-    .chart-container {
-        background: #ffffff;
-        padding: 25px;
-        border-radius: 20px;
-        box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.1);
-        width: 85%;
+    /* ── FLOATING KPI ROW (overlaps hero) ── */
+    .pg-kpi-wrap {
+        padding: 0 32px;
+        margin-top: -48px;
+        position: relative;
+        z-index: 5;
     }
 
-        .chart-container h2 {
-            text-align: center;
-            margin-bottom: 15px;
-            font-size: 1.6rem;
-            color: #333;
-        }
-
-    .term-summary-container, .class-summary-container {
+    .pg-kpi-row {
         display: flex;
         flex-wrap: wrap;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 15px;
+        gap: 14px;
     }
 
-    .small-card {
-        width: 320px;
-        min-height: 240px;
+    .pg-kpi {
+        flex: 1;
+        min-width: 155px;
+        background: #fff;
+        border-radius: 16px;
+        padding: 20px 18px 16px 18px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid #f0f1f8;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    .chart-container h2 {
-        margin-top: 0;
-        color: #2f3542;
+        .pg-kpi:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+        }
+
+        .pg-kpi .k-accent {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .pg-kpi .k-icon-box {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 14px;
+        }
+
+        .pg-kpi .k-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #9aa0b4;
+            margin-bottom: 5px;
+        }
+
+        .pg-kpi .k-val {
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: #1a1d2e;
+            line-height: 1;
+            letter-spacing: -0.02em;
+        }
+
+            .pg-kpi .k-val.sm {
+                font-size: 1.15rem;
+                font-weight: 700;
+            }
+
+        .pg-kpi .k-sub {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #f59e0b;
+            margin-top: 5px;
+        }
+
+    .k-purple .k-accent {
+        background: linear-gradient(90deg,#6366f1,#818cf8);
+    }
+
+    .k-blue .k-accent {
+        background: linear-gradient(90deg,#0ea5e9,#38bdf8);
+    }
+
+    .k-rose .k-accent {
+        background: linear-gradient(90deg,#f43f5e,#fb7185);
+    }
+
+    .k-teal .k-accent {
+        background: linear-gradient(90deg,#0d9488,#2dd4bf);
+    }
+
+    .k-amber .k-accent {
+        background: linear-gradient(90deg,#f59e0b,#fcd34d);
+    }
+
+    .k-purple .k-icon-box {
+        background: #ede9fe;
+    }
+
+    .k-blue .k-icon-box {
+        background: #e0f2fe;
+    }
+
+    .k-rose .k-icon-box {
+        background: #ffe4e6;
+    }
+
+    .k-teal .k-icon-box {
+        background: #ccfbf1;
+    }
+
+    .k-amber .k-icon-box {
+        background: #fef3c7;
+    }
+
+    /* ── CONTENT ── */
+    .pg-content {
+        padding: 24px 32px 40px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+    }
+
+    .pg-section-lbl {
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #b0b7c9;
+        margin: 0 0 12px 2px;
+    }
+
+    /* ── PANEL ── */
+    .pg-panel {
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid #eaecf3;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        padding: 20px 22px;
+    }
+
+    .pg-panel-hdr {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+        .pg-panel-hdr h4 {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: #1a1d2e;
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+
+    /* ── TWO COL ── */
+    .pg-two {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+        .pg-two .col-l {
+            flex: 1.25;
+            min-width: 280px;
+        }
+
+        .pg-two .col-r {
+            flex: 1;
+            min-width: 260px;
+        }
+
+    /* ── TERM ROWS ── */
+    .pg-term-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .pg-tr {
+        border: 1px solid #f0f1f8;
+        border-radius: 12px;
+        padding: 13px 15px;
+        background: #fafbff;
+        transition: border-color 0.2s;
+    }
+
+        .pg-tr:hover {
+            border-color: #c4b5fd;
+        }
+
+    .pg-tr-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 9px;
+    }
+
+        .pg-tr-top .tr-name {
+            font-size: 0.83rem;
+            font-weight: 700;
+            color: #1a1d2e;
+        }
+
+    .pg-badge {
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 12px;
+    }
+
+        .pg-badge.good {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .pg-badge.mid {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
+        .pg-badge.low {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .pg-badge.red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+    .pg-tr-nums {
+        display: flex;
+        gap: 12px;
+        font-size: 0.74rem;
+        color: #9aa0b4;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+    }
+
+        .pg-tr-nums strong {
+            color: #374151;
+        }
+
+    .pg-mini-bar {
+        background: #f0f1f8;
+        border-radius: 6px;
+        height: 5px;
+        overflow: hidden;
+    }
+
+        .pg-mini-bar div {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.6s cubic-bezier(.4,0,.2,1);
+        }
+
+    /* ── CLASS GRID ── */
+    .pg-class-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .pg-cc {
+        flex: 1;
+        min-width: 150px;
+        background: #fafbff;
+        border: 1px solid #eaecf3;
+        border-radius: 14px;
+        padding: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+
+        .pg-cc:hover {
+            border-color: #c4b5fd;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.1);
+            transform: translateY(-2px);
+        }
+
+        .pg-cc .cc-badge {
+            display: inline-block;
+            background: linear-gradient(135deg,#6366f1,#8b5cf6);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .pg-cc .cc-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.74rem;
+            padding: 3px 0;
+            color: #6b7280;
+            border-bottom: 1px solid #f4f5fb;
+        }
+
+            .pg-cc .cc-row:last-of-type {
+                border-bottom: none;
+            }
+
+            .pg-cc .cc-row strong {
+                color: #1a1d2e;
+                font-weight: 700;
+            }
+
+    .cls-prog {
+        margin-top: 10px;
+        background: #f0f1f8;
+        border-radius: 6px;
+        height: 5px;
+        overflow: hidden;
+    }
+
+        .cls-prog div {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.6s cubic-bezier(.4,0,.2,1);
+        }
+
+    .cls-pct {
+        font-size: 0.67rem;
+        color: #b0b7c9;
+        text-align: right;
+        margin-top: 4px;
+        font-weight: 600;
+    }
+
+    .pg-empty {
         text-align: center;
-        font-size: 1.6rem;
-        font-weight: bold;
+        padding: 36px;
+        color: #b0b7c9;
+        font-size: 0.85rem;
     }
 
-    .dashboard-card p {
-        font-size: 1.1rem;
-        margin: 4px 0;
+    .pg-empty-icon {
+        font-size: 2rem;
+        margin-bottom: 8px;
     }
 
+    .cls-loading {
+        text-align: center;
+        padding: 36px;
+        color: #b0b7c9;
+        font-size: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
 </style>
 
 @if (!isLoading)
 {
-    <RadzenFieldset Text="SELECT CURRENT TERM AND DATE THE TERM ENDS">
+    <div class="pg">
 
-        <RadzenDropDown @bind-Value="currentTermId"
-                        Data="@terms"
-                        TextProperty="Term"
-                        ValueProperty="TermID"
-                        Placeholder="Select Current Term"
-                        Disabled="@isCurrentTermLocked"
-                        Style="width: 300px;" />
-
-        <RadzenDatePicker @bind-Value="currentTermEndDate"
-                          DateFormat="yyyy-MM-dd"
-                          Disabled="@isCurrentTermLocked"
-                          Style="margin-left: 20px;" />
-
-        @if (!isCurrentTermLocked)
-        {
-            <RadzenButton Text="OK" Click="@SetCurrentTermAsync" Style="margin-left: 20px;" />
-        }
-        else
-        {
-            <p style="margin-left: 20px; font-weight: bold;">This term ends on: @currentTermEndDate?.ToString("yyyy-MM-dd")</p>
-        }
-
-    </RadzenFieldset>
-
-    <div class="dashboard-container">
-        <!-- Summary Cards -->
-        <div class="card-container">
-            <div class="dashboard-card" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-                <i class="fas fa-users"></i>
-                <h1>Total Students</h1>
-                <h2>@totalStudentsCount</h2>
+        <!-- HEADER -->
+        <div class="pg-hdr">
+            <div class="pg-hdr-left">
+                <h5>&#x1F3EB; School Dashboard</h5>
+                <span>@DateTime.Now.ToString("dddd, dd MMMM yyyy")</span>
             </div>
 
-            <div class="dashboard-card" style="background: linear-gradient(135deg, #00c6fb, #005bea);">
-                <i class="fas fa-chalkboard-teacher"></i>
-                <h1>Total Teachers</h1>
-                <h2>@totalTeachersCount</h2>
-            </div>
-
-            <div class="dashboard-card" style="background: linear-gradient(135deg, #ff758c, #ff7eb3);">
-                <i class="fas fa-user-tie"></i>
-                <h1>Total Staff</h1>
-                <h2>@totalStaffsCount</h2>
-            </div>
-
-          @*   <div class="dashboard-card" style="background: linear-gradient(135deg, #42e695, #3bb2b8);">
-                <i class="fas fa-credit-card"></i>
-                <h1>Total Online Transactions</h1>
-                <h2>GHS @totalTransactionAmount</h2>
-            </div> *@
-
-            <div class="dashboard-card" style="background: linear-gradient(135deg, #00b09b, #96c93d);">
-                <i class="fas fa-university"></i>
-                <h1>Cash In Hand</h1>
-                <h2>GHS @totalBankTransferAmount</h2>
-            </div>
-
-            <div class="dashboard-card" style="background: linear-gradient(135deg, 	#fbc531, #e84118);">
-                <i class="fas fa-money-bill-wave"></i>
-                <h1>Students Owing</h1>
-                <h2>@totalOwingStudentsCount</h2>
-                <p style="margin-top: 10px; font-size: 1.2rem;">GHS @totalOwingAmount.ToString("F2")</p>
-            </div>
-
-
+            @if (isCurrentTermLocked)
+            {
+                <span class="pg-term-badge">
+                    <span class="dot"></span>
+                    @terms.FirstOrDefault(t => t.TermID == currentTermId)?.Term
+                    &nbsp;&mdash;&nbsp; Ends @currentTermEndDate?.ToString("dd MMM yyyy")
+                </span>
+            }
+            else
+            {
+                <div class="pg-term-set">
+                    <label>Active Term:</label>
+                    <RadzenDropDown @bind-Value="currentTermId"
+                                    Data="@terms"
+                                    TextProperty="Term"
+                                    ValueProperty="TermID"
+                                    Placeholder="Select Term"
+                                    Style="width:160px;" />
+                    <label>Ends:</label>
+                    <RadzenDatePicker @bind-Value="currentTermEndDate"
+                                      DateFormat="dd/MM/yyyy"
+                                      Style="width:145px;" />
+                    <RadzenButton Text="Set Term"
+                                  Icon="check_circle"
+                                  ButtonStyle="ButtonStyle.Success"
+                                  Size="ButtonSize.Small"
+                                  Click="@SetCurrentTermAsync" />
+                </div>
+            }
         </div>
 
-        <!-- Charts Section -->
-        <!-- Term Summary Section -->
-        <div class="chart-container">
-            <h2>Term-Wise Financial Summary</h2>
-            <div class="term-summary-container">
-                @foreach (var termSummary in termSummaries)
+        <!-- HERO -->
+        <div class="pg-hero">
+            <h2>Good @(DateTime.Now.Hour < 12 ? "Morning" : DateTime.Now.Hour < 17 ? "Afternoon" : "Evening") &#x1F44B;</h2>
+            <p>Here is what is happening at your school today.</p>
+        </div>
+
+        <!-- FLOATING KPI ROW -->
+        <div class="pg-kpi-wrap">
+            <div class="pg-kpi-row">
+
+                <div class="pg-kpi k-purple">
+                    <div class="k-accent"></div>
+                    <div class="k-icon-box">&#x1F465;</div>
+                    <div class="k-label">Total Students</div>
+                    <div class="k-val">@totalStudentsCount</div>
+                </div>
+
+                <div class="pg-kpi k-blue">
+                    <div class="k-accent"></div>
+                    <div class="k-icon-box">&#x1F4DA;</div>
+                    <div class="k-label">Teachers</div>
+                    <div class="k-val">@totalTeachersCount</div>
+                </div>
+
+                <div class="pg-kpi k-rose">
+                    <div class="k-accent"></div>
+                    <div class="k-icon-box">&#x1F454;</div>
+                    <div class="k-label">Staff</div>
+                    <div class="k-val">@totalStaffsCount</div>
+                </div>
+
+                @* <div class="pg-kpi k-teal">
+                    <div class="k-accent"></div>
+                    <div class="k-icon-box">&#x1F3E6;</div>
+                    <div class="k-label">Cash In Hand</div>
+                    <div class="k-val sm">GH&#x20b5; @totalBankTransferAmount.ToString("F2")</div>
+                </div> *@
+
+                @* <div class="pg-kpi k-amber">
+                    <div class="k-accent"></div>
+                    <div class="k-icon-box">&#x26A0;&#xFE0F;</div>
+                    <div class="k-label">Students Owing</div>
+                    <div class="k-val">@totalOwingStudentsCount</div>
+                    <div class="k-sub">GH&#x20b5; @totalOwingAmount.ToString("F2") outstanding</div>
+                </div> *@
+
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="pg-content">
+
+            <!-- TWO COL: Term list + Chart -->
+            <div class="pg-two">
+
+                <div class="col-l">
+                    <div class="pg-panel" style="height:100%;">
+                        <div class="pg-panel-hdr">
+                            <h4>&#x1F4CA; Term Financial Summary</h4>
+                        </div>
+
+                        @if (termSummaries.Any())
+                        {
+                            <div class="pg-term-list">
+                                @foreach (var ts in termSummaries)
+                                {
+                                    var tName = terms.FirstOrDefault(t => t.TermID == ts.TermID)?.Term ?? $"Term {ts.TermID}";
+                                    var outstanding = ts.ExpectedTotal - ts.ActualTotal;
+                                    var pct = ts.ExpectedTotal > 0 ? (int)Math.Round(ts.ActualTotal / ts.ExpectedTotal * 100) : 0;
+                                    var badgeCls = pct >= 90 ? "good" : pct >= 50 ? "mid" : pct >= 25 ? "low" : "red";
+                                    var barCol = pct >= 90 ? "#10b981" : pct >= 50 ? "#6366f1" : pct >= 25 ? "#f59e0b" : "#ef4444";
+                                    <div class="pg-tr">
+                                        <div class="pg-tr-top">
+                                            <span class="tr-name">@tName</span>
+                                            <span class="pg-badge @badgeCls">@pct% collected</span>
+                                        </div>
+                                        <div class="pg-tr-nums">
+                                            <span>Expected <strong>GH&#x20b5; @ts.ExpectedTotal.ToString("F2")</strong></span>
+                                            <span>Received <strong style="color:#059669;">GH&#x20b5; @ts.ActualTotal.ToString("F2")</strong></span>
+                                            <span>Left <strong style="color:#d97706;">GH&#x20b5; @outstanding.ToString("F2")</strong></span>
+                                        </div>
+                                        <div class="pg-mini-bar">
+                                            <div style="width:@(Math.Min(pct, 100))%; background:@barCol;"></div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="pg-empty">
+                                <div class="pg-empty-icon">&#x1F4CB;</div>
+                                No term data available.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-r">
+                    <div class="pg-panel" style="height:100%;">
+                        <div class="pg-panel-hdr">
+                            <h4>&#x1F4C8; Collection Chart</h4>
+                        </div>
+                        @if (termChartData.Any())
+                        {
+                            <RadzenChart Style="height:290px;">
+                                <RadzenColumnSeries Data="@termChartData"
+                                                    CategoryProperty="Label"
+                                                    ValueProperty="Expected"
+                                                    Title="Expected"
+                                                    Fill="#6366f1" />
+                                <RadzenColumnSeries Data="@termChartData"
+                                                    CategoryProperty="Label"
+                                                    ValueProperty="Received"
+                                                    Title="Received"
+                                                    Fill="#10b981" />
+                                <RadzenLegend Position="LegendPosition.Bottom" />
+                            </RadzenChart>
+                        }
+                        else
+                        {
+                            <div class="pg-empty">
+                                <div class="pg-empty-icon">&#x1F4C9;</div>
+                                No chart data.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- CLASS BREAKDOWN -->
+            <div class="pg-panel">
+                <div class="pg-panel-hdr">
+                    <h4>&#x1F3EB; Class-Wise Breakdown</h4>
+                    <RadzenDropDown Data="@terms"
+                                    TextProperty="Term"
+                                    ValueProperty="TermID"
+                                    @bind-Value="selectedTermId"
+                                    Placeholder="Select Term"
+                                    Change="@OnTermDropdownChanged"
+                                    Style="width:180px;" />
+                </div>
+
+                @if (isLoadingClassSummaries)
                 {
-                    <div class="dashboard-card small-card" style="background: linear-gradient(135deg, #1f4037, #99f2c8);">
-                        <i class="fas fa-coins"></i>
-                        <h1>@terms.FirstOrDefault(t => t.TermID == termSummary.TermID)?.Term</h1>
-                        <h2>Expected: GH¢ @termSummary.ExpectedTotal.ToString("F2")</h2>
-                        <p>Received: GH¢ @termSummary.ActualTotal.ToString("F2")</p>
-                        <p>Outstanding: GH¢ @termSummary.Outstanding.ToString("F2")</p>
+                    <div class="cls-loading">
+                        <RadzenProgressBarCircular Value="100" ShowValue="false"
+                                                   Mode="ProgressBarMode.Indeterminate"
+                                                   Size="ProgressBarCircularSize.Small" />
+                        <span>Loading class data…</span>
+                    </div>
+                }
+                else if (selectedTermId <= 0)
+                {
+                    <div class="pg-empty">
+                        <div class="pg-empty-icon">&#x1F4C5;</div>
+                        Select a term to view class financials.
+                    </div>
+                }
+                else if (!classTermSummaries.Any())
+                {
+                    <div class="pg-empty">
+                        <div class="pg-empty-icon">&#x1F50D;</div>
+                        No data found for the selected term.
+                        <br />
+                        <small style="color:#d97706;font-size:0.72rem;">
+                            Check that FeeTypes are configured for this term's classes.
+                        </small>
+                    </div>
+                }
+                else
+                {
+                    <div class="pg-class-grid">
+                        @foreach (var item in classTermSummaries)
+                        {
+                            var pct = item.ExpectedTotal > 0
+                            ? (int)Math.Round(item.ActualTotal / item.ExpectedTotal * 100)
+                            : 0;
+                            var barCol = pct >= 100 ? "#10b981" : pct >= 50 ? "#6366f1" : "#f59e0b";
+                            <div class="pg-cc">
+                                <span class="cc-badge">@item.ClassID</span>
+                                <div class="cc-row"><span>Students</span><strong>@item.TotalStudents</strong></div>
+                                <div class="cc-row"><span>Fee Types</span><strong>@item.FeeTypesCount</strong></div>
+                                <div class="cc-row"><span>Expected</span><strong>GH&#x20b5; @item.ExpectedTotal.ToString("F2")</strong></div>
+                                <div class="cc-row"><span>Received</span><strong style="color:#059669;">GH&#x20b5; @item.ActualTotal.ToString("F2")</strong></div>
+                                <div class="cc-row"><span>Outstanding</span><strong style="color:#d97706;">GH&#x20b5; @item.Outstanding.ToString("F2")</strong></div>
+                                <div class="cls-prog">
+                                    <div style="width:@(Math.Min(pct, 100))%; background:@barCol;"></div>
+                                </div>
+                                <div class="cls-pct">@pct% collected</div>
+                            </div>
+                        }
                     </div>
                 }
             </div>
 
-            <RadzenChart Style="height: 300px;" Class="mt-4">
-                <RadzenColumnSeries Data="@termSummaries" CategoryProperty="TermID" ValueProperty="ExpectedTotal" Title="Expected" />
-                <RadzenColumnSeries Data="@termSummaries" CategoryProperty="TermID" ValueProperty="ActualTotal" Title="Received" />
-            </RadzenChart>
         </div>
-
-        <!-- Term Selector -->
-        <div class="chart-container">
-            <h2>Select Term to View Class Financials</h2>
-            <RadzenDropDown Data="@terms"
-                            TextProperty="Term"
-                            ValueProperty="TermID"
-                            @bind-Value="selectedTermId"
-                            Placeholder="Select Term"
-                            Change="@(async args => await LoadClassTermSummariesAsync())"
-                            Style="width: 300px; margin: 0 auto 30px auto;" />
-        </div>
-
-        <!-- Class Summary Section -->
-        @if (classTermSummaries.Any())
-        {
-            <div class="chart-container">
-                <h2>Class-Wise Breakdown For Term @terms.FirstOrDefault(t => t.TermID == selectedTermId)?.Term</h2>
-                <div class="class-summary-container">
-                    @foreach (var item in classTermSummaries)
-                    {
-                        <div class="dashboard-card small-card" style="background: linear-gradient(135deg, #1e3c72, #2a5298);">
-                            <i class="fas fa-school"></i>
-                            <h1>Class @item.ClassID</h1>
-                            <p>Students: @item.TotalStudents | Fee Types: @item.FeeTypesCount</p>
-                            <p>Expected: GH¢ @item.ExpectedTotal.ToString("F2")</p>
-                            <p>Received: GH¢ @item.ActualTotal.ToString("F2")</p>
-                            <p>Outstanding: GH¢ @item.Outstanding.ToString("F2")</p>
-                        </div>
-                    }
-                </div>
-            </div>
-        }
     </div>
 }
 else
@@ -239,18 +764,19 @@ else
     <LoadingSpinner Visible="true" />
 }
 
-
 @code {
     private int totalStudentsCount;
     private int totalTeachersCount;
     private int totalStaffsCount;
     private decimal totalTransactionAmount;
-    private bool isLoading = true;  
+    private bool isLoading = true;
+    private bool isLoadingClassSummaries = false;
     private decimal totalBankTransferAmount;
     private int userId;
     private List<ChartData> chartData = new();
     private List<ChartData> lineChartData = new();
     private List<TermFeeSummary> termSummaries = new();
+    private List<TermChartPoint> termChartData = new();
     private int totalOwingStudentsCount;
     private decimal totalOwingAmount;
     private List<ClassTermFeeSummary> classTermSummaries = new();
@@ -260,6 +786,19 @@ else
     private DateTime? currentTermEndDate;
     private bool isCurrentTermLocked;
 
+    public class TermChartPoint
+    {
+        public string Label { get; set; }
+        public decimal Expected { get; set; }
+        public decimal Received { get; set; }
+    }
+
+    public class ChartData
+    {
+        public string Category { get; set; }
+        public int Value { get; set; }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -267,62 +806,68 @@ else
             isLoading = true;
 
             var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
-
             if (string.IsNullOrWhiteSpace(username))
             {
-                Notify.ShowNotification("User Error", "User not logged in or session expired.",NotificationSeverity.Error);
+                Notify.ShowNotification("User Error", "User not logged in or session expired.", NotificationSeverity.Error);
                 return;
             }
 
             var user = await authService.GetUserByUsernameAsync(username);
             if (user == null)
             {
-                Notify.ShowNotification("User Error", "User not found.",NotificationSeverity.Error);
+                Notify.ShowNotification("User Error", "User not found.", NotificationSeverity.Error);
                 return;
             }
 
             userId = user.UserID;
-
             await authStateService.EnsureAuthenticated();
+
             totalStudentsCount = await authService.GetTotalStudentsCount();
             totalTeachersCount = await authService.GetTotalTeachersCount();
-            totalStaffsCount = await authService.GetStaffsCount();            
+            totalStaffsCount = await authService.GetStaffsCount();
             totalBankTransferAmount = await authService.GetTotalBankTransferredAsync();
+
             (var studentsOwingCount, var amountOwing) = await authService.GetStudentsOwingSummaryAsync();
             totalOwingStudentsCount = studentsOwingCount;
             totalOwingAmount = amountOwing;
+
             termSummaries = await authService.GetTermFeeSummariesAsync();
             terms = await authService.GetAllSchoolTermsAsync();
+
             await LoadCurrentTermAsync();
 
+            termChartData = termSummaries.Select(ts => new TermChartPoint
+            {
+                Label = terms.FirstOrDefault(t => t.TermID == ts.TermID)?.Term ?? $"Term {ts.TermID}",
+                Expected = ts.ExpectedTotal,
+                Received = ts.ActualTotal
+            }).ToList();
 
+            // ── Auto-select the first term and immediately load its class data ──
             if (terms.Any())
             {
-                selectedTermId = terms.First().TermID; // auto-select first term
-                await LoadClassTermSummariesAsync();   // load summary for first term
+                selectedTermId = terms.OrderBy(t => t.TermID).First().TermID;
+                await LoadClassTermSummariesAsync();
             }
-            var transactions = await PaymentService.GetAllSuccessfulPaymentsAsync();
-            totalTransactionAmount = transactions.Sum(x => x.Amount) / 100.0m;
+
+            try
+            {
+                var transactions = await PaymentService.GetAllSuccessfulPaymentsAsync();
+                totalTransactionAmount = transactions.Sum(x => x.Amount) / 100.0m;
+                lineChartData = transactions
+                    .GroupBy(tx => DateTime.Parse(tx.PaidAt).ToString("MMM"))
+                    .Select(g => new ChartData { Category = g.Key, Value = g.Sum(x => x.Amount) / 100 })
+                    .OrderBy(d => DateTime.ParseExact(d.Category, "MMM", null).Month)
+                    .ToList();
+            }
+            catch { totalTransactionAmount = 0; }
 
             chartData = new()
             {
                 new ChartData { Category = "Students", Value = totalStudentsCount },
                 new ChartData { Category = "Teachers", Value = totalTeachersCount },
-                new ChartData { Category = "Staff", Value = totalStaffsCount },
-               // new ChartData { Category = "Transactions", Value = (int)totalTransactionAmount }
+                new ChartData { Category = "Staff",    Value = totalStaffsCount   },
             };
-
-            // Simulate monthly trend (example)
-            lineChartData = transactions
-              .GroupBy(tx => DateTime.Parse(tx.PaidAt).ToString("MMM")) // e.g., "Jan", "Feb"
-             .Select(g => new ChartData
-            {
-             Category = g.Key,
-             Value = g.Sum(x => x.Amount) / 100 // converting from pesewas to GHS
-            })
-           .OrderBy(data => DateTime.ParseExact(data.Category, "MMM", null).Month) // Optional: order by month
-            .ToList();
-
         }
         catch (Exception ex)
         {
@@ -334,28 +879,47 @@ else
         }
     }
 
-    private async Task LoadClassTermSummariesAsync()
+    // ── Called by the dropdown Change event ──────────────────────────────────
+    private async Task OnTermDropdownChanged(object value)
     {
-        if (selectedTermId > 0)
-        {
-            classTermSummaries = await authService.GetClassTermFeeSummariesAsync(selectedTermId);
-        }
+        // RadzenDropDown passes the new value via Change before @bind-Value updates,
+        // so we cast and assign manually to guarantee selectedTermId is correct.
+        if (value is int termId)
+            selectedTermId = termId;
+
+        await LoadClassTermSummariesAsync();
     }
 
-    public class ChartData
+    private async Task LoadClassTermSummariesAsync()
     {
-        public string Category { get; set; }
-        public int Value { get; set; }
+        if (selectedTermId <= 0) return;
+
+        try
+        {
+            isLoadingClassSummaries = true;
+            StateHasChanged();
+
+            classTermSummaries = await authService.GetClassTermFeeSummariesAsync(selectedTermId);
+        }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error", $"Failed to load class summary: {ex.Message}", NotificationSeverity.Error);
+            classTermSummaries = new();
+        }
+        finally
+        {
+            isLoadingClassSummaries = false;
+            StateHasChanged();
+        }
     }
 
     private async Task SetCurrentTermAsync()
     {
         if (currentTermId <= 0 || currentTermEndDate == null)
         {
-            Notify.ShowNotification("Invalid", "Please select a term and its end date.", NotificationSeverity.Warning);
+            Notify.ShowNotification("Validation", "Please select a term and its end date.", NotificationSeverity.Warning);
             return;
         }
-
         await authService.SetCurrentTermAsync(currentTermId, currentTermEndDate.Value, userId);
         Notify.ShowNotification("Success", "Current term updated.", NotificationSeverity.Success);
         await LoadCurrentTermAsync();

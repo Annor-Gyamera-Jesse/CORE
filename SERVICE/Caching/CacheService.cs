@@ -12,7 +12,7 @@ namespace CORE.SERVICE.Caching
         }
 
         // Generic method for getting or setting cached data
-        public async Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> getDataFunc, int minutes = 15)
+        public async Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> getDataFunc, int minutes = 01)
         {
             if (_cache.TryGetValue(key, out T cachedValue))
             {

@@ -322,7 +322,7 @@ namespace CORE.SERVICE
                 }
             }
 
-            _cache.Set("CachedUsersList", users, TimeSpan.FromMinutes(10)); // cache for 10 minutes
+            _cache.Set("CachedUsersList", users, TimeSpan.FromMinutes(01)); // cache for 10 minutes
             return users;
         }
 
@@ -335,7 +335,7 @@ namespace CORE.SERVICE
             using (var connection = new SqlConnection(connectionString))
             {
                 var result = await connection.QueryAsync<User>("SELECT UserID, UserName FROM SchoolManagement.Users");
-                _cache.Set("CachedMUsersList", result, TimeSpan.FromMinutes(10));
+                _cache.Set("CachedMUsersList", result, TimeSpan.FromMinutes(01));
                 return result;
             }
         }
@@ -349,7 +349,7 @@ namespace CORE.SERVICE
             using (var connection = new SqlConnection(connectionString))
             {
                 var roles = await connection.QueryAsync<Role>("SELECT RoleName FROM SchoolManagement.Roles");
-                _cache.Set("CachedRoles", roles, TimeSpan.FromMinutes(30));
+                _cache.Set("CachedRoles", roles, TimeSpan.FromMinutes(01));
                 return roles;
             }
         }
@@ -364,7 +364,7 @@ namespace CORE.SERVICE
             {
                 var menuItems = await connection.QueryAsync<MobileMenuItem>(
                     "SELECT CategoryName, MenuItem AS ItemName FROM SchoolManagement.MobileAppMenuDisplay");
-                _cache.Set("CachedMenuItems", menuItems, TimeSpan.FromMinutes(30));
+                _cache.Set("CachedMenuItems", menuItems, TimeSpan.FromMinutes(01));
                 return menuItems;
             }
         }
@@ -379,7 +379,7 @@ namespace CORE.SERVICE
             {
                 var categories = await connection.QueryAsync<string>(
                     "SELECT DISTINCT CategoryName FROM SchoolManagement.MobileAppMenuDisplay");
-                _cache.Set("CachedCategoryNames", categories, TimeSpan.FromMinutes(30));
+                _cache.Set("CachedCategoryNames", categories, TimeSpan.FromMinutes(01));
                 return categories;
             }
         }
@@ -421,7 +421,7 @@ namespace CORE.SERVICE
                     "SELECT * FROM SchoolManagement.MobileAppRoles WHERE UserID = @UserID",
                     new { UserID = userId });
 
-                _cache.Set(cacheKey, roles, TimeSpan.FromMinutes(10)); // or less depending on role update frequency
+                _cache.Set(cacheKey, roles, TimeSpan.FromMinutes(01)); // or less depending on role update frequency
 
                 return roles;
             }
@@ -3750,24 +3750,24 @@ namespace CORE.SERVICE
         }
 
         // Fetch all classes (ensure the correct class model is used)
-        public async Task<List<Class>> GetAllClassesforsetfeesamountAsync()
-        {
-            try
-            {
-                using (var connection = new SqlConnection(connectionString))
-                {
-                    await connection.OpenAsync();
-                    var query = "SELECT * FROM SchoolManagement.Class";  // Ensure the correct query here for fetching classes
-                    var result = await connection.QueryAsync<Class>(query);
-                    return result.AsList();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetAllClassesAsync: {ex.Message}");
-                throw;
-            }
-        }
+        //public async Task<List<Class>> GetAllClassesforsetfeesamountAsync()
+        //{
+        //    try
+        //    {
+        //        using (var connection = new SqlConnection(connectionString))
+        //        {
+        //            await connection.OpenAsync();
+        //            var query = "SELECT * FROM SchoolManagement.Class";  // Ensure the correct query here for fetching classes
+        //            var result = await connection.QueryAsync<Class>(query);
+        //            return result.AsList();
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"Error in GetAllClassesAsync: {ex.Message}");
+        //        throw;
+        //    }
+        //}
 
         // Fetch all fee types for the dropdown
         public async Task<List<FeeType>> GetAllFeeTypesAsync()
@@ -5983,7 +5983,7 @@ VALUES (
 
                     return await connection.QueryFirstOrDefaultAsync<(int, decimal)>(sql);
                 }
-            }, minutes: 15);
+            }, minutes: 01);
         }
 
         //
@@ -6034,51 +6034,50 @@ VALUES (
 
         public async Task<List<ClassTermFeeSummary>> GetClassTermFeeSummariesAsync(int termId)
         {
+            // Get term name from the cached terms list
+            var terms = await GetAllSchoolTermsAsync();
+            var termName = terms.FirstOrDefault(t => t.TermID == termId)?.Term ?? $"Term {termId}";
+
             using var connection = new SqlConnection(connectionString);
-
             var sql = @"
-    SELECT 
-        c.ClassID,
-        @TermID AS TermID,
-        -- Total number of students in the class
-        (SELECT COUNT(*) 
-         FROM SchoolManagement.Students s 
-         WHERE s.ClassID = c.ClassID AND s.EnableSwitch = 1) AS TotalStudents,
-
-        -- Total number of fee types for the class
-        (SELECT COUNT(*) 
-         FROM SchoolManagement.FeeTypes f 
-         WHERE f.ClassID = c.ClassID) AS FeeTypesCount,
-
-        -- ExpectedTotal = Total fee per student * Number of students
-        (SELECT ISNULL(SUM(f.Amount), 0) 
-         FROM SchoolManagement.FeeTypes f 
-         WHERE f.ClassID = c.ClassID) 
-         * 
-        (SELECT COUNT(*) 
-         FROM SchoolManagement.Students s 
-         WHERE s.ClassID = c.ClassID AND s.EnableSwitch = 1) AS ExpectedTotal,
-
-        -- ActualTotal paid by students for the selected term
-        (SELECT ISNULL(SUM(sf.AmountPaid), 0) 
-         FROM SchoolManagement.StudentFees sf 
-         WHERE sf.ClassID = c.ClassID AND sf.TermID = @TermID) AS ActualTotal
-
-    FROM 
-        (SELECT DISTINCT ClassID FROM SchoolManagement.Students) c;
+        SELECT 
+            base.ClassID,
+            @TermID                                             AS TermID,
+            base.TotalStudents,
+            ISNULL(ft.FeeTypesCount, 0)                        AS FeeTypesCount,
+            ISNULL(ft.TotalFeeAmount, 0)                       AS TotalFeePerStudent,
+            ISNULL(ft.TotalFeeAmount, 0) * base.TotalStudents  AS ExpectedTotal,
+            ISNULL(sf.ActualTotal, 0)                          AS ActualTotal
+        FROM (
+            SELECT ClassID, COUNT(*) AS TotalStudents
+            FROM SchoolManagement.Students
+            WHERE EnableSwitch = 1
+            GROUP BY ClassID
+        ) base
+        LEFT JOIN (
+            SELECT ClassID, SUM(Amount) AS TotalFeeAmount, COUNT(*) AS FeeTypesCount
+            FROM SchoolManagement.FeeTypes
+            GROUP BY ClassID
+        ) ft ON ft.ClassID = base.ClassID
+        LEFT JOIN (
+            SELECT ClassID, SUM(AmountPaid) AS ActualTotal
+            FROM SchoolManagement.StudentFees
+            WHERE TermID = @TermID
+            GROUP BY ClassID
+        ) sf ON sf.ClassID = base.ClassID;
     ";
 
             var result = await connection.QueryAsync<ClassTermFeeSummary>(sql, new { TermID = termId });
 
-            // Calculate Outstanding after query (safe in C#)
             foreach (var summary in result)
             {
+                summary.TermID = termId;
+                summary.TermName = termName;
                 summary.Outstanding = summary.ExpectedTotal - summary.ActualTotal;
             }
 
             return result.ToList();
         }
-
         public async Task<List<StudentFee>> GetStudentFeesByClassAndTerm(string classId, int termId)
         {
             var query = @"
@@ -6293,6 +6292,7 @@ VALUES (
             return (await connection.QueryAsync<StudentFeesReport>(sql, new { date })).ToList();
         }
 
-
+        /*this is to get all data of fees for the director to see it*/
+       
     }
 }
