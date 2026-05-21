@@ -1,4 +1,4 @@
-
+﻿
 using Dapper;
 using CORE.MODEL;
 using System.Data.SqlClient;
@@ -144,7 +144,7 @@ namespace CORE.SERVICE
 
                     return result;
                 }
-            }, minutes: 15); // Cache for 15 minutes
+            }, minutes: 1); // Cache for 15 minutes
         }
 
 
@@ -348,7 +348,7 @@ namespace CORE.SERVICE
 
             using (var connection = new SqlConnection(connectionString))
             {
-                var roles = await connection.QueryAsync<Role>("SELECT RoleName FROM SchoolManagement.Roles");
+                var roles = await connection.QueryAsync<Role>("SELECT RoleID, RoleName FROM SchoolManagement.Roles");
                 _cache.Set("CachedRoles", roles, TimeSpan.FromMinutes(01));
                 return roles;
             }
@@ -971,7 +971,7 @@ namespace CORE.SERVICE
                     Console.WriteLine($"Error in GetSchoolCoursesAsync: {ex.Message}");
                     throw;
                 }
-            }, minutes: 30); // Cache for 30 minutes
+            }, minutes: 1); // Cache for 30 minutes
         }
 
 
@@ -1098,7 +1098,7 @@ namespace CORE.SERVICE
                     Console.WriteLine($"Error in GetAllTeachersAsync: {ex.Message}");
                     throw;
                 }
-            }, minutes: 20); // Cache for 20 minutes
+            }, minutes: 1); // Cache for 20 minutes
         }
 
         public async Task<int> AssignTeacherToClassAsync(int teacherId, string classId)
@@ -1222,7 +1222,7 @@ namespace CORE.SERVICE
                     Console.WriteLine($"Error in GetAllClassAsync: {ex.Message}");
                     throw;
                 }
-            }, minutes: 30); // Cached for 30 minutes
+            }, minutes: 1); // Cached for 30 minutes
         }
 
         //TeacherAssignClassService
@@ -1246,7 +1246,7 @@ namespace CORE.SERVICE
                     Console.WriteLine($"Error in GetAllClassesAsync: {ex.Message}");
                     throw;
                 }
-            }, minutes: 20); // Cached for 20 minutes
+            }, minutes: 1); // Cached for 20 minutes
         }
 
         public async Task<bool> DeleteClassAsync(string classId)
@@ -1488,7 +1488,7 @@ namespace CORE.SERVICE
                 }
 
                 return null;
-            }, minutes: 15); // Cache for 15 minutes
+            }, minutes: 1); // Cache for 15 minutes
         }
 
 
@@ -1910,17 +1910,24 @@ namespace CORE.SERVICE
                         try
                         {
                             // Insert Exam Record
+                            //    var insertExamQuery = @"
+                            //INSERT INTO SchoolManagement.SchoolExams 
+                            //(StudentName, ClassName, AcademicYear, VacationDate, PromotedTo, NumberOnRoll, 
+                            // TermID, Position, NextTermsBegins, AttendanceOut, AttendanceIn, SchoolCourse, ClassScore, 
+                            // ExamsScore, TotalScore, SubjectsPositions, Grade, TeachersRemarks, Conduct, HeadmasterRemark, 
+                            // SchoolInformation, TeachersSignature, HeadMasterSignature, UserID) 
+                            //VALUES 
+                            //(@StudentName, @ClassName, @AcademicYear, @VacationDate, @PromotedTo, @NumberOnRoll, 
+                            // @TermID, @Position, @NextTermsBegins, @AttendanceOut, @AttendanceIn, @SchoolCourse, @ClassScore, 
+                            // @ExamsScore, @TotalScore, @SubjectsPositions, @Grade, @TeachersRemarks, @Conduct, @HeadmasterRemark, 
+                            // @SchoolInformation, @TeachersSignature, @HeadMasterSignature, @UserID);
+                            //SELECT SCOPE_IDENTITY();";
+
                             var insertExamQuery = @"
                         INSERT INTO SchoolManagement.SchoolExams 
-                        (StudentName, ClassName, AcademicYear, VacationDate, PromotedTo, NumberOnRoll, 
-                         TermID, Position, NextTermsBegins, AttendanceOut, AttendanceIn, SchoolCourse, ClassScore, 
-                         ExamsScore, TotalScore, SubjectsPositions, Grade, TeachersRemarks, Conduct, HeadmasterRemark, 
-                         SchoolInformation, TeachersSignature, HeadMasterSignature, UserID) 
+                        (StudentName, ClassName, PromotedTo, TermID, UserID) 
                         VALUES 
-                        (@StudentName, @ClassName, @AcademicYear, @VacationDate, @PromotedTo, @NumberOnRoll, 
-                         @TermID, @Position, @NextTermsBegins, @AttendanceOut, @AttendanceIn, @SchoolCourse, @ClassScore, 
-                         @ExamsScore, @TotalScore, @SubjectsPositions, @Grade, @TeachersRemarks, @Conduct, @HeadmasterRemark, 
-                         @SchoolInformation, @TeachersSignature, @HeadMasterSignature, @UserID);
+                        (@StudentName, @ClassName, @PromotedTo, @TermID, @UserID);
                         SELECT SCOPE_IDENTITY();";
 
                             var examId = await connection.ExecuteScalarAsync<int>(
@@ -2104,7 +2111,7 @@ namespace CORE.SERVICE
                     Console.WriteLine($"Error in GetAllStudents: {ex.Message}");
                     throw;
                 }
-            }, minutes: 20);
+            }, minutes: 1);
         }
 
 
@@ -2133,7 +2140,7 @@ namespace CORE.SERVICE
                 }
 
                 return totalStudents;
-            }, minutes: 10); // Cache for 10 minutes (adjust as needed)
+            }, minutes: 1); // Cache for 10 minutes (adjust as needed)
         }
 
         public async Task<decimal> GetTotalBankTransferredAsync()
@@ -2143,7 +2150,7 @@ namespace CORE.SERVICE
                 using var connection = new SqlConnection(connectionString);
                 var query = "SELECT ISNULL(SUM(AmountTransferred), 0) FROM SchoolManagement.Bank";
                 return await connection.ExecuteScalarAsync<decimal>(query);
-            }, minutes: 10); // Cache for 10 minutes (adjust as needed)
+            }, minutes: 1); // Cache for 10 minutes (adjust as needed)
         }
 
         public async Task SetCurrentTermAsync(int termId, DateTime endDate, int userId)
@@ -2207,7 +2214,7 @@ namespace CORE.SERVICE
                 }
 
                 return totalTeachers;
-            }, minutes: 15); // Cache duration can be adjusted as needed
+            }, minutes: 1); // Cache duration can be adjusted as needed
         }
         public async Task<int> GetStaffsCount()
         {
@@ -3111,7 +3118,7 @@ namespace CORE.SERVICE
                     var feeTypes = await connection.QueryAsync<FeeType>(query);
                     return feeTypes.AsList();
                 }
-            }, minutes: 20); // Cache for 20 minutes
+            }, minutes: 1); // Cache for 20 minutes
         }
 
         // Get all student fees
@@ -3256,7 +3263,7 @@ namespace CORE.SERVICE
                     var feeTypes = await connection.QueryAsync<FeeType>(query, new { ClassID = classId });
                     return feeTypes.AsList();
                 }
-            }, minutes: 15); // Cache each class-specific result for 15 minutes
+            }, minutes: 1); // Cache each class-specific result for 15 minutes
         }
 
 
@@ -3581,7 +3588,7 @@ namespace CORE.SERVICE
         }
 
 
-        // 1 Balance that�s still left in THIS term only
+        // 1 Balance that’s still left in THIS term only
         //public async Task<decimal> GetTermOutstandingAsync(int studentId, int termId)
         //{
         //    const string sql = @"
@@ -3609,35 +3616,172 @@ namespace CORE.SERVICE
         //}
 
 
-        public async Task<int> GetBankIDAsync(string paymentMethod)
+        public async Task<int> GetBankIDAsync(string paymentMethod, int userId = 0)
         {
             string cacheKey = $"BankID_{paymentMethod}";
+
+            // Invalidate cache so it re-checks every time
+            _cacheService.Invalidate(cacheKey);
 
             return await _cacheService.GetOrSetAsync(cacheKey, async () =>
             {
                 using var connection = new SqlConnection(connectionString);
-                string query = "SELECT BankID FROM SchoolManagement.Bank WHERE MethodName = @PaymentMethod";
+                await connection.OpenAsync();
+
+                // Step 1: Try to find existing BankID
+                string query = "SELECT TOP 1 BankID FROM SchoolManagement.Bank WHERE MethodName = @PaymentMethod ORDER BY BankID DESC";
                 var bankId = await connection.ExecuteScalarAsync<int?>(query, new { PaymentMethod = paymentMethod });
 
-                return bankId ?? 0; // Return 0 if not found
-            }, minutes: 1); // Cache for 1 MINT. (can be more, unless banks change often)
+                if (bankId.HasValue && bankId.Value > 0)
+                    return bankId.Value;
+
+                // Step 2: Check if PaymentMethod exists in PaymentMethods table
+                string checkPMQuery = @"
+            SELECT PaymentMethodID, BankNumber 
+            FROM SchoolManagement.PaymentMethods 
+            WHERE MethodName = @PaymentMethod";
+
+                var pm = await connection.QueryFirstOrDefaultAsync<(int PaymentMethodID, string BankNumber)>(
+                    checkPMQuery, new { PaymentMethod = paymentMethod });
+
+                // Step 3: Generate a unique SystemTransferID
+                int systemTransferId = new Random().Next(100000, 999999);
+
+                // Step 4: Resolve UserID — use provided userId, else fallback to first valid user
+                int resolvedUserId = userId;
+                if (resolvedUserId <= 0)
+                {
+                    resolvedUserId = await connection.ExecuteScalarAsync<int>(
+                        "SELECT TOP 1 UserID FROM SchoolManagement.Users ORDER BY UserID ASC");
+                }
+
+                if (pm.PaymentMethodID > 0)
+                {
+                    // Payment method exists in PaymentMethods — create Bank entry only
+                    string insertQuery = @"
+                INSERT INTO SchoolManagement.Bank 
+                (PaymentMethodID, BankNumber, MethodName, AmountTransferred, 
+                 SystemTransferID, AmountInHand, Remarks, UserID)
+                VALUES 
+                (@PaymentMethodID, @BankNumber, @MethodName, 0, 
+                 @SystemTransferID, 0, @Remarks, @UserID);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                    var newBankId = await connection.ExecuteScalarAsync<int>(insertQuery, new
+                    {
+                        PaymentMethodID = pm.PaymentMethodID,
+                        BankNumber = pm.BankNumber ?? "AUTO-GENERATED",
+                        MethodName = paymentMethod,
+                        SystemTransferID = systemTransferId,
+                        Remarks = $"Auto-created bank entry for {paymentMethod}",
+                        UserID = resolvedUserId
+                    });
+
+                    return newBankId;
+                }
+                else
+                {
+                    // Doesn't exist anywhere — create PaymentMethod first then Bank entry
+                    string insertPMQuery = @"
+                INSERT INTO SchoolManagement.PaymentMethods 
+                (MethodName, Description, BankNumber, UserID)
+                VALUES 
+                (@MethodName, @Description, @BankNumber, @UserID);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                    var newPMId = await connection.ExecuteScalarAsync<int>(insertPMQuery, new
+                    {
+                        MethodName = paymentMethod,
+                        Description = $"Auto-created for {paymentMethod}",
+                        BankNumber = "AUTO-GENERATED",
+                        UserID = resolvedUserId
+                    });
+
+                    // Now create Bank entry
+                    string insertBankQuery = @"
+                INSERT INTO SchoolManagement.Bank 
+                (PaymentMethodID, BankNumber, MethodName, AmountTransferred, 
+                 SystemTransferID, AmountInHand, Remarks, UserID)
+                VALUES 
+                (@PaymentMethodID, @BankNumber, @MethodName, 0, 
+                 @SystemTransferID, 0, @Remarks, @UserID);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                    var newBankId = await connection.ExecuteScalarAsync<int>(insertBankQuery, new
+                    {
+                        PaymentMethodID = newPMId,
+                        BankNumber = "AUTO-GENERATED",
+                        MethodName = paymentMethod,
+                        SystemTransferID = systemTransferId,
+                        Remarks = $"Auto-created payment method and bank entry for {paymentMethod}",
+                        UserID = resolvedUserId
+                    });
+
+                    return newBankId;
+                }
+
+            }, minutes: 1);
         }
 
         public async Task LogsBankTransactionAsync(int? bankId, string transactionType, decimal amount, string status, string errorMessage)
         {
-            using var connection = new SqlConnection(connectionString);
-            string logQuery = @"
-    INSERT INTO SchoolManagement.BankTransactionLog (BankID, TransactionType, Amount, Status, ErrorMessage)
-    VALUES (@BankID, @TransactionType, @Amount, @Status, @ErrorMessage)";
-
-            await connection.ExecuteAsync(logQuery, new
+            try
             {
-                BankID = bankId,
-                TransactionType = transactionType,
-                Amount = amount,
-                Status = status,
-                ErrorMessage = errorMessage
-            });
+                using var connection = new SqlConnection(connectionString);
+
+                // Verify BankID exists before inserting
+                if (bankId.HasValue && bankId.Value > 0)
+                {
+                    var bankExists = await connection.ExecuteScalarAsync<int>(
+                        "SELECT COUNT(1) FROM SchoolManagement.Bank WHERE BankID = @BankID",
+                        new { BankID = bankId.Value });
+
+                    if (bankExists == 0)
+                    {
+                        Console.WriteLine($"BankID {bankId} does not exist. Logging without BankID.");
+                        bankId = null;
+                    }
+                }
+
+                // Step 1: Insert the transaction log
+                string logQuery = @"
+            INSERT INTO SchoolManagement.BankTransactionLog 
+            (BankID, TransactionType, Amount, Status, ErrorMessage)
+            VALUES 
+            (@BankID, @TransactionType, @Amount, @Status, @ErrorMessage)";
+
+                await connection.ExecuteAsync(logQuery, new
+                {
+                    BankID = bankId,
+                    TransactionType = transactionType,
+                    Amount = amount,
+                    Status = status,
+                    ErrorMessage = errorMessage
+                });
+
+                // Step 2: If deposit was successful, update Bank balance
+                if (status == "Success" && transactionType == "Deposit" &&
+                    bankId.HasValue && bankId.Value > 0)
+                {
+                    string updateBankQuery = @"
+                UPDATE SchoolManagement.Bank
+                SET AmountTransferred = AmountTransferred + @Amount,
+                    AmountInHand = AmountInHand + @Amount
+                WHERE BankID = @BankID";
+
+                    await connection.ExecuteAsync(updateBankQuery, new
+                    {
+                        Amount = amount,
+                        BankID = bankId.Value
+                    });
+
+                    Console.WriteLine($"Bank balance updated. BankID: {bankId}, Amount Added: {amount}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"LogsBankTransactionAsync failed: {ex.Message}");
+            }
         }
 
         /*logic to display student outstanding balance*/
@@ -3657,7 +3801,7 @@ namespace CORE.SERVICE
                 return await connection.QueryFirstOrDefaultAsync<StudentFee>(
                     query, new { StudentID = studentId, FeeTypeID = feeTypeId });
 
-            }, minutes: 10); // Cache for 10 minutes
+            }, minutes: 1); // Cache for 10 minutes
         }
 
         public async Task<List<string>> GetPaymentMethodsAsync()
@@ -3671,7 +3815,7 @@ namespace CORE.SERVICE
 
                 var paymentMethods = await connection.QueryAsync<string>(query);
                 return paymentMethods.AsList();
-            }, minutes: 60); // Cache for 1 hour or more
+            }, minutes: 1); // Cache for 1 hour or more
         }
 
         // Method to fetch all classes
@@ -3685,7 +3829,7 @@ namespace CORE.SERVICE
                 string query = "SELECT DISTINCT ClassID FROM SchoolManagement.Class";
                 var classes = await connection.QueryAsync<Class>(query);
                 return classes.AsList();
-            }, minutes: 60); // Cache for 1 hour or more
+            }, minutes: 1); // Cache for 1 hour or more
         }
 
         public async Task<List<DetailedStudentFeeSummary>> GetDetailedStudentFeeSummaryAsync(bool allTerms, int termId)
@@ -3714,7 +3858,7 @@ namespace CORE.SERVICE
                 string query = "SELECT TermID, Term FROM SchoolManagement.SchoolTerm";
                 var terms = await connection.QueryAsync<SchoolTerm>(query);
                 return terms.AsList();
-            }, minutes: 60); // Cache for 1 hour or more
+            }, minutes: 1); // Cache for 1 hour or more
         }
 
         public async Task<SchoolTerm> GetCurrentSchoolTermAsync()
@@ -3780,7 +3924,7 @@ namespace CORE.SERVICE
                 var query = "SELECT * FROM SchoolManagement.FeeTypes WHERE DeletedBy IS NULL";
                 var result = await connection.QueryAsync<FeeType>(query);
                 return result.AsList();
-            }, minutes: 60); // Cache for 1 hour or longer
+            }, minutes: 1); // Cache for 1 hour or longer
         }
 
         // Insert the fee amount for the selected class and fee type
@@ -3856,7 +4000,7 @@ namespace CORE.SERVICE
                 var query = "SELECT * FROM SchoolManagement.Class";
                 var result = await connection.QueryAsync<Class>(query);
                 return result.AsList();
-            }, minutes: 60); // Cache for 1 hour or more
+            }, minutes: 1); // Cache for 1 hour or more
         }
 
 
@@ -3921,7 +4065,7 @@ namespace CORE.SERVICE
 
                     return await connection.QueryAsync<Student>(query, new { SearchTerm = $"%{searchTerm}%" });
                 }
-            }, minutes: 5); // Cache each search term for 5 minutes
+            }, minutes: 1); // Cache each search term for 5 minutes
         }
 
 
@@ -3942,7 +4086,7 @@ namespace CORE.SERVICE
                     var fees = await connection.QueryAsync<StudentFee>(query, new { StudentID = studentId });
                     return fees;
                 }
-            }, minutes: 10); // Cache for 10 minutes
+            }, minutes: 1); // Cache for 10 minutes
         }
 
         public async Task<IEnumerable<Staff>> GetAllStaffAsync()
@@ -4035,6 +4179,12 @@ namespace CORE.SERVICE
             }
         }
 
+        // ─────────────────────────────────────────────────────────────────────────────
+        // FIX 3 of 3  —  ProcessAutomaticPaymentAsync
+        // OLD BUG: INSERT included TeacherID column — but the DB script explicitly ran:
+        //          "alter table SchoolManagement.SalaryPayments drop column TeacherID"
+        //          So that column no longer exists → INSERT always fails with column error.
+        // ─────────────────────────────────────────────────────────────────────────────
         public async Task<bool> ProcessAutomaticPaymentAsync(int categoryId, string paymentMethod)
         {
             int? paymentMethodId = null;
@@ -4043,101 +4193,130 @@ namespace CORE.SERVICE
             {
                 using var connection = new SqlConnection(connectionString);
 
-                // Get both staff and teachers under the selected category
-                string staffQuery = "SELECT StaffID FROM SchoolManagement.Staff WHERE CategoryID = @CategoryID";
-                var staffList = await connection.QueryAsync<Staff>(staffQuery, new { CategoryID = categoryId });
+                // Get CategoryName to match staff/teachers
+                string categoryNameQuery = "SELECT CategoryName FROM SchoolManagement.PaymentCategory WHERE CategoryID = @CategoryID";
+                string categoryName = await connection.ExecuteScalarAsync<string>(categoryNameQuery, new { CategoryID = categoryId });
 
-                string teacherQuery = "SELECT TeacherID FROM SchoolManagement.Teacher WHERE CategoryID = @CategoryID";
-                var teacherList = await connection.QueryAsync<TeachersRegistration>(teacherQuery, new { CategoryID = categoryId });
+                if (string.IsNullOrEmpty(categoryName))
+                {
+                    await LogPaymentAsync(null, null, "Automatic Payment Salary", 0, "Failed", "Category not found.", 0);
+                    return false;
+                }
 
-                // Get payment amount for this category
+                // Get staff and teachers by CategoryName
+                string staffQuery = "SELECT StaffID, BasicSalary FROM SchoolManagement.Staff WHERE CategoryName = @CategoryName";
+                var staffList = await connection.QueryAsync<Staff>(staffQuery, new { CategoryName = categoryName });
+
+                string teacherQuery = "SELECT TeacherID, BasicSalary FROM SchoolManagement.Teacher WHERE CategoryName = @CategoryName";
+                var teacherList = await connection.QueryAsync<TeachersRegistration>(teacherQuery, new { CategoryName = categoryName });
+
+                // Fallback salary from PaymentCategory
                 string salaryQuery = "SELECT Amount FROM SchoolManagement.PaymentCategory WHERE CategoryID = @CategoryID";
                 decimal salaryAmount = await connection.ExecuteScalarAsync<decimal>(salaryQuery, new { CategoryID = categoryId });
 
-                // Calculate total amount to deduct
-                decimal totalAmountToDeduct = salaryAmount * (staffList.Count() + teacherList.Count());
+                if (!staffList.Any() && !teacherList.Any())
+                {
+                    await LogPaymentAsync(null, null, "Automatic Payment Salary", 0, "Failed",
+                        $"No staff or teachers found with CategoryName '{categoryName}'.", 0);
+                    return false;
+                }
+
+                // Calculate total using actual BasicSalary per person
+                decimal totalAmountToDeduct =
+                    staffList.Sum(s => s.BasicSalary ?? salaryAmount) +
+                    teacherList.Sum(t => t.BasicSalary ?? salaryAmount);
 
                 // Get PaymentMethodID
                 string paymentMethodIdQuery = "SELECT PaymentMethodID FROM SchoolManagement.PaymentMethods WHERE MethodName = @MethodName";
                 paymentMethodId = await connection.ExecuteScalarAsync<int>(paymentMethodIdQuery, new { MethodName = paymentMethod });
 
-                // Get BankID associated with the PaymentMethod
-                string bankIdQuery = "SELECT BankID FROM SchoolManagement.Bank WHERE PaymentMethodID = @PaymentMethodId";
-                int bankId = await connection.ExecuteScalarAsync<int>(bankIdQuery, new { PaymentMethodId = paymentMethodId });
-
-                // Check available balance in the bank
-                string availableBalanceQuery = "SELECT SUM(AmountTransferred) FROM SchoolManagement.Bank WHERE PaymentMethodID = @PaymentMethodId";
-                decimal availableBalance = await connection.ExecuteScalarAsync<decimal>(availableBalanceQuery, new { PaymentMethodId = paymentMethodId });
-
-                if (availableBalance < totalAmountToDeduct)
+                if (paymentMethodId == 0)
                 {
-                    await LogPaymentAsync(null, null, "Automatic", totalAmountToDeduct, "Failed", "Insufficient funds in the selected bank account.", paymentMethodId.Value);
-                    return false; // Not enough funds
+                    await LogPaymentAsync(null, null, "Automatic Payment Salary", totalAmountToDeduct, "Failed", "Payment method not found.", 0);
+                    return false;
                 }
 
-                // Insert payments for both staff and teachers
-                string insertQuery = @"
-INSERT INTO SchoolManagement.SalaryPayments (StaffID, TeacherID, CategoryID, PayedOn, SalaryFor, PaymentYear, Amount, PaymentMethod, PaymentMethodID)
-OUTPUT INSERTED.PaymentID
-VALUES (@StaffID, @TeacherID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @PaymentMethod, @PaymentMethodId)";
+                // Get BankID by MethodName
+                string bankIdQuery = @"SELECT TOP 1 BankID FROM SchoolManagement.Bank 
+                               WHERE MethodName = @MethodName 
+                               ORDER BY BankID DESC";
+                int bankId = await connection.ExecuteScalarAsync<int>(bankIdQuery, new { MethodName = paymentMethod });
 
-                // Process payments for Staff
+                if (bankId == 0)
+                {
+                    await LogPaymentAsync(null, null, "Automatic Payment Salary", totalAmountToDeduct, "Failed",
+                        $"No bank record found for '{paymentMethod}'. Please deposit first.", paymentMethodId.Value);
+                    return false;
+                }
+
+                // Check available balance
+                decimal availableBalance = await GetAvailableBalanceAsync(paymentMethod);
+                if (availableBalance < totalAmountToDeduct)
+                {
+                    await LogPaymentAsync(null, bankId, "Automatic Payment Salary", totalAmountToDeduct, "Failed",
+                        $"Insufficient funds. Available: {availableBalance:C}, Required: {totalAmountToDeduct:C}", paymentMethodId.Value);
+                    return false;
+                }
+
+                // INSERT — TeacherID column removed
+                string insertQuery = @"
+                    INSERT INTO SchoolManagement.SalaryPayments 
+                    (StaffID, CategoryID, PayedOn, SalaryFor, PaymentYear, Amount, PaymentMethod, PaymentMethodID)
+                    OUTPUT INSERTED.PaymentID
+                    VALUES (@StaffID, @CategoryID, GETDATE(), @SalaryFor, @PaymentYear, @Amount, @PaymentMethod, @PaymentMethodId)";
+
+                // Process Staff
                 foreach (var staff in staffList)
                 {
+                    decimal staffSalary = staff.BasicSalary ?? salaryAmount;
                     var paymentId = await connection.ExecuteScalarAsync<int>(insertQuery, new
                     {
                         StaffID = staff.StaffID,
-                        TeacherID = (int?)null,
                         CategoryID = categoryId,
                         SalaryFor = DateTime.Now.Month,
                         PaymentYear = DateTime.Now.Year,
-                        Amount = salaryAmount,
+                        Amount = staffSalary,
                         PaymentMethodId = paymentMethodId.Value,
                         PaymentMethod = paymentMethod
                     });
-
-                    await LogPaymentAsync(paymentId, bankId, "Automatic", salaryAmount, "Success", null, paymentMethodId.Value);
+                    await LogPaymentAsync(paymentId, bankId, "Automatic Payment Salary", staffSalary, "Success", null, paymentMethodId.Value);
                 }
 
-                // Process payments for Teachers
+                // Process Teachers
                 foreach (var teacher in teacherList)
                 {
+                    decimal teacherSalary = teacher.BasicSalary ?? salaryAmount;
                     var paymentId = await connection.ExecuteScalarAsync<int>(insertQuery, new
                     {
                         StaffID = (int?)null,
-                        TeacherID = teacher.TeacherID,
                         CategoryID = categoryId,
                         SalaryFor = DateTime.Now.Month,
                         PaymentYear = DateTime.Now.Year,
-                        Amount = salaryAmount,
+                        Amount = teacherSalary,
                         PaymentMethodId = paymentMethodId.Value,
                         PaymentMethod = paymentMethod
                     });
-
-                    await LogPaymentAsync(paymentId, bankId, "Automatic", salaryAmount, "Success", null, paymentMethodId.Value);
+                    await LogPaymentAsync(paymentId, bankId, "Automatic Payment Salary", teacherSalary, "Success", null, paymentMethodId.Value);
                 }
 
-                // Deduct total amount from the bank
-                string deductQuery = @"
-UPDATE SchoolManagement.Bank
-SET AmountTransferred = AmountTransferred - @TotalAmount
-WHERE PaymentMethodID = @PaymentMethodId";
+                // Deduct from bank
+                string deductQuery = @"UPDATE SchoolManagement.Bank
+                               SET AmountTransferred = AmountTransferred - @TotalAmount
+                               WHERE MethodName = @MethodName";
+                await connection.ExecuteAsync(deductQuery, new { TotalAmount = totalAmountToDeduct, MethodName = paymentMethod });
 
-                await connection.ExecuteAsync(deductQuery, new { TotalAmount = totalAmountToDeduct, PaymentMethodId = paymentMethodId.Value });
-
-                // **Log withdrawal in BankTransactionLog**
-                string logWithdrawalQuery = @"
-INSERT INTO SchoolManagement.BankTransactionLog (BankID, TransactionType, Amount, TransactionDate, Status, ErrorMessage)
-VALUES (@BankID, 'Withdrawal', @TotalAmount, GETDATE(), 'Success', NULL)";
-
+                // Log withdrawal
+                string logWithdrawalQuery = @"INSERT INTO SchoolManagement.BankTransactionLog 
+                                      (BankID, TransactionType, Amount, TransactionDate, Status, ErrorMessage)
+                                      VALUES (@BankID, 'Withdrawal for Salary Payment', @TotalAmount, GETDATE(), 'Success', NULL)";
                 await connection.ExecuteAsync(logWithdrawalQuery, new { BankID = bankId, TotalAmount = totalAmountToDeduct });
-
 
                 return true;
             }
             catch (Exception ex)
             {
-                await LogPaymentAsync(null, null, "Automatic", 0, "Failed", ex.Message, paymentMethodId ?? 0);
+                Console.WriteLine($"ProcessAutomaticPaymentAsync error: {ex.Message}");
+                await LogPaymentAsync(null, null, "Automatic Payment Salary", 0, "Failed", ex.Message, paymentMethodId ?? 0);
                 return false;
             }
         }
@@ -4246,48 +4425,87 @@ VALUES (@StaffID, @PayedOn, @SalaryFor, @PaymentYear, @Amount, @PaymentMethodId)
             }
         }
 
+        // ─────────────────────────────────────────────────────────────────────────────
+        // FIX 1 — InsertSalaryPaymentAsync
+        // ─────────────────────────────────────────────────────────────────────────────
         public async Task<(bool Success, string ErrorMessage)> InsertSalaryPaymentAsync(object paymentData)
         {
             try
             {
-                var query = @"
-INSERT INTO SchoolManagement.SalaryPayments 
-(StaffID, CategoryID, SalaryFor, PaymentYear, Amount, OverTime, TaxDeduction, BankName, AccountName, AccountNumber, PaymentMethodId) 
-OUTPUT INSERTED.PaymentID
-VALUES 
-(@StaffID, @CategoryID, @SalaryFor, @PaymentYear, @Amount, @OverTime, @TaxDeduction, @BankName, @AccountName, @AccountNumber, @PaymentMethodId)";
-
                 using (var connection = new SqlConnection(connectionString))
                 {
-                    // Capture the PaymentID of the newly inserted salary payment
-                    int paymentId = await connection.ExecuteScalarAsync<int>(query, paymentData);
-
-                    // Retrieve the BankID based on the PaymentMethodId
-                    string bankQuery = "SELECT BankID FROM SchoolManagement.Bank WHERE PaymentMethodID = @PaymentMethodId";
                     int paymentMethodId = (int)paymentData.GetType().GetProperty("PaymentMethodId").GetValue(paymentData);
-                    int bankId = await connection.ExecuteScalarAsync<int>(bankQuery, new { PaymentMethodId = paymentMethodId });
+                    decimal amount = (decimal)paymentData.GetType().GetProperty("Amount").GetValue(paymentData);
 
-                    // Log the successful insertion
+                    // Handle CategoryID — send NULL if 0
+                    var categoryIdProp = paymentData.GetType().GetProperty("CategoryID");
+                    int? categoryId = null;
+                    if (categoryIdProp != null)
+                    {
+                        var val = (int)categoryIdProp.GetValue(paymentData);
+                        categoryId = val == 0 ? (int?)null : val;
+                    }
+
+                    // Get BankID by MethodName — more reliable than by PaymentMethodID
+                    string methodNameQuery = "SELECT MethodName FROM SchoolManagement.PaymentMethods WHERE PaymentMethodID = @PaymentMethodId";
+                    string methodName = await connection.ExecuteScalarAsync<string>(methodNameQuery, new { PaymentMethodId = paymentMethodId });
+
+                    if (string.IsNullOrEmpty(methodName))
+                        return (false, "Payment method not found.");
+
+                    string bankQuery = @"SELECT TOP 1 BankID FROM SchoolManagement.Bank 
+                                 WHERE MethodName = @MethodName 
+                                 ORDER BY BankID DESC";
+                    int bankId = await connection.ExecuteScalarAsync<int>(bankQuery, new { MethodName = methodName });
+
+                    if (bankId == 0)
+                        return (false, $"No bank record found for '{methodName}'. Please make a deposit first.");
+
+                    // Build parameters manually to handle nullable CategoryID
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@StaffID", paymentData.GetType().GetProperty("StaffID")?.GetValue(paymentData));
+                    parameters.Add("@CategoryID", categoryId, DbType.Int32);
+                    parameters.Add("@SalaryFor", paymentData.GetType().GetProperty("SalaryFor")?.GetValue(paymentData));
+                    parameters.Add("@PaymentYear", paymentData.GetType().GetProperty("PaymentYear")?.GetValue(paymentData));
+                    parameters.Add("@Amount", amount);
+                    parameters.Add("@OverTime", paymentData.GetType().GetProperty("OverTime")?.GetValue(paymentData));
+                    parameters.Add("@TaxDeduction", paymentData.GetType().GetProperty("TaxDeduction")?.GetValue(paymentData));
+                    parameters.Add("@BankName", paymentData.GetType().GetProperty("BankName")?.GetValue(paymentData));
+                    parameters.Add("@AccountName", paymentData.GetType().GetProperty("AccountName")?.GetValue(paymentData));
+                    parameters.Add("@AccountNumber", paymentData.GetType().GetProperty("AccountNumber")?.GetValue(paymentData));
+                    parameters.Add("@PaymentMethodId", paymentMethodId);
+
+                    var query = @"
+                    INSERT INTO SchoolManagement.SalaryPayments 
+                    (StaffID, CategoryID, SalaryFor, PaymentYear, Amount, OverTime, TaxDeduction, BankName, AccountName, AccountNumber, PaymentMethodId) 
+                    OUTPUT INSERTED.PaymentID
+                    VALUES 
+                    (@StaffID, @CategoryID, @SalaryFor, @PaymentYear, @Amount, @OverTime, @TaxDeduction, @BankName, @AccountName, @AccountNumber, @PaymentMethodId)";
+
+                    int paymentId = await connection.ExecuteScalarAsync<int>(query, parameters);
+
                     if (paymentId > 0)
                     {
-                        await LogPaymentAsync(paymentId, bankId, "Manual",
-                            (decimal)paymentData.GetType().GetProperty("Amount").GetValue(paymentData), "Success", null, paymentMethodId);
+                        await LogPaymentAsync(paymentId, bankId, "Manual Payment Salary", amount, "Success", null, paymentMethodId);
                         return (true, null);
                     }
                     else
                     {
-                        string errorMessage = "No rows affected while inserting salary payment.";
-                        await LogPaymentAsync(null, null, "Manual",
-                            (decimal)paymentData.GetType().GetProperty("Amount").GetValue(paymentData), "Failed", errorMessage, paymentMethodId);
-                        return (false, errorMessage);
+                        string err = "No rows affected while inserting salary payment.";
+                        await LogPaymentAsync(null, bankId, "Manual Payment Salary", amount, "Failed", err, paymentMethodId);
+                        return (false, err);
                     }
                 }
             }
             catch (Exception ex)
             {
                 string errorMessage = $"Error inserting salary payment: {ex.Message}";
-                await LogPaymentAsync(null, null, "Manual",
-                    (decimal)paymentData.GetType().GetProperty("Amount").GetValue(paymentData), "Failed", errorMessage, 0);
+                try
+                {
+                    decimal amount = (decimal)paymentData.GetType().GetProperty("Amount").GetValue(paymentData);
+                    await LogPaymentAsync(null, null, "Manual Payment Salary", amount, "Failed", errorMessage, 0);
+                }
+                catch { }
                 return (false, errorMessage);
             }
         }
@@ -4317,62 +4535,77 @@ VALUES
 
         public async Task<bool> DeductFromBankAsync(string paymentMethod, decimal amount)
         {
+            int? resolvedBankId = null;
             try
             {
                 using var connection = new SqlConnection(connectionString);
 
-                // Retrieve the BankID based on the payment method
-                string bankQuery = "SELECT BankID FROM SchoolManagement.Bank WHERE MethodName = @PaymentMethod";
+                // Get BankID by MethodName
+                string bankQuery = @"SELECT TOP 1 BankID FROM SchoolManagement.Bank 
+                             WHERE MethodName = @PaymentMethod 
+                             ORDER BY BankID DESC";
                 int bankId = await connection.ExecuteScalarAsync<int>(bankQuery, new { PaymentMethod = paymentMethod });
 
-                // Check if BankID is valid
                 if (bankId == 0)
-                {
-                    throw new Exception("Invalid payment method selected. No corresponding BankID found.");
-                }
+                    throw new Exception($"No bank record found for '{paymentMethod}'.");
 
-                string query = @"
-        UPDATE SchoolManagement.Bank
-        SET AmountTransferred = AmountTransferred - @Amount
-        WHERE MethodName = @PaymentMethod";
+                resolvedBankId = bankId;
+
+                string query = @"UPDATE SchoolManagement.Bank
+                         SET AmountTransferred = AmountTransferred - @Amount
+                         WHERE MethodName = @PaymentMethod";
 
                 int rowsAffected = await connection.ExecuteAsync(query, new { Amount = amount, PaymentMethod = paymentMethod });
 
                 if (rowsAffected > 0)
                 {
-                    // Log the successful deduction
-                    await LogBankTransactionAsync(bankId, "Withdrawal", amount, "Success", null);
+                    await LogBankTransactionAsync(bankId, "Withdrawal for Salary Payment", amount, "Success", null);
                     return true;
                 }
                 else
                 {
-                    // Log the failure
-                    await LogBankTransactionAsync(bankId, "Withdrawal", amount, "Failed", "No rows affected.");
+                    await LogBankTransactionAsync(bankId, "Withdrawal for Salary Payment", amount, "Failed", "No rows affected.");
                     return false;
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error deducting amount from bank: {ex.Message}");
-                await LogBankTransactionAsync(null, "Withdrawal", amount, "Failed", ex.Message);
+                if (resolvedBankId.HasValue && resolvedBankId.Value > 0)
+                    await LogBankTransactionAsync(resolvedBankId.Value, "Withdrawal for Salary Payment", amount, "Failed", ex.Message);
+                else
+                    Console.WriteLine($"Cannot log — no BankID resolved for {paymentMethod}. Error: {ex.Message}");
                 return false;
             }
         }
         private async Task LogBankTransactionAsync(int? bankId, string transactionType, decimal amount, string status, string errorMessage)
         {
-            using var connection = new SqlConnection(connectionString);
-            string logQuery = @"
-    INSERT INTO SchoolManagement.BankTransactionLog (BankID, TransactionType, Amount, Status, ErrorMessage)
-    VALUES (@BankID, @TransactionType, @Amount, @Status, @ErrorMessage)";
-
-            await connection.ExecuteAsync(logQuery, new
+            try
             {
-                BankID = bankId,
-                TransactionType = transactionType,
-                Amount = amount,
-                Status = status,
-                ErrorMessage = errorMessage
-            });
+                if (!bankId.HasValue || bankId.Value == 0)
+                {
+                    Console.WriteLine($"LogBankTransactionAsync skipped — no valid BankID. Type:{transactionType}, Status:{status}");
+                    return;
+                }
+
+                using var connection = new SqlConnection(connectionString);
+                string logQuery = @"INSERT INTO SchoolManagement.BankTransactionLog 
+                            (BankID, TransactionType, Amount, Status, ErrorMessage)
+                            VALUES (@BankID, @TransactionType, @Amount, @Status, @ErrorMessage)";
+
+                await connection.ExecuteAsync(logQuery, new
+                {
+                    BankID = bankId.Value,
+                    TransactionType = transactionType,
+                    Amount = amount,
+                    Status = status,
+                    ErrorMessage = errorMessage
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"LogBankTransactionAsync failed: {ex.Message}");
+            }
         }
 
         /*EXPENSES*/
@@ -4513,24 +4746,24 @@ VALUES
         }
 
         // Add a new Expense Payment for the logged-in user
-        public async Task AddExpensePaymentAsync(ExpensePayment payment)
-        {
-            using (var connection = new SqlConnection(connectionString))
-            {
-                await connection.OpenAsync();
-                var command = new SqlCommand("INSERT INTO SchoolManagement.ExpensePayments (ExpenseID, PaymentMethodID, PaymentDate, AmountPaid, UserID) VALUES (@ExpenseID, @PaymentMethodID, @PaymentDate, @AmountPaid, @UserID)", connection);
-                command.Parameters.AddWithValue("@ExpenseID", payment.ExpenseID);
-                command.Parameters.AddWithValue("@PaymentMethodID", payment.PaymentMethodID);
-                command.Parameters.AddWithValue("@PaymentDate", payment.PaymentDate);
-                command.Parameters.AddWithValue("@AmountPaid", payment.AmountPaid);
-                command.Parameters.AddWithValue("@UserID", payment.UserID);
+        //public async Task AddExpensePaymentAsync(ExpensePayment payment)
+        //{
+        //    using (var connection = new SqlConnection(connectionString))
+        //    {
+        //        await connection.OpenAsync();
+        //        var command = new SqlCommand("INSERT INTO SchoolManagement.ExpensePayments (ExpenseID, PaymentMethodID, PaymentDate, AmountPaid, UserID) VALUES (@ExpenseID, @PaymentMethodID, @PaymentDate, @AmountPaid, @UserID)", connection);
+        //        command.Parameters.AddWithValue("@ExpenseID", payment.ExpenseID);
+        //        command.Parameters.AddWithValue("@PaymentMethodID", payment.PaymentMethodID);
+        //        command.Parameters.AddWithValue("@PaymentDate", payment.PaymentDate);
+        //        command.Parameters.AddWithValue("@AmountPaid", payment.AmountPaid);
+        //        command.Parameters.AddWithValue("@UserID", payment.UserID);
 
-                Console.WriteLine($"Executing SQL: {command.CommandText}"); // Debugging
-                Console.WriteLine($"Parameters: ExpenseID={payment.ExpenseID}, PaymentMethodID={payment.PaymentMethodID}, PaymentDate={payment.PaymentDate}, AmountPaid={payment.AmountPaid}, UserID={payment.UserID}"); // Debugging
+        //        Console.WriteLine($"Executing SQL: {command.CommandText}"); // Debugging
+        //        Console.WriteLine($"Parameters: ExpenseID={payment.ExpenseID}, PaymentMethodID={payment.PaymentMethodID}, PaymentDate={payment.PaymentDate}, AmountPaid={payment.AmountPaid}, UserID={payment.UserID}"); // Debugging
 
-                await command.ExecuteNonQueryAsync();
-            }
-        }
+        //        await command.ExecuteNonQueryAsync();
+        //    }
+        //}
 
         // Get all categories for the logged-in user
         public async Task<List<ExpenseCategory>> GetExpensesCategoriesAsync(int userId)
@@ -5400,70 +5633,212 @@ VALUES (
 
             try
             {
-                Console.WriteLine("Opening SQL connection...");
                 await connection.OpenAsync();
-                Console.WriteLine("SQL connection opened.");
-
                 using var transaction = connection.BeginTransaction();
-                Console.WriteLine("Transaction started.");
 
-                var systemTransferId = new Random().Next(100000, 999999);
-
-                var fromBank = await connection.QueryFirstOrDefaultAsync<dynamic>(
-                    "SELECT TOP 1 * FROM SchoolManagement.Bank WHERE MethodName = @MethodName ORDER BY BankID DESC",
-                    new { MethodName = transfer.FromMethod }, transaction: transaction);
-
-                var toBank = await connection.QueryFirstOrDefaultAsync<dynamic>(
-                    "SELECT TOP 1 * FROM SchoolManagement.Bank WHERE MethodName = @MethodName ORDER BY BankID DESC",
-                    new { MethodName = transfer.ToMethod }, transaction: transaction);
-
-                if (fromBank == null || toBank == null)
-                    throw new Exception("One of the selected payment methods does not exist.");
-
-                if ((decimal)fromBank.AmountInHand < transfer.Amount)
-                    throw new Exception("Insufficient funds in the source method.");
-
-                string insertQuery = @"INSERT INTO SchoolManagement.Bank 
-            (PaymentMethodID, BankNumber, MethodName, AmountTransferred, SystemTransferID, AmountInHand, Remarks, UserID)
-            VALUES 
-            (@PaymentMethodID, @BankNumber, @MethodName, @AmountTransferred, @SystemTransferID, @AmountInHand, @Remarks, @UserID)";
-
-                // Deduct
-                await connection.ExecuteAsync(insertQuery, new
+                try
                 {
-                    PaymentMethodID = fromBank.PaymentMethodID,
-                    BankNumber = fromBank.BankNumber,
-                    MethodName = transfer.FromMethod,
-                    AmountTransferred = -transfer.Amount,
-                    SystemTransferID = systemTransferId,
-                    AmountInHand = (decimal)fromBank.AmountInHand - transfer.Amount,
-                    Remarks = "Fund transfer to " + transfer.ToMethod + " - " + transfer.Remarks,
-                    UserID = userId
-                }, transaction);
+                    // Step 1: Get or Auto-Create FROM bank entry
+                    var fromBank = await GetOrCreateBankEntryAsync(
+                        connection, transaction, transfer.FromMethod, userId);
 
-                // Credit
-                await connection.ExecuteAsync(insertQuery, new
+                    // Step 2: Get or Auto-Create TO bank entry
+                    var toBank = await GetOrCreateBankEntryAsync(
+                        connection, transaction, transfer.ToMethod, userId);
+
+                    // Step 3: Check sufficient funds
+                    if (fromBank.AmountInHand < transfer.Amount)
+                        throw new Exception(
+                            $"Insufficient funds in {transfer.FromMethod}. " +
+                            $"Available: ₵{fromBank.AmountInHand:F2}");
+
+                    // Step 4: Deduct from source using UPDATE
+                    int rowsDeducted = await connection.ExecuteAsync(@"
+                UPDATE SchoolManagement.Bank
+                SET AmountInHand      = AmountInHand - @Amount,
+                    AmountTransferred = AmountTransferred - @Amount
+                WHERE MethodName = @MethodName 
+                AND BankID = @BankID",
+                        new
+                        {
+                            Amount = transfer.Amount,
+                            MethodName = transfer.FromMethod,
+                            BankID = fromBank.BankID
+                        }, transaction);
+
+                    if (rowsDeducted == 0)
+                        throw new Exception(
+                            $"Failed to deduct funds from {transfer.FromMethod}.");
+
+                    // Step 5: Credit to destination using UPDATE
+                    int rowsCredited = await connection.ExecuteAsync(@"
+                UPDATE SchoolManagement.Bank
+                SET AmountInHand      = AmountInHand + @Amount,
+                    AmountTransferred = AmountTransferred + @Amount
+                WHERE MethodName = @MethodName
+                AND BankID = @BankID",
+                        new
+                        {
+                            Amount = transfer.Amount,
+                            MethodName = transfer.ToMethod,
+                            BankID = toBank.BankID
+                        }, transaction);
+
+                    if (rowsCredited == 0)
+                        throw new Exception(
+                            $"Failed to credit funds to {transfer.ToMethod}.");
+
+                    // Step 6: Log the transfer in BankTransactionLog
+                    string logQuery = @"
+                INSERT INTO SchoolManagement.BankTransactionLog
+                (BankID, TransactionType, Amount, TransactionDate, Status, ErrorMessage)
+                VALUES
+                (@BankID, @TransactionType, @Amount, GETDATE(), 'Success', NULL)";
+
+                    // Log deduction
+                    await connection.ExecuteAsync(logQuery, new
+                    {
+                        BankID = fromBank.BankID,
+                        TransactionType = $"Transfer Out to {transfer.ToMethod}",
+                        Amount = transfer.Amount
+                    }, transaction);
+
+                    // Log credit
+                    await connection.ExecuteAsync(logQuery, new
+                    {
+                        BankID = toBank.BankID,
+                        TransactionType = $"Transfer In from {transfer.FromMethod}",
+                        Amount = transfer.Amount
+                    }, transaction);
+
+                    transaction.Commit();
+
+                    Console.WriteLine(
+                        $"Transfer successful: ₵{transfer.Amount:F2} " +
+                        $"from {transfer.FromMethod} to {transfer.ToMethod}");
+
+                    return true;
+                }
+                catch
                 {
-                    PaymentMethodID = toBank.PaymentMethodID,
-                    BankNumber = toBank.BankNumber,
-                    MethodName = transfer.ToMethod,
-                    AmountTransferred = transfer.Amount,
-                    SystemTransferID = systemTransferId,
-                    AmountInHand = (decimal)toBank.AmountInHand + transfer.Amount,
-                    Remarks = "Fund received from " + transfer.FromMethod + " - " + transfer.Remarks,
-                    UserID = userId
-                }, transaction);
-
-                transaction.Commit();
-                Console.WriteLine("Transaction committed.");
-                return true;
+                    transaction.Rollback();
+                    throw;
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception occurred: " + ex.Message);
-                Console.WriteLine(ex.StackTrace);
+                Console.WriteLine($"Transfer failed: {ex.Message}");
                 throw new Exception($"Transfer failed: {ex.Message}", ex);
             }
+        }
+
+
+
+        private async Task<BankEntry> GetOrCreateBankEntryAsync(
+            SqlConnection connection,
+            SqlTransaction transaction,
+            string methodName,
+            int userId)
+        {
+            // Step 1: Check if Bank entry exists
+            var bankEntry = await connection.QueryFirstOrDefaultAsync<BankEntry>(
+                @"SELECT TOP 1 
+            BankID, 
+            PaymentMethodID, 
+            BankNumber, 
+            MethodName, 
+            AmountInHand, 
+            AmountTransferred
+          FROM SchoolManagement.Bank 
+          WHERE MethodName = @MethodName 
+          ORDER BY BankID DESC",
+                new { MethodName = methodName },
+                transaction: transaction);
+
+            if (bankEntry != null)
+            {
+                Console.WriteLine($"Found existing Bank entry for: {methodName}, " +
+                                  $"Balance: ₵{bankEntry.AmountInHand:F2}");
+                return bankEntry;
+            }
+
+            Console.WriteLine($"No Bank entry found for: {methodName}. Creating...");
+
+            // Step 2: Check PaymentMethods table
+            var pm = await connection.QueryFirstOrDefaultAsync<(int PaymentMethodID, string BankNumber)>(
+                @"SELECT TOP 1 PaymentMethodID, BankNumber 
+          FROM SchoolManagement.PaymentMethods 
+          WHERE MethodName = @MethodName",
+                new { MethodName = methodName },
+                transaction: transaction);
+
+            int paymentMethodId;
+            string bankNumber;
+            int systemTransferId = new Random().Next(100000, 999999);
+
+            if (pm.PaymentMethodID > 0)
+            {
+                // PaymentMethod exists — use its details
+                paymentMethodId = pm.PaymentMethodID;
+                bankNumber = pm.BankNumber ?? "AUTO-GENERATED";
+                Console.WriteLine($"Found PaymentMethod for: {methodName}, " +
+                                  $"PaymentMethodID: {paymentMethodId}");
+            }
+            else
+            {
+                // PaymentMethod doesnt exist — create it
+                paymentMethodId = await connection.ExecuteScalarAsync<int>(
+                    @"INSERT INTO SchoolManagement.PaymentMethods 
+              (MethodName, Description, BankNumber, UserID)
+              VALUES (@MethodName, @Description, @BankNumber, @UserID);
+              SELECT CAST(SCOPE_IDENTITY() AS INT);",
+                    new
+                    {
+                        MethodName = methodName,
+                        Description = $"Auto-created for {methodName}",
+                        BankNumber = "AUTO-GENERATED",
+                        UserID = userId
+                    },
+                    transaction: transaction);
+
+                bankNumber = "AUTO-GENERATED";
+                Console.WriteLine($"Auto-created PaymentMethod: {methodName}, " +
+                                  $"ID: {paymentMethodId}");
+            }
+
+            // Step 3: Create Bank entry with 0 balance
+            var newBankId = await connection.ExecuteScalarAsync<int>(
+                @"INSERT INTO SchoolManagement.Bank 
+          (PaymentMethodID, BankNumber, MethodName, AmountTransferred, 
+           SystemTransferID, AmountInHand, Remarks, UserID)
+          VALUES 
+          (@PaymentMethodID, @BankNumber, @MethodName, 0, 
+           @SystemTransferID, 0, @Remarks, @UserID);
+          SELECT CAST(SCOPE_IDENTITY() AS INT);",
+                new
+                {
+                    PaymentMethodID = paymentMethodId,
+                    BankNumber = bankNumber,
+                    MethodName = methodName,
+                    SystemTransferID = systemTransferId,
+                    Remarks = $"Auto-created bank entry for {methodName}",
+                    UserID = userId
+                },
+                transaction: transaction);
+
+            Console.WriteLine($"Auto-created Bank entry for: {methodName}, " +
+                              $"BankID: {newBankId}");
+
+            // Step 4: Return the new entry
+            return new BankEntry
+            {
+                BankID = newBankId,
+                PaymentMethodID = paymentMethodId,
+                BankNumber = bankNumber,
+                MethodName = methodName,
+                AmountInHand = 0,
+                AmountTransferred = 0
+            };
         }
 
 
@@ -5714,7 +6089,7 @@ VALUES (
                 var result = await connection.QueryAsync<FeeTransactionSummary>(query);
                 return result.ToList();
 
-            }, minutes: 10); // Cached for 10 minutes
+            }, minutes: 1); // Cached for 10 minutes
         }
 
         public async Task<List<FeeTransactionSummary>> GetFilteredFeeTransactionSummariesAsync(DateTime? fromDate, DateTime? toDate, string feeTypeName)
@@ -5765,7 +6140,7 @@ VALUES (
                 var result = await connection.QueryAsync<FeeTransactionSummary>(query.ToString(), parameters);
                 return result.ToList();
 
-            }, minutes: 10); // Cache for 10 minutes
+            }, minutes: 1); // Cache for 10 minutes
         }
 
         //view all students page
@@ -5784,7 +6159,7 @@ VALUES (
                 var result = await connection.QueryAsync<Student>(query);
                 return result.ToList();
 
-            }, minutes: 10); // Cache for 10 minutes
+            }, minutes: 1); // Cache for 10 minutes
         }
 
         public async Task DeleteStudentAsync(int studentId)
@@ -5866,61 +6241,59 @@ VALUES (
         {
             using var connection = new SqlConnection(connectionString);
             await connection.OpenAsync();
-
-            // Start a database transaction to ensure atomicity
             using var transaction = connection.BeginTransaction();
 
             try
             {
-                // Clear the BankBalances table before inserting fresh totals
-                const string deleteSql = "DELETE FROM SchoolManagement.BankBalances";
-                await connection.ExecuteAsync(deleteSql, transaction: transaction);
+                // Clear old balances
+                await connection.ExecuteAsync(
+                    "DELETE FROM SchoolManagement.BankBalances",
+                    transaction: transaction);
 
-                // Insert the sum of AmountTransferred grouped by MethodName
-                const string insertSql = @"
+                // FIX: Read LATEST AmountInHand per method — not SUM
+                // AmountInHand on the latest row IS the current balance
+                await connection.ExecuteAsync(@"
             INSERT INTO SchoolManagement.BankBalances (MethodName, TotalAmount)
-            SELECT MethodName, SUM(AmountTransferred)
-            FROM SchoolManagement.Bank
-            GROUP BY MethodName";
+            SELECT MethodName, AmountInHand
+            FROM (
+                SELECT 
+                    MethodName,
+                    AmountInHand,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY MethodName 
+                        ORDER BY BankID DESC
+                    ) AS rn
+                FROM SchoolManagement.Bank
+            ) latest
+            WHERE rn = 1",
+                    transaction: transaction);
 
-                await connection.ExecuteAsync(insertSql, transaction: transaction);
+                // Log success
+                await connection.ExecuteAsync(@"
+            INSERT INTO SchoolManagement.BankBalanceSyncLog 
+            (SyncByUserID, Status)
+            VALUES (@UserID, 'SUCCESS')",
+                    new { UserID = userId },
+                    transaction: transaction);
 
-                // Log the successful sync operation
-                const string logSql = @"
-            INSERT INTO SchoolManagement.BankBalanceSyncLog (SyncByUserID, Status)
-            VALUES (@UserID, 'SUCCESS')";
-
-                await connection.ExecuteAsync(logSql, new { UserID = userId }, transaction: transaction);
-
-                // Commit the transaction
                 await transaction.CommitAsync();
-
-                return 1;  // success
+                return 1;
             }
             catch (Exception ex)
             {
-                // Attempt to log the failure, ignoring any logging errors
                 try
                 {
-                    const string logFailSql = @"
-                INSERT INTO SchoolManagement.BankBalanceSyncLog (SyncByUserID, Status, ErrorMessage)
-                VALUES (@UserID, 'FAILED', @ErrorMessage)";
-
-                    await connection.ExecuteAsync(logFailSql, new
-                    {
-                        UserID = userId,
-                        ErrorMessage = ex.Message
-                    }, transaction: transaction);
+                    await connection.ExecuteAsync(@"
+                INSERT INTO SchoolManagement.BankBalanceSyncLog 
+                (SyncByUserID, Status, ErrorMessage)
+                VALUES (@UserID, 'FAILED', @ErrorMessage)",
+                        new { UserID = userId, ErrorMessage = ex.Message },
+                        transaction: transaction);
                 }
-                catch
-                {
-                    // Ignored: logging failure should not throw
-                }
+                catch { }
 
-                // Roll back the transaction since an error occurred
                 await transaction.RollbackAsync();
-
-                return 0;  // failure
+                return 0;
             }
         }
 
@@ -6293,6 +6666,83 @@ VALUES (
         }
 
         /*this is to get all data of fees for the director to see it*/
-       
+
+
+
+        /*auto graduate*/
+        public async Task<int> AutoGraduateAsync(int userId)
+        {
+            using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Step 1: Get all JHS3 students not yet graduated
+                var students = (await connection.QueryAsync<Student>(@"
+            SELECT StudentID, StudentFirstName, StudentLastName, 
+                   ClassID, StudentGender, ImageData, UserID
+            FROM SchoolManagement.Students
+            WHERE ClassID = 'JHS3' AND Graduated = 0",
+                    transaction: transaction)).ToList();
+
+                if (!students.Any())
+                {
+                    transaction.Rollback();
+                    return 0;
+                }
+
+                // Step 2: Insert into Graduates table
+                foreach (var s in students)
+                {
+                    await connection.ExecuteAsync(@"
+                INSERT INTO SchoolManagement.Graduates
+                (StudentID, StudentFirstName, StudentLastName, ClassID, 
+                 StudentGender, ImageData, DateCompleted, DateCreated, UserID)
+                VALUES
+                (@StudentID, @StudentFirstName, @StudentLastName, @ClassID,
+                 @StudentGender, @ImageData, @DateCompleted, GETDATE(), @UserID)",
+                        new
+                        {
+                            s.StudentID,
+                            s.StudentFirstName,
+                            s.StudentLastName,
+                            s.ClassID,
+                            s.StudentGender,
+                            s.ImageData,
+                            DateCompleted = DateOnly.FromDateTime(DateTime.Today),
+                            UserID = userId
+                        },
+                        transaction: transaction);
+                }
+
+                // Step 3: Mark as graduated in Students table
+                await connection.ExecuteAsync(@"
+            UPDATE SchoolManagement.Students
+            SET Graduated = 1
+            WHERE ClassID = 'JHS3' AND Graduated = 0",
+                    transaction: transaction);
+
+                transaction.Commit();
+                return students.Count;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        public async Task<bool> HasPendingJHS3GraduatesAsync()
+        {
+            using var connection = new SqlConnection(connectionString);
+            var count = await connection.ExecuteScalarAsync<int>(@"
+        SELECT COUNT(*) 
+        FROM SchoolManagement.Students
+        WHERE ClassID = 'JHS3' AND Graduated = 0");
+            return count > 0;
+        }
+
+
     }
 }

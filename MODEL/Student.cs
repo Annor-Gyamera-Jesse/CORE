@@ -92,5 +92,19 @@ namespace CORE.MODEL
         public decimal Amount { get; set; }
     }
 
+    public class AutoGraduate
+    {
+        public int Gradutes { get; set; }
+        public int StudentID { get; set; }
+        public string StudentFirstName { get; set; }
+        public string StudentLastName { get; set; }
+        public string ClassID { get; set; }
+        public string StudentGender { get; set; }
+        public string ImageData { get; set; }
+        public DateOnly DateCompleted { get; set; }
+        public DateTime DateCreated { get; set; }
+        public int UserID { get; set; }
+    }
+
 }
 

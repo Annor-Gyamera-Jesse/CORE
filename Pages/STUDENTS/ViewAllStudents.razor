@@ -3,6 +3,9 @@
 @using CORE.Pages.LOADING_COMPONENT
 @using CORE.SERVICE
 @inject AuthService authService
+@inject NotificationService NotificationService
+@using CORE.SERVICE.NOTIFICATION
+@inject IJSRuntime jsRuntime
 <style>
     .text-blue {
     color: blue;
@@ -70,6 +73,13 @@
                                Placeholder="Search by name..."
                                Style="width:200px; margin-left:10px"
                                Change="@(args => ApplyFilters())" />
+
+            <RadzenButton @onclick="@AutoGraduate"
+                          Text="Click To Auto Graduate"
+                          Style="margin-bottom: 10px;"
+                          ButtonStyle="ButtonStyle.Danger"
+                          Icon="school"
+                          Disabled="@(!_hasPendingGraduates)" />
         </RadzenFieldset>
       </RadzenHeader>
 
@@ -100,12 +110,35 @@
     private List<string> classIds = new();
     public bool isLoading = false;
     private string searchTerm = string.Empty;
+    private bool _hasPendingGraduates = false;
+    private int userId;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             isLoading = true;
+
+            var username = await jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "userName");
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                NotificationService.Notify(NotificationSeverity.Error,
+                "User Error", "User not logged in or session expired.");
+                return;
+            }
+
+            var user = await authService.GetUserByUsernameAsync(username);
+            if (user == null)
+            {
+                NotificationService.Notify(NotificationSeverity.Warning,
+                   "User Error", "User not found.");
+                return;
+            }
+
+            userId = user.UserID;
+            // Check on page load whether button should be enabled
+            _hasPendingGraduates = await authService.HasPendingJHS3GraduatesAsync();
             students = await authService.GetAllStudentsAsync();
             classIds = students.Select(s => s.ClassID).Distinct().OrderBy(x => x).ToList();
 
@@ -188,13 +221,13 @@
         {
             isLoading = true;
             if (!string.IsNullOrEmpty(selectedClass))
-        {
-            filteredStudents = students.Where(s => s.ClassID == selectedClass).ToList();
-        }
-        else
-        {
-            filteredStudents = new List<Student>(students);
-        }
+            {
+                filteredStudents = students.Where(s => s.ClassID == selectedClass).ToList();
+            }
+            else
+            {
+                filteredStudents = new List<Student>(students);
+            }
         }
         catch (Exception ex)
         {
@@ -203,6 +236,42 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task AutoGraduate()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var count = await authService.AutoGraduateAsync(userId);
+
+            if (count > 0)
+            {
+                NotificationService.Notify(NotificationSeverity.Success,
+                    "Graduation Complete", $"{count} student(s) graduated successfully.");
+
+                students = await authService.GetAllStudentsAsync();
+                _hasPendingGraduates = await authService.HasPendingJHS3GraduatesAsync();
+                ApplyFilters();
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Warning,
+                    "Nothing to Graduate", "No JHS3 students found pending graduation.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error,
+                "Graduation Failed", ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
         }
     }
 }

@@ -6,13 +6,8 @@
 @using CORE.SERVICE.NOTIFICATION
 @inject UserService UserService
 @inject NotificationMessageService Notify
-<style>
-    .page-title {
-        font-size: 24px;
-        margin-bottom: 20px;
-        color: #333;
-    }
 
+<style>
     .user-role-management {
         display: flex;
         gap: 20px;
@@ -53,8 +48,8 @@
         .menu-grid .rz-row {
             border-bottom: 1px solid #e0e0e0;
         }
-
 </style>
+
 <RadzenNotification />
 <LoadingSpinner Visible="isLoading" />
 
@@ -62,10 +57,17 @@
 {
     <RadzenFieldset Text="User Role Management" Icon="role">
         <div class="user-role-management">
+
             <div class="user-selection-panel">
                 <RadzenFieldset Legend="Users" class="user-fieldset">
-                    <RadzenDropDown @bind-Value="@selectedUser" Data="@users" TextProperty="UserName" ValueProperty="UserID"
-                    Change="@(args => OnUserSelected(args))" Placeholder="Select a user" Style="width: 100%;" />
+                   <RadzenDropDown TValue="int?"
+                @bind-Value="@selectedUser"
+                Data="@users"
+                TextProperty="UserName"
+                ValueProperty="UserID"
+                Change="@(async (object args) => await OnUserSelected(args))"
+                Placeholder="Select a user"
+                Style="width: 100%;" />
                 </RadzenFieldset>
             </div>
 
@@ -73,37 +75,48 @@
                 <RadzenFieldset Legend="Role Management" Disabled="@(!selectedUser.HasValue)" class="role-fieldset">
                     @if (selectedUser.HasValue)
                     {
-                        <RadzenDropDown @bind-Value="@selectedRole" Data="@roles" TextProperty="RoleName" ValueProperty="RoleID"
-                        Change="@(args => OnRoleSelected(args))" Placeholder="Select a role" Style="margin-bottom: 20px; width: 100%;" />
+                        <RadzenDropDown TValue="int?"
+                @bind-Value="@selectedRole"
+                Data="@roles"
+                TextProperty="RoleName"
+                ValueProperty="RoleID"
+                Change="@(async (object args) => await OnRoleSelected(args))"
+                Placeholder="Select a role"
+                Style="margin-bottom: 20px; width: 100%;" />
+
                         @if (selectedRole.HasValue)
                         {
                             <h4 class="section-title">Menu Access</h4>
-                            <RadzenGrid TItem="MenuItem" Data="@allMenus" class="menu-grid">
+                            <RadzenDataGrid TItem="MenuItem" Data="@allMenus" class="menu-grid">
                                 <Columns>
-                                    <RadzenGridColumn TItem="MenuItem" Property="Text" Title="Menu" />
-                                    <RadzenGridColumn TItem="MenuItem" Title="Can Access">
+                                    <RadzenDataGridColumn TItem="MenuItem" Property="Text" Title="Menu" />
+                                    <RadzenDataGridColumn TItem="MenuItem" Title="Can Access">
                                         <Template Context="menu">
-                                            <RadzenSwitch TValue="bool" Value="@(menuAccessDict[menu.MenuID])"
-                                            Change="@(args => UpdateAccess(menu.MenuID, args))" />
+                                            <RadzenSwitch TValue="bool"
+                                                          Value="@(menuAccessDict.ContainsKey(menu.MenuID) && menuAccessDict[menu.MenuID])"
+                                                          Change="@(async (bool val) => await UpdateAccess(menu.MenuID, val))" />
                                         </Template>
-                                    </RadzenGridColumn>
+                                    </RadzenDataGridColumn>
                                 </Columns>
-                            </RadzenGrid>
+                            </RadzenDataGrid>
                         }
                     }
                 </RadzenFieldset>
             </div>
+
         </div>
     </RadzenFieldset>
 }
+
 @code {
-    private IEnumerable<User> users;
-    private IEnumerable<Role> roles;
-    private IEnumerable<MenuItem> allMenus;
-    private Dictionary<int, bool> menuAccessDict; // To track access for each menu
+    private IEnumerable<User> users = Enumerable.Empty<User>();
+    private IEnumerable<Role> roles = Enumerable.Empty<Role>();
+    private IEnumerable<MenuItem> allMenus = Enumerable.Empty<MenuItem>();
+    private Dictionary<int, bool> menuAccessDict = new();
     private int? selectedUser;
     private int? selectedRole;
     private bool isLoading = false;
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -111,8 +124,8 @@
             isLoading = true;
             users = await UserService.GetUsersAsync();
             roles = await UserService.GetRolesAsync();
-            allMenus = await UserService.GetMenusAsync(); // Get all menus for display
-            menuAccessDict = allMenus.ToDictionary(menu => menu.MenuID, menu => false); // Initialize access to false
+            allMenus = await UserService.GetMenusAsync();
+            menuAccessDict = allMenus.ToDictionary(menu => menu.MenuID, menu => false);
         }
         catch (Exception ex)
         {
@@ -124,55 +137,58 @@
         }
     }
 
-    private async Task OnUserSelected(object args)
-    {
-        selectedUser = Convert.ToInt32(args);
-        selectedRole = null; // Reset the selected role when a new user is selected
+   private Task OnUserSelected(object args)
+{
+    selectedRole = null;
+    menuAccessDict = allMenus.ToDictionary(m => m.MenuID, m => false);
 
-        // Reset menu access tracking to false
-        menuAccessDict = allMenus.ToDictionary(menu => menu.MenuID, menu => false);
+    if (args is int id)
+        selectedUser = id;
+    else if (args != null && int.TryParse(args.ToString(), out var parsed))
+        selectedUser = parsed;
+    else
+        selectedUser = null;
 
-        StateHasChanged(); // Update the UI
-    }
+    StateHasChanged();
+    return Task.CompletedTask;
+}
 
-    // private async Task OnRoleSelected(object args)
-    // {
-    //     selectedRole = Convert.ToInt32(args);
-    //     if (selectedRole.HasValue)
-    //     {
-    //         var menuAccess = await UserService.GetMenuAccessAsync(selectedRole.Value);
+    [CascadingParameter] private Task<AuthenticationState> AuthState { get; set; }
 
-    //         // Initialize menu access dictionary based on selected role
-    //         foreach (var menu in allMenus)
-    //         {
-    //             menuAccessDict[menu.MenuID] = menuAccess.Any(ma => ma.MenuID == menu.MenuID && ma.CanAccess);
-    //         }
-
-    //         StateHasChanged(); // Update the UI
-    //     }
-    // }
+    private int loggedInUserId;
 
     private async Task OnRoleSelected(object args)
     {
-        selectedRole = Convert.ToInt32(args);
+        if (args == null || !selectedUser.HasValue) return;
 
-        if (selectedUser.HasValue && selectedRole.HasValue)
+        if (!int.TryParse(args.ToString(), out int roleId) || roleId <= 0)
         {
-            // Update the user's role in the database
-            await UserService.UpdateUserRoleAsync(selectedUser.Value, selectedRole.Value);
+            Notify.ShowNotification("Invalid role selected.");
+            return;
+        }
 
-            // Load menu access after role is updated
+        selectedRole = roleId;
+
+        try
+        {
+            await UserService.UpdateUserRoleAsync(
+                selectedUser.Value,
+                selectedRole.Value,
+                loggedInUserId);
+
             var menuAccess = await UserService.GetMenuAccessAsync(selectedRole.Value);
 
             foreach (var menu in allMenus)
-            {
-                menuAccessDict[menu.MenuID] = menuAccess.Any(ma => ma.MenuID == menu.MenuID && ma.CanAccess);
-            }
+                menuAccessDict[menu.MenuID] = menuAccess
+                    .Any(ma => ma.MenuID == menu.MenuID && ma.CanAccess);
 
             StateHasChanged();
         }
+        catch (Exception ex)
+        {
+            Notify.ShowNotification("Error updating role: " + ex.Message);
+        }
     }
-
 
     private async Task UpdateAccess(int menuId, bool canAccess)
     {
@@ -180,15 +196,15 @@
         {
             isLoading = true;
             var access = new MenuAccess
-                {
-                    RoleID = selectedRole.Value,
-                    MenuID = menuId,
-                    CanAccess = canAccess
-                };
+            {
+                RoleID = selectedRole!.Value,
+                MenuID = menuId,
+                CanAccess = canAccess
+            };
 
             await UserService.UpdateMenuAccessAsync(access);
-            menuAccessDict[menuId] = canAccess; // Update the dictionary
-            StateHasChanged(); // Update the UI
+            menuAccessDict[menuId] = canAccess;
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -200,4 +216,3 @@
         }
     }
 }
-
