@@ -727,20 +727,12 @@
             var success = await StudentService.SaveStudentFeeAsync(payment);
             if (success)
             {
-                if (!IsCashInHand)
-                {
-                    int bankId = await StudentService.GetBankIDAsync(PaymentMethod);
-                    if (bankId == 0)
-                    {
-                        NotificationService.ShowNotification("Error", "Invalid payment method selected.", NotificationSeverity.Error);
-                        return;
-                    }
+                int bankId = await StudentService.GetBankIDAsync(PaymentMethod, userId);
+                
 
-                    await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
-                }
+                await StudentService.LogsBankTransactionAsync(bankId, "Deposit", AmountPaid, "Success", null);
 
                 OutstandingBalance = await StudentService.GetOutstandingBalanceAsync(SelectedStudentID, SelectedFeeTypeID, SelectedTermID);
-
                 NotificationService.ShowNotification("Success", "Payment saved successfully and logged.", NotificationSeverity.Success);
                 ResetPaymentForm();
             }

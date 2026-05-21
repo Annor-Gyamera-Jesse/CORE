@@ -55,12 +55,12 @@
                         <RadzenForm Data="@examModel">
                             <!-- General Information -->
                             <div class="row mb-3">
-                                <div class="col-md-4">
+                                @* <div class="col-md-4">
                                     <RadzenField Property="SchoolCourse" Title="School Course">
                                         <RadzenLabel Text="Course" />
                                         <RadzenDropDown @bind-Value="@examModel.SchoolCourse" Data="@courseList"></RadzenDropDown>
                                     </RadzenField>
-                                </div>
+                                </div> *@
                                 <div class="col-md-4">
                                     <RadzenField Property="StudentName" Title="Student Name">
                                         <RadzenLabel Text="Student Name" />
@@ -77,7 +77,7 @@
 
                             <!-- Academic Details -->
                             <div class="row mb-3">
-                                <div class="col-md-3">
+                                @* <div class="col-md-3">
                                     <RadzenField Property="AcademicYear" Title="Academic Year">
                                         <RadzenLabel Text="Academic Year" />
                                         <RadzenTextBox @bind-Value="@examModel.AcademicYear"></RadzenTextBox>
@@ -88,7 +88,7 @@
                                         <RadzenLabel Text="Vacation Date" />
                                         <RadzenDatePicker @bind-Value="@examModel.VacationDate"></RadzenDatePicker>
                                     </RadzenField>
-                                </div>
+                                </div> *@
                                 <div class="col-md-3">
                                     <RadzenField Property="PromotedTo" Title="Promoted To">
                                         <RadzenLabel Text="Promoted To" />
@@ -99,28 +99,28 @@
 
                             <!-- Examination Details -->
                             <div class="row mb-3">
-                                <div class="col-md-4">
+                                @* <div class="col-md-4">
                                     <RadzenField Property="NumberOnRoll" Title="Number On Roll">
                                         <RadzenLabel Text="Number On Roll" />
                                         <RadzenNumeric @bind-Value="@examModel.NumberOnRoll"></RadzenNumeric>
                                     </RadzenField>
-                                </div>
+                                </div> *@
                                 <div class="col-md-4">
                                     <RadzenField Property="Term" Title="Term">
                                         <RadzenLabel Text="Term" />
                                         <RadzenDropDown @bind-Value="@examModel.TermID" Data="@termList" TextProperty="Term" ValueProperty="TermID" Placeholder="Select Term" Style="width:100%" />
                                     </RadzenField>
                                 </div>
-                                <div class="col-md-4">
+                                @* <div class="col-md-4">
                                     <RadzenField Property="Position" Title="Position">
                                         <RadzenLabel Text="Position" />
                                         <RadzenTextBox @bind-Value="@examModel.Position"></RadzenTextBox>
                                     </RadzenField>
-                                </div>
+                                </div> *@
                             </div>
 
                             <!-- Results Details -->
-                            <div class="row mb-3">
+                            @* <div class="row mb-3">
                                 <div class="col-md-4">
                                     <RadzenField Property="ClassScore" Title="Class Score">
                                         <RadzenLabel Text="Class Score" />
@@ -139,10 +139,10 @@
                                         <RadzenNumeric @bind-Value="@examModel.TotalScore"></RadzenNumeric>
                                     </RadzenField>
                                 </div>
-                            </div>
+                            </div> *@
 
                             <!-- Additional Details -->
-                            <div class="row mb-3">
+                            @* <div class="row mb-3">
                                 <div class="col-md-4">
                                     <RadzenField Property="SubjectsPositions" Title="Subjects Positions">
                                         <RadzenLabel Text="Subjects Positions" />
@@ -199,7 +199,7 @@
                                         <RadzenTextBox @bind-Value="@examModel.HeadMasterSignature"></RadzenTextBox>
                                     </RadzenField>
                                 </div>
-                            </div>
+                            </div> *@
 
                             <div class="text-right mt-3">
                                 <RadzenButton Text="Add" Click="@AddExam"></RadzenButton>
@@ -209,7 +209,7 @@
                 </RadzenFieldset>
             </div>
             <!-- Right Section: Assessment Search List Box -->
-            <div class="col-md-4">
+            @* <div class="col-md-4">
                 <RadzenFieldset Text="Assessment Search">
                     <div class="mt-3">
                         <!-- RadzenDropDown for selecting class -->
@@ -274,7 +274,7 @@
 
                     </div>
                 </RadzenFieldset>
-            </div>
+            </div> *@
 
 
 
@@ -284,44 +284,44 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>Subject</th>
+                                    @* <th>Subject</th> *@
                                     <th>StudentName</th>
                                     <th>ClassName</th>
-                                    <th>AcademicYear</th>
-                                    <th>VacationDate</th> 
-                                    <th>NextTermsBegins</th>
+                                    @* <th>AcademicYear</th> *@
+                                    @* <th>VacationDate</th>  *@
+                                    @* <th>NextTermsBegins</th> *@
                                     <th>PromotedTo</th>
-                                    <th>NumberOnRoll</th>
+                                    @* <th>NumberOnRoll</th> *@
                                     <th>Term</th>
-                                    <th>Position</th>
+                                    @* <th>Position</th>
                                     <th>ClassScore 50%</th>
                                     <th>ExamsScore 50%</th>
                                     <th>TotalScore 100%</th>
                                     <th>SubjectsPositions</th>
                                     <th>Grade</th>
-                                    <th>TeachersRemarks</th>
+                                    <th>TeachersRemarks</th> *@
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var result in examResults)
                                 {
                                     <tr>
-                                        <td>@result.SchoolCourse</td>
+                                        @* <td>@result.SchoolCourse</td> *@
                                         <td>@result.StudentName</td>
                                         <td>@result.ClassName</td>
-                                        <td>@result.AcademicYear</td>
+                                        @* <td>@result.AcademicYear</td>
                                         <td>@result.VacationDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
-                                        <td>@result.NextTermsBegins?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
+                                        <td>@result.NextTermsBegins?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td> *@
                                         <td>@result.PromotedTo</td>
-                                        <td>@result.NumberOnRoll</td>
+                                        @* <td>@result.NumberOnRoll</td> *@
                                         <td>@result.TermID</td>
-                                        <td>@result.Position</td>
+                                        @* <td>@result.Position</td>
                                         <td>@result.ClassScore</td>
                                         <td>@result.ExamsScore</td>
                                         <td>@result.TotalScore</td>
                                         <td>@result.SubjectsPositions</td>
                                         <td>@result.Grade</td>
-                                        <td>@result.TeachersRemarks</td>
+                                        <td>@result.TeachersRemarks</td> *@
                                     </tr>
                                 }
                             </tbody>
@@ -364,27 +364,27 @@
             examModel.StudentName = selectedStudent?.FullName;
             examResults.Add(new Exam
                 {
-                    SchoolCourse = examModel.SchoolCourse,
+                   // SchoolCourse = examModel.SchoolCourse,
                     StudentName = examModel.StudentName,
                     ClassName = examModel.ClassName,
-                    AcademicYear = examModel.AcademicYear,
-                    VacationDate = examModel.VacationDate,
-                    NextTermsBegins = examModel.NextTermsBegins,
+                    //AcademicYear = examModel.AcademicYear,
+                    //VacationDate = examModel.VacationDate,
+                    //NextTermsBegins = examModel.NextTermsBegins,
                     PromotedTo = examModel.PromotedTo,
-                    NumberOnRoll = examModel.NumberOnRoll,
+                    //NumberOnRoll = examModel.NumberOnRoll,
                     TermID = examModel.TermID,
-                    Position = examModel.Position,
-                    ClassScore = examModel.ClassScore,
-                    ExamsScore = examModel.ExamsScore,
-                    TotalScore = examModel.TotalScore,
-                    SubjectsPositions = examModel.SubjectsPositions,
-                    Grade = examModel.Grade,
-                    TeachersRemarks = examModel.TeachersRemarks,
-                    Conduct = examModel.Conduct,
-                    HeadmasterRemark = examModel.HeadmasterRemark,
-                    SchoolInformation = examModel.SchoolInformation,
-                    TeachersSignature = examModel.TeachersSignature,
-                    HeadMasterSignature = examModel.HeadMasterSignature,
+                    //Position = examModel.Position,
+                    // ClassScore = examModel.ClassScore,
+                    // ExamsScore = examModel.ExamsScore,
+                    // TotalScore = examModel.TotalScore,
+                    // SubjectsPositions = examModel.SubjectsPositions,
+                    // Grade = examModel.Grade,
+                    // TeachersRemarks = examModel.TeachersRemarks,
+                    // Conduct = examModel.Conduct,
+                    // HeadmasterRemark = examModel.HeadmasterRemark,
+                    // SchoolInformation = examModel.SchoolInformation,
+                    // TeachersSignature = examModel.TeachersSignature,
+                    // HeadMasterSignature = examModel.HeadMasterSignature,
                 });
 
             // Reset only specific properties, not the entire examModel so this fields are resertted after its added 

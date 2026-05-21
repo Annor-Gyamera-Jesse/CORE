@@ -20,12 +20,24 @@ namespace CORE.SERVICE.MainLayout
             return new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
         }
 
+        //public async Task<IEnumerable<User>> GetUsersAsync()
+        //{
+        //    using (var connection = CreateConnection())
+        //    {
+        //        return await connection.QueryAsync<User>("SELECT * FROM SchoolManagement.Users");
+        //    }
+        //}
+
         public async Task<IEnumerable<User>> GetUsersAsync()
         {
-            using (var connection = CreateConnection())
-            {
-                return await connection.QueryAsync<User>("SELECT * FROM SchoolManagement.Users");
-            }
+            using var connection = CreateConnection();
+            return await connection.QueryAsync<User>(@"
+        SELECT 
+            UserID,
+            UserName,
+            RoleID
+        FROM SchoolManagement.Users
+    ");
         }
 
         public async Task<IEnumerable<Role>> GetRolesAsync()
@@ -84,13 +96,18 @@ namespace CORE.SERVICE.MainLayout
             }
         }
 
-        public async Task UpdateUserRoleAsync(int userId, int roleId)
+        public async Task UpdateUserRoleAsync(int userId, int roleId, int updatedByUserId)
         {
-            using (var connection = CreateConnection())
-            {
-                var sql = "UPDATE SchoolManagement.Users SET RoleID = @RoleID WHERE UserID = @UserID";
-                await connection.ExecuteAsync(sql, new { UserID = userId, RoleID = roleId });
-            }
+            using var connection = CreateConnection();
+            connection.Open();
+
+            // Pass the acting user ID into SQL session context
+            await connection.ExecuteAsync(
+                "EXEC sp_set_session_context @key = N'CurrentUserID', @value = @val",
+                new { val = (object)updatedByUserId });
+
+            var sql = "UPDATE SchoolManagement.Users SET RoleID = @RoleID WHERE UserID = @UserID";
+            await connection.ExecuteAsync(sql, new { UserID = userId, RoleID = roleId });
         }
 
     }

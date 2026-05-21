@@ -1,4 +1,4 @@
-﻿@page "/core/pages/students/view-other-fees"
+﻿@page "/core/pages/fees/feeding-fee/other-payment/view-other-fees"
 @using CORE.MODEL
 @using CORE.MODEL.FEEDING_FEE
 @using CORE.MODEL.Term
@@ -227,16 +227,18 @@
 
     private async Task PayFee(StudentExtended student)
     {
-        try
-        {
-            isLoading = true;
         if (currentTerm == null || student.SelectedFeeTypeId == 0)
         {
-            Console.WriteLine("Please select FeeType.");
+            NotificationService.ShowNotification("Validation", "Please select a fee type before paying.", NotificationSeverity.Warning);
             return;
         }
 
-        var payment = new PaymentsOtherFee
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var payment = new PaymentsOtherFee
             {
                 StudentID = student.StudentID,
                 StudentName = $"{student.StudentFirstName} {student.StudentLastName}",
@@ -245,24 +247,24 @@
                 ClassID = student.ClassID,
                 AmountPaid = student.SelectedFeeAmount,
                 AmountLeft = 0,
-                PaymentDate = paymentDate, 
+                PaymentDate = paymentDate,
                 UserID = userId,
                 PaymentMethod = $"{student.SelectedFeeTypeName} Vault",
-                TermID = currentTerm.TermID, 
+                TermID = currentTerm.TermID,
                 PaymentStatus = "Paid"
             };
 
-        await authService.SavePaymentAsync(payment);
-        Console.WriteLine($"Payment saved for {student.StudentFirstName}");
+            await authService.SavePaymentAsync(payment);
             NotificationService.ShowNotification("Success", $"Payment saved for {student.StudentFirstName}", NotificationSeverity.Success);
         }
         catch (Exception ex)
         {
-            NotificationService.ShowNotification("Error", $"An error occurred: {ex.Message}", NotificationSeverity.Error);
+            NotificationService.ShowNotification("Error", $"Payment failed: {ex.Message}", NotificationSeverity.Error);
         }
         finally
         {
             isLoading = false;
+            StateHasChanged();
         }
     }
 

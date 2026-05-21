@@ -36,4 +36,16 @@
         public decimal TotalOwingAmount { get; set; }
     }
 
+    // Strongly typed model instead of dynamic
+    public class BankEntry
+    {
+        public int BankID { get; set; }
+        public int PaymentMethodID { get; set; }
+        public string BankNumber { get; set; }
+        public string MethodName { get; set; }
+        public decimal AmountInHand { get; set; }
+        public decimal AmountTransferred { get; set; }
+        public int UserID { get; set; }
+    }
+
 }
